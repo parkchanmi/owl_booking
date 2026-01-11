@@ -4,8 +4,8 @@
   "settings": {
     "width": 2000,
     "height": 2000,
-    "scrollTop": 0,
-    "scrollLeft": -638,
+    "scrollTop": -336,
+    "scrollLeft": 0,
     "zoomLevel": 1,
     "show": 431,
     "database": 4,
@@ -161,14 +161,14 @@
         ],
         "ui": {
           "x": 1124,
-          "y": 562,
+          "y": 561,
           "zIndex": 78,
           "widthName": 60,
           "widthComment": 60,
           "color": ""
         },
         "meta": {
-          "updateAt": 1768100741009,
+          "updateAt": 1768112143698,
           "createAt": 1768048693925
         }
       },
@@ -553,18 +553,18 @@
         "tableId": "jQekil3cqDV1Rmazhemwv",
         "name": "login_id",
         "comment": "로그인ID",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(100)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 81,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100789126,
+          "updateAt": 1768112045016,
           "createAt": 1768046246731
         }
       },
@@ -573,18 +573,18 @@
         "tableId": "jQekil3cqDV1Rmazhemwv",
         "name": "pwd",
         "comment": "비밀번호",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(100)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 81,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100792120,
+          "updateAt": 1768112046941,
           "createAt": 1768046247214
         }
       },
@@ -633,18 +633,18 @@
         "tableId": "jQekil3cqDV1Rmazhemwv",
         "name": "name",
         "comment": "이름",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(20)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 75,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100796270,
+          "updateAt": 1768112118024,
           "createAt": 1768048595316
         }
       },
@@ -653,18 +653,18 @@
         "tableId": "jQekil3cqDV1Rmazhemwv",
         "name": "email",
         "comment": "이메일",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(100)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 81,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100798410,
+          "updateAt": 1768112050333,
           "createAt": 1768048598081
         }
       },
@@ -673,18 +673,18 @@
         "tableId": "jQekil3cqDV1Rmazhemwv",
         "name": "hp",
         "comment": "전화번호",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(20)",
         "default": "",
         "options": 0,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 75,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100799724,
+          "updateAt": 1768112032924,
           "createAt": 1768048598775
         }
       },
@@ -833,18 +833,18 @@
         "tableId": "5duVI2xifmrrt3A6fqI4F",
         "name": "name",
         "comment": "센터명",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(100)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 81,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100846718,
+          "updateAt": 1768112384383,
           "createAt": 1768048701916
         }
       },
@@ -853,18 +853,18 @@
         "tableId": "5duVI2xifmrrt3A6fqI4F",
         "name": "biz_no",
         "comment": "사업자등록번호",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(100)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 86,
-          "widthDataType": 60,
+          "widthDataType": 81,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100849630,
+          "updateAt": 1768112389447,
           "createAt": 1768048713021
         }
       },
@@ -873,18 +873,18 @@
         "tableId": "5duVI2xifmrrt3A6fqI4F",
         "name": "ceo_name",
         "comment": "대표자명",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(20)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 75,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100851311,
+          "updateAt": 1768112527033,
           "createAt": 1768048713390
         }
       },
@@ -893,18 +893,18 @@
         "tableId": "5duVI2xifmrrt3A6fqI4F",
         "name": "biz_name",
         "comment": "상호",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(100)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 81,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100852499,
+          "updateAt": 1768112528660,
           "createAt": 1768048805048
         }
       },
@@ -913,18 +913,18 @@
         "tableId": "5duVI2xifmrrt3A6fqI4F",
         "name": "addr",
         "comment": "센터주소",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(200)",
         "default": "",
         "options": 0,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 81,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100853609,
+          "updateAt": 1768112194861,
           "createAt": 1768048805298
         }
       },
@@ -933,18 +933,18 @@
         "tableId": "5duVI2xifmrrt3A6fqI4F",
         "name": "tel",
         "comment": "센터전화번호",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(20)",
         "default": "",
         "options": 0,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 74,
-          "widthDataType": 60,
+          "widthDataType": 75,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100854918,
+          "updateAt": 1768112198179,
           "createAt": 1768048805492
         }
       },
@@ -953,18 +953,18 @@
         "tableId": "jQekil3cqDV1Rmazhemwv",
         "name": "type",
         "comment": "회원타입(일반/관리자)",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(20)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 122,
-          "widthDataType": 60,
+          "widthDataType": 75,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100784586,
+          "updateAt": 1768112054229,
           "createAt": 1768048872765
         }
       },
@@ -1073,18 +1073,18 @@
         "tableId": "kXSild2nvxOB2LLfNb4in",
         "name": "name",
         "comment": "강사 이름",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(20)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 75,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100869461,
+          "updateAt": 1768112485309,
           "createAt": 1768049324802
         }
       },
@@ -1093,18 +1093,18 @@
         "tableId": "kXSild2nvxOB2LLfNb4in",
         "name": "hp",
         "comment": "강사 연락처",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(20)",
         "default": "",
         "options": 0,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 65,
-          "widthDataType": 60,
+          "widthDataType": 75,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100870686,
+          "updateAt": 1768112476851,
           "createAt": 1768049325400
         }
       },
@@ -1113,18 +1113,18 @@
         "tableId": "kXSild2nvxOB2LLfNb4in",
         "name": "info",
         "comment": "강사 소개",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(4000)",
         "default": "",
         "options": 0,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 87,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100871668,
+          "updateAt": 1768112481181,
           "createAt": 1768049326716
         }
       },
@@ -1153,18 +1153,18 @@
         "tableId": "-qtdKYAnV16EFVLZ-2dVz",
         "name": "name",
         "comment": "수업명",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(100)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 81,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100873561,
+          "updateAt": 1768112558964,
           "createAt": 1768049373716
         }
       },
@@ -1173,18 +1173,18 @@
         "tableId": "-qtdKYAnV16EFVLZ-2dVz",
         "name": "day_of_week",
         "comment": "수업 요일",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(20)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 69,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 75,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100875607,
+          "updateAt": 1768112560748,
           "createAt": 1768049374017
         }
       },
@@ -1193,18 +1193,18 @@
         "tableId": "-qtdKYAnV16EFVLZ-2dVz",
         "name": "start_time",
         "comment": "수업 시작시간",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(20)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 77,
-          "widthDataType": 60,
+          "widthDataType": 75,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100877328,
+          "updateAt": 1768112562602,
           "createAt": 1768049374258
         }
       },
@@ -1235,7 +1235,7 @@
         "comment": "수업 최대인원",
         "dataType": "NUMERIC",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 72,
@@ -1244,7 +1244,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100932431,
+          "updateAt": 1768112575648,
           "createAt": 1768049405808
         }
       },
@@ -1293,18 +1293,18 @@
         "tableId": "zT8VxdGtK072QCD9_dQq9",
         "name": "name",
         "comment": "이용권 이름",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(100)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 65,
-          "widthDataType": 60,
+          "widthDataType": 81,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100858363,
+          "updateAt": 1768112594066,
           "createAt": 1768049508124
         }
       },
@@ -1313,9 +1313,9 @@
         "tableId": "zT8VxdGtK072QCD9_dQq9",
         "name": "use_cnt",
         "comment": "이용 횟수",
-        "dataType": "",
+        "dataType": "NUMERIC",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
@@ -1324,7 +1324,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768050133017,
+          "updateAt": 1768112595762,
           "createAt": 1768049508434
         }
       },
@@ -1333,9 +1333,9 @@
         "tableId": "zT8VxdGtK072QCD9_dQq9",
         "name": "duration_days",
         "comment": "사용 기간",
-        "dataType": "",
+        "dataType": "NUMERIC",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 76,
@@ -1344,7 +1344,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100284919,
+          "updateAt": 1768112596922,
           "createAt": 1768050134823
         }
       },
@@ -1353,7 +1353,7 @@
         "tableId": "zT8VxdGtK072QCD9_dQq9",
         "name": "hold_days",
         "comment": "중지 가능 기간",
-        "dataType": "",
+        "dataType": "NUMERIC",
         "default": "",
         "options": 0,
         "ui": {
@@ -1364,7 +1364,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100291070,
+          "updateAt": 1768112268887,
           "createAt": 1768050139113
         }
       },
@@ -1373,7 +1373,7 @@
         "tableId": "zT8VxdGtK072QCD9_dQq9",
         "name": "price",
         "comment": "가격",
-        "dataType": "",
+        "dataType": "NUMERIC",
         "default": "",
         "options": 0,
         "ui": {
@@ -1384,7 +1384,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768050199012,
+          "updateAt": 1768112272101,
           "createAt": 1768050140163
         }
       },
@@ -1393,18 +1393,18 @@
         "tableId": "zT8VxdGtK072QCD9_dQq9",
         "name": "status",
         "comment": "상태",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(20)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 60,
-          "widthDataType": 60,
+          "widthDataType": 75,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100867008,
+          "updateAt": 1768112602962,
           "createAt": 1768050141000
         }
       },
@@ -1435,7 +1435,7 @@
         "comment": "수업일자",
         "dataType": "TIMESTAMP",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 70,
@@ -1444,7 +1444,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100896041,
+          "updateAt": 1768112585730,
           "createAt": 1768050312445
         }
       },
@@ -1653,18 +1653,18 @@
         "tableId": "4n_bO9HBRGMeYolfXNQa_",
         "name": "confirm_mode",
         "comment": "대기 확정 방법",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(20)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 78,
           "widthComment": 81,
-          "widthDataType": 60,
+          "widthDataType": 75,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100825390,
+          "updateAt": 1768112277321,
           "createAt": 1768050724034
         }
       },
@@ -1684,7 +1684,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100832335,
+          "updateAt": 1768112281177,
           "createAt": 1768050734898
         }
       },
@@ -1815,7 +1815,7 @@
         "comment": "이용권 시작일자",
         "dataType": "TIMESTAMP",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
@@ -1824,7 +1824,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100916062,
+          "updateAt": 1768112533950,
           "createAt": 1768051006853
         }
       },
@@ -1915,7 +1915,7 @@
         "comment": "이용권 종료일자",
         "dataType": "TIMESTAMP",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
@@ -1924,7 +1924,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100917534,
+          "updateAt": 1768112534724,
           "createAt": 1768099347315
         }
       },
@@ -2015,7 +2015,7 @@
         "comment": "홀딩시작일",
         "dataType": "TIMESTAMP",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
@@ -2024,7 +2024,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100905802,
+          "updateAt": 1768112544568,
           "createAt": 1768099587554
         }
       },
@@ -2035,7 +2035,7 @@
         "comment": "홀딩종료일",
         "dataType": "TIMESTAMP",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
@@ -2044,7 +2044,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100908106,
+          "updateAt": 1768112546184,
           "createAt": 1768099589094
         }
       },
@@ -2055,7 +2055,7 @@
         "comment": "홀딩 일자",
         "dataType": "NUMERIC",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
@@ -2064,7 +2064,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100928934,
+          "updateAt": 1768112552520,
           "createAt": 1768099609586
         }
       },
@@ -2293,18 +2293,18 @@
         "tableId": "-qtdKYAnV16EFVLZ-2dVz",
         "name": "end_time",
         "comment": "수업 종료시간",
-        "dataType": "VARCHAR",
+        "dataType": "VARCHAR(20)",
         "default": "",
-        "options": 0,
+        "options": 8,
         "ui": {
           "keys": 0,
           "widthName": 60,
           "widthComment": 77,
-          "widthDataType": 60,
+          "widthDataType": 75,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1768100878542,
+          "updateAt": 1768112563844,
           "createAt": 1768100408472
         }
       }
@@ -2377,7 +2377,7 @@
             "k-5DoAkwnyEv3CPQVwnoD"
           ],
           "x": 1227,
-          "y": 562,
+          "y": 561,
           "direction": 4
         },
         "end": {
@@ -2433,7 +2433,7 @@
             "k-5DoAkwnyEv3CPQVwnoD"
           ],
           "x": 1467.333333333333,
-          "y": 786,
+          "y": 785,
           "direction": 8
         },
         "end": {
@@ -2461,7 +2461,7 @@
             "k-5DoAkwnyEv3CPQVwnoD"
           ],
           "x": 1536,
-          "y": 674,
+          "y": 673,
           "direction": 2
         },
         "end": {
@@ -2489,7 +2489,7 @@
             "k-5DoAkwnyEv3CPQVwnoD"
           ],
           "x": 1124,
-          "y": 618,
+          "y": 617,
           "direction": 1
         },
         "end": {
@@ -2545,7 +2545,7 @@
             "k-5DoAkwnyEv3CPQVwnoD"
           ],
           "x": 1192.6666666666665,
-          "y": 786,
+          "y": 785,
           "direction": 8
         },
         "end": {
@@ -2573,7 +2573,7 @@
             "k-5DoAkwnyEv3CPQVwnoD"
           ],
           "x": 1433,
-          "y": 562,
+          "y": 561,
           "direction": 4
         },
         "end": {
@@ -2601,7 +2601,7 @@
             "k-5DoAkwnyEv3CPQVwnoD"
           ],
           "x": 1329.9999999999998,
-          "y": 786,
+          "y": 785,
           "direction": 8
         },
         "end": {
@@ -2685,7 +2685,7 @@
             "k-5DoAkwnyEv3CPQVwnoD"
           ],
           "x": 1124,
-          "y": 730,
+          "y": 729,
           "direction": 1
         },
         "end": {
