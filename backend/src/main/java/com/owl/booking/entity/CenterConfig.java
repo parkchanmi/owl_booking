@@ -15,7 +15,7 @@ import lombok.*;
 public class CenterConfig {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(nullable = false)
@@ -34,6 +34,6 @@ public class CenterConfig {
     private Long generationStartDat;
 
     @OneToOne(cascade = CascadeType.REMOVE)
-    @JoinColumn(name="id", referencedColumnName = "center_id")
+    @JoinColumn(name="center_id", referencedColumnName = "id")
     Center center;
 }

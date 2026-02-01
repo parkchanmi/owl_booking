@@ -15,7 +15,7 @@ import lombok.*;
 public class HoldHistory {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(nullable = false)
@@ -28,6 +28,6 @@ public class HoldHistory {
     private Long hDay;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
-    @JoinColumn(name="id", referencedColumnName = "mm_id")
+    @JoinColumn(name="mm_id", referencedColumnName = "id")
     MemberMembership mm;
 }

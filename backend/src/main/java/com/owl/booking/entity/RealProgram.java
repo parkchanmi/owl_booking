@@ -15,17 +15,17 @@ import lombok.*;
 public class RealProgram {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(nullable = false)
     private LocalDateTime programDat;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
-    @JoinColumn(name="id", referencedColumnName = "center_id")
+    @JoinColumn(name="center_id", referencedColumnName = "id")
     Center center;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
-    @JoinColumn(name="id", referencedColumnName = "program_id")
+    @JoinColumn(name="program_id", referencedColumnName = "id")
     Program program;
 }

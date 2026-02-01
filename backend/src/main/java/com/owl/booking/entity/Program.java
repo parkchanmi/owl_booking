@@ -13,7 +13,7 @@ import lombok.*;
 public class Program {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(nullable = false)
@@ -32,10 +32,10 @@ public class Program {
     private Long maxCapacity;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
-    @JoinColumn(name="id", referencedColumnName = "center_id")
+    @JoinColumn(name="center_id", referencedColumnName = "id")
     Center center;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
-    @JoinColumn(name="id", referencedColumnName = "instructor_id")
+    @JoinColumn(name="instructor_id", referencedColumnName = "id")
     Instructor instructor;
 }

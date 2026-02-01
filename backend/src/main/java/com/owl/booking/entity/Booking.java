@@ -13,14 +13,14 @@ import lombok.*;
 public class Booking {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
-    @JoinColumn(name="id", referencedColumnName = "center_id")
+    @JoinColumn(name="center_id", referencedColumnName = "id")
     Center center;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
-    @JoinColumn(name="id", referencedColumnName = "program_id")
+    @JoinColumn(name="program_id", referencedColumnName = "id")
     RealProgram program;
 }
