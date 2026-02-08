@@ -24,9 +24,8 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  display: block;      /* flex에서 block으로 변경 */
+  min-width: 100vw;    /* 너비를 화면 전체로 */
   min-height: 100vh;
 }
 
@@ -65,4 +64,11 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+#root {
+  width: 100%;         /* 전체 너비 사용 */
+  margin: 0;
+  padding: 0;
+  text-align: left;    /* 기본 정렬을 왼쪽으로 (선택 사항) */
 }

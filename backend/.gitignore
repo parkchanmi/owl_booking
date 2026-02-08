@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Vite build artifacts
+src/main/resources/static/
+
+# 빌드 시 생성되는 기타 파일들
+dist/
+node_modules/
+*.log
