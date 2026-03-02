@@ -1,15 +1,18 @@
 import React from 'react';
 import { Button } from 'antd';
-
-const join = () => {
-  
-}
-
-const login = () => {
-
-}
+import { useNavigate } from 'react-router-dom';
 
 function Home() {
+  const navigate = useNavigate();
+
+  const join = () => {
+    navigate('/join');
+  }
+
+  const login = () => {
+    navigate('/login');
+  }
+
   return (
     <div style={{ padding: 20 }}>
       <h1>Home Page</h1>

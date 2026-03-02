@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from 'react-router-dom';
 
-import { Button, Form, Input, message } from 'antd';
+import { Button, Form, Input, message, Flex } from 'antd';
 
 const Join = () => {
   const navigate = useNavigate();
+  const [value, setValue] = React.useState('horizontal');
   const layout = {
     labelCol: { span: 8 },
     wrapperCol: { span: 16 },
@@ -77,16 +78,29 @@ const Join = () => {
         <Form.Item name={['user', 'name']} label="회원명" rules={[{ required: true }]}>
           <Input />
         </Form.Item>
-        <Form.Item name={['user', 'email']} label="이메일" rules={[{ type: 'email', required: true }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item name={['user', 'email_check']} label="이메일 인증" rules={[{ required: true }]}>
-          <Input />
-        </Form.Item>
+        <Flex vertical={value === 'vertical'}>
+          <Form.Item name={['user', 'email']} label="이메일" rules={[{ type: 'email', required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label={null}>
+            <Button type="primary">
+              인증요청
+            </Button>
+          </Form.Item>
+        </Flex>
+        <Flex vertical={value === 'vertical'}>
+          <Form.Item name={['user', 'email_check']} label="인증코드" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label={null}>
+            <Button type="primary">
+              인증확인
+            </Button>
+          </Form.Item>
+        </Flex>
         <Form.Item name={['user', 'hp']} label="전화번호" rules={[{ required: true }]}>
           <Input />
         </Form.Item>
-        
         <Form.Item label={null}>
           <Button type="primary" htmlType="submit">
             회원가입
