@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Form, Input, Card, Typography, Radio, Space, message, Row, Col } from 'antd';
 import { useNavigate } from 'react-router-dom';
 
@@ -155,6 +155,7 @@ const Join = () => {
                     </Form.Item>
 
                     {isSent ? (
+                    <Form.Item>
                       <Form.Item name={['user', 'email_check']} label="인증코드" rules={[
                           { required: true, message: '인증코드를 입력하세요.' },
                           {
@@ -190,6 +191,7 @@ const Join = () => {
                             재전송
                           </Button>
                         )}
+                    </Form.Item>
                   ):<></>}    
                     <Form.Item name="hp" label="전화번호" rules={[{ required: true }]}>
                         <Input placeholder="- 없이 숫자만 입력" />
