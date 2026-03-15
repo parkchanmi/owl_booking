@@ -6,7 +6,12 @@ import { Button, Form, Input, message, Flex } from 'antd';
 
 const Join = () => {
   const navigate = useNavigate();
-  const [value, setValue] = React.useState('horizontal');
+  const [form] = Form.useForm();
+  const [code, setCode] = useState(null);
+  const [isSent, setIsSent] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(180); // 3분 = 180초
+  const [isValid, setIsValid] = useState(false);
+  const [value, setValue] = useState('horizontal');
   const layout = {
     labelCol: { span: 8 },
     wrapperCol: { span: 16 },
@@ -51,6 +56,66 @@ const Join = () => {
     }
   };
 
+  const sendMail = async () => {
+    const email = form.getFieldValue(['user', 'email']);
+    if (!email) {
+      message.error("이메일을 입력해주세요.");
+      return;
+    }
+    const response = await fetch('/api/mail/authenticate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({         
+          email : email
+        }),
+        credentials: 'include'
+    });
+    setIsSent(true);
+    setTimeLeft(180);
+  }
+
+  const verifyCode = async () => {
+    const userCode = form.getFieldValue(['user', 'email_check']);
+    const response = await fetch('/api/mail/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        userCode : userCode }),
+      credentials: 'include' // 세션 쿠키 유지를 위해 필수!
+    });
+    
+    const result = await response.text();
+    if (response.ok) {
+      message.success(result);
+      setIsValid(true);
+      form.validateFields(['user', 'email_check']);
+    }else{
+      message.error(result);
+      setIsValid(false);
+      form.validateFields(['user', 'email_check']);
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  useEffect(() => {
+    if (isSent && timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer); // 언마운트 시 정리
+    }
+  }, [isSent, timeLeft]);
+  useEffect(() => {
+    if (isValid) {
+      // 인증 성공 시 에러 메시지를 지우고 'success' 상태로 만듦
+      form.validateFields(['user', 'email_check']);
+    }
+  }, [isValid, form]);
   return (
     <div style={{ 
       display: 'flex', 
@@ -61,6 +126,7 @@ const Join = () => {
     }}>
       <Form
         {...layout}
+        form={form}
         name="nest-messages"
         onFinish={onFinish}
         style={{ maxWidth: 600 }}
@@ -70,34 +136,67 @@ const Join = () => {
           <Input />
         </Form.Item>
         <Form.Item name={['user', 'pwd']} label="비밀번호" rules={[{ required: true }]}>
-          <Input />
+          <Input.Password/>
         </Form.Item>
         <Form.Item name={['user', 'pwd_check']} label="비밀번호 확인" rules={[{ required: true }]}>
-          <Input />
+          <Input.Password />
         </Form.Item>
         <Form.Item name={['user', 'name']} label="회원명" rules={[{ required: true }]}>
           <Input />
         </Form.Item>
         <Flex vertical={value === 'vertical'}>
           <Form.Item name={['user', 'email']} label="이메일" rules={[{ type: 'email', required: true }]}>
-            <Input />
+            <Input disabled={isValid}/>
           </Form.Item>
-          <Form.Item label={null}>
-            <Button type="primary">
-              인증요청
-            </Button>
-          </Form.Item>
+          {!isSent ? (
+            <Form.Item label={null}>
+              <Button type="primary" onClick={sendMail}>
+                인증요청
+              </Button>
+            </Form.Item>
+          ): <></>}
         </Flex>
-        <Flex vertical={value === 'vertical'}>
-          <Form.Item name={['user', 'email_check']} label="인증코드" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item label={null}>
-            <Button type="primary">
-              인증확인
-            </Button>
-          </Form.Item>
-        </Flex>
+        {isSent ? (
+          <Flex vertical={value === 'vertical'}>
+            <Form.Item name={['user', 'email_check']} label="인증코드" rules={[
+                { required: true, message: '인증코드를 입력하세요.' },
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve(); // 값이 없으면 required에서 처리
+                    if (isValid) {
+                      return Promise.resolve(); // 인증 성공 상태면 통과
+                    }
+                    return Promise.reject(new Error('인증확인 버튼을 눌러주세요.'));
+                  },
+                },
+              ]}
+              // validateStatus를 직접 제어하는 것이 더 확실합니다.
+              validateStatus={
+                timeLeft <= 0 ? "error" : (isValid ? "success" : "")
+              }
+            >
+              <Input 
+                placeholder="인증코드 입력"
+                suffix={<span style={{ color: timeLeft < 30 ? 'red' : '#999' }}>{formatTime(timeLeft)}</span>}
+                disabled={timeLeft <= 0} // 시간 만료 시 입력 차단
+              />
+            </Form.Item>
+            <Form.Item label={null}>
+              <Button 
+                type="primary" 
+                onClick={verifyCode} 
+                disabled={timeLeft <= 0} // 시간 만료 시 버튼 비활성화
+              >
+                인증 확인
+              </Button>
+              {timeLeft <= 0 && (
+                <Button type="link" onClick={sendMail} style={{ marginLeft: 8 }}>
+                  재전송
+                </Button>
+              )}
+            </Form.Item>
+          </Flex>
+        ):<></>}
         <Form.Item name={['user', 'hp']} label="전화번호" rules={[{ required: true }]}>
           <Input />
         </Form.Item>
