@@ -37,6 +37,25 @@ const Join = () => {
     insertMember(userData);
   };
 
+  const insertMember = async (userData) => {
+    try {
+      const response = await fetch('/api/member/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      });
+
+      if (response.ok) {
+        message.success('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
+        navigate('/login', { replace: true }); // 뒤로가기 방지
+      }else{
+        message.error('회원가입에 실패했습니다. 다시 시도해주세요.');
+      }
+    } catch (error) {
+      console.error("네트워크 에러:", error);
+      message.error('서버와 통신 중 에러가 발생했습니다.');
+    }
+  };
 
   const sendMail = async () => {
     const email = form.getFieldValue(['user', 'email']);
@@ -124,26 +143,28 @@ const Join = () => {
                     </Form.Item>
 
                     {/* 공통 가입 정보 */}
-                    <Form.Item name="loginId" label="아이디" rules={[{ required: true, message: '영문/숫자 8~10자 이내' }]}>
+                    <Form.Item name={['user', 'loginId']} label="아이디" rules={[{ required: true, message: '영문/숫자 8~10자 이내' }]}>
                         <Input placeholder="아이디를 입력해주세요" />
                     </Form.Item>
 
                     <Row gutter={12}>
                         <Col span={12}>
-                            <Form.Item name="pwd" label="비밀번호" rules={[{ required: true, message: '영문, 숫자, 특수문자 포함 8~20자' }]}>
+                            <Form.Item name={['user', 'pwd']} label="비밀번호" rules={[{ required: true, message: '영문, 숫자, 특수문자 포함 8~20자' }]}>
                                 <Input.Password placeholder="비밀번호 입력" />
                             </Form.Item>
                         </Col>
                         <Col span={12}>
-                            <Form.Item name="pwd_check" label="비밀번호 확인" rules={[{ required: true, message: '비밀번호를 다시 입력해주세요' }]}>
+                            <Form.Item name={['user', 'pwd_check']} label="비밀번호 확인" rules={[{ required: true, message: '비밀번호를 다시 입력해주세요' }]}>
                                 <Input.Password placeholder="비밀번호 재입력" />
                             </Form.Item>
                         </Col>
                     </Row>
-
+                    <Form.Item name={['user', 'name']} label="이름" rules={[{ required: true, message: '이름을 입력해주세요' }]}>
+                        <Input placeholder="이름을 입력해주세요" />
+                    </Form.Item>
                     <Form.Item label="이메일">
                         <Space.Compact style={{ width: '100%' }}>
-                            <Form.Item name="email" noStyle rules={[{ required: true, type: 'email' }]}>
+                            <Form.Item name={['user', 'email']} noStyle rules={[{ required: true, type: 'email' }]}>
                                 <Input placeholder="이메일 주소" disabled={isValid}/>
                             </Form.Item>
                             {!isSent ? (
@@ -155,45 +176,47 @@ const Join = () => {
                     </Form.Item>
 
                     {isSent ? (
-                    <Form.Item>
-                      <Form.Item name={['user', 'email_check']} label="인증코드" rules={[
-                          { required: true, message: '인증코드를 입력하세요.' },
-                          {
-                            validator: (_, value) => {
-                              if (!value) return Promise.resolve(); // 값이 없으면 required에서 처리
-                              if (isValid) {
-                                return Promise.resolve(); // 인증 성공 상태면 통과
-                              }
-                              return Promise.reject(new Error('인증확인 버튼을 눌러주세요.'));
-                            },
-                          },
-                        ]}
-                        // validateStatus를 직접 제어하는 것이 더 확실합니다.
-                        validateStatus={
-                          timeLeft <= 0 ? "error" : (isValid ? "success" : "")
-                        }
-                      >
-                        <Input 
-                          placeholder="인증코드 입력"
-                          suffix={<span style={{ color: timeLeft < 30 ? 'red' : '#999' }}>{formatTime(timeLeft)}</span>}
-                          disabled={timeLeft <= 0} // 시간 만료 시 입력 차단
-                        />
-                      </Form.Item>
-                        <Button 
-                          type="primary" 
-                          onClick={verifyCode} 
-                          disabled={timeLeft <= 0} // 시간 만료 시 버튼 비활성화
-                        >
-                          인증 확인
-                        </Button>
-                        {timeLeft <= 0 && (
-                          <Button type="link" onClick={sendMail} style={{ marginLeft: 8 }}>
-                            재전송
-                          </Button>
-                        )}
+                      <Form.Item label="이메일 인증코드">
+                        <Space.Compact style={{ width: '100%' }}>
+                            <Form.Item name={['user', 'email_check']} noStyle rules={[
+                              { required: true, message: '인증코드를 입력하세요.' },
+                              {
+                                validator: (_, value) => {
+                                  if (!value) return Promise.resolve(); // 값이 없으면 required에서 처리
+                                  if (isValid) {
+                                    return Promise.resolve(); // 인증 성공 상태면 통과
+                                  }
+                                  return Promise.reject(new Error('인증확인 버튼을 눌러주세요.'));
+                                },
+                              },
+                            ]}
+                            // validateStatus를 직접 제어하는 것이 더 확실합니다.
+                            validateStatus={
+                              timeLeft <= 0 ? "error" : (isValid ? "success" : "")
+                            }
+                          >
+                            <Input 
+                              placeholder="인증코드 입력"
+                              suffix={<span style={{ color: timeLeft < 30 ? 'red' : '#999' }}>{formatTime(timeLeft)}</span>}
+                              disabled={timeLeft <= 0} // 시간 만료 시 입력 차단
+                            />
+                            </Form.Item>
+                            <Button 
+                              type="primary" 
+                              onClick={verifyCode}
+                              disabled={timeLeft <= 0} // 시간 만료 시 버튼 비활성화
+                            >
+                              인증 확인
+                            </Button>
+                            {timeLeft <= 0 && (
+                              <Button type="link" onClick={sendMail} style={{ marginLeft: 8 }}>
+                                재전송
+                              </Button>
+                            )}
+                        </Space.Compact>
                     </Form.Item>
                   ):<></>}    
-                    <Form.Item name="hp" label="전화번호" rules={[{ required: true }]}>
+                    <Form.Item name={['user', 'hp']} label="전화번호" rules={[{ required: true }]}>
                         <Input placeholder="- 없이 숫자만 입력" />
                     </Form.Item>
 
@@ -202,27 +225,27 @@ const Join = () => {
                         <div style={{ padding: '20px', background: '#fafafa', borderRadius: 8, marginBottom: 24, border: '1px solid #f0f0f0' }}>
                             <Text strong style={{ display: 'block', marginBottom: 16 }}>센터(사업자) 정보</Text>
                             
-                            <Form.Item name="businessNo" label="사업자등록번호" rules={[{ required: true }]}>
+                            <Form.Item name={['user', 'businessNo']} label="사업자등록번호" rules={[{ required: true }]}>
                                 <Input placeholder="사업자등록번호 입력" />
                             </Form.Item>
-                            <Form.Item name="ceoName" label="대표자명" rules={[{ required: true }]}>
+                            <Form.Item name={['user', 'ceoName']} label="대표자명" rules={[{ required: true }]}>
                                 <Input placeholder="대표자명 입력" />
                             </Form.Item>
-                            <Form.Item name="companyName" label="상호 (센터명)" rules={[{ required: true }]}>
+                            <Form.Item name={['user', 'companyName']} label="상호 (센터명)" rules={[{ required: true }]}>
                                 <Input placeholder="상호 입력" />
                             </Form.Item>
                             
                             <Form.Item label="센터 주소">
                                 <Space.Compact style={{ width: '100%', marginBottom: 8 }}>
-                                    <Form.Item name="zipCode" noStyle>
+                                    <Form.Item name={['user', 'zipCode']} noStyle>
                                         <Input placeholder="우편번호" readOnly />
                                     </Form.Item>
                                     <Button>우편번호 찾기</Button>
                                 </Space.Compact>
-                                <Form.Item name="address1" style={{ marginBottom: 8 }}>
+                                <Form.Item name={['user', 'address1']} style={{ marginBottom: 8 }}>
                                     <Input placeholder="기본 주소" readOnly />
                                 </Form.Item>
-                                <Form.Item name="address2" noStyle>
+                                <Form.Item name={['user', 'address2']} noStyle>
                                     <Input placeholder="상세 주소를 입력해주세요" />
                                 </Form.Item>
                             </Form.Item>
