@@ -81,18 +81,29 @@ public class MemberController {
             if (passwordEncoder.matches(member.getPwd(), foundMember.getPwd())) {
                 
                 // 3. 일치하면 인증 토큰 생성 및 세션 저장 (이전 코드 활용)
+                String role = foundMember.getType() == MemberType.ADMIN ? "ROLE_ADMIN" : "ROLE_USER";
                 UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
-                        foundMember.getLoginId(), null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                        foundMember.getLoginId(), null, List.of(new SimpleGrantedAuthority(role)));
 
                 SecurityContext context = SecurityContextHolder.getContext();
                 context.setAuthentication(token);
                 HttpSession session = request.getSession(true);
                 session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
 
-                return ResponseEntity.ok(true);
+                Map<String, Object> loginResult = new HashMap<>();
+                loginResult.put("loginId", foundMember.getLoginId());
+                loginResult.put("name", foundMember.getName());
+                loginResult.put("type", foundMember.getType());
+                loginResult.put("typeCode", getMemberTypeCode(foundMember.getType()));
+
+                return ResponseEntity.ok(loginResult);
             }
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(false);
+    }
+
+    private int getMemberTypeCode(MemberType type) {
+        return type == MemberType.ADMIN ? 1 : 2;
     }
 
     @PostMapping("/logout")

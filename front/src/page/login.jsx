@@ -1,5 +1,5 @@
-import React from "react";
-import { Button, Checkbox, Form, Input, Card, Typography, Flex } from 'antd';
+import React, { useState } from "react";
+import { Button, Checkbox, Form, Input, Card, Typography, Flex, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,10 +7,38 @@ const { Title, Text, Link } = Typography;
 
 const Login = () => {
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
 
-    const onFinish = (values) => {
-        console.log('Success:', values);
-        navigate('/main', { replace: true });
+    const onFinish = async (values) => {
+        setLoading(true);
+
+        try {
+            const response = await fetch('/api/member/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    loginId: values.loginId,
+                    pwd: values.pwd,
+                }),
+                credentials: 'include',
+            });
+
+            if (response.ok) {
+                const loginResult = await response.json();
+                const nextPath = loginResult.typeCode === 1 ? '/admin' : '/member';
+
+                message.success('로그인되었습니다.');
+                navigate(nextPath, { replace: true });
+                return;
+            }
+
+            message.error('아이디 또는 비밀번호가 일치하지 않습니다.');
+        } catch (error) {
+            console.error('Login error:', error);
+            message.error('서버와 통신 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -41,7 +69,7 @@ const Login = () => {
                     </Flex>
 
                     <Form.Item>
-                        <Button type="primary" htmlType="submit" block style={{ height: 40, fontSize: 16 }}>
+                        <Button type="primary" htmlType="submit" block loading={loading} style={{ height: 40, fontSize: 16 }}>
                             로그인
                         </Button>
                     </Form.Item>
