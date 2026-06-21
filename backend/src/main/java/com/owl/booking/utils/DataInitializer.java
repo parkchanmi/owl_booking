@@ -1,8 +1,8 @@
 package com.owl.booking.utils;
 
-import com.owl.booking.entity.Member;
-import com.owl.booking.entity.type.MemberType;
-import com.owl.booking.repository.MemberRepository;
+import com.owl.booking.model.entity.Member;
+import com.owl.booking.model.entity.type.MemberType;
+import com.owl.booking.model.repository.MemberRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
