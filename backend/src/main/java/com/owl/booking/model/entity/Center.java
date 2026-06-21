@@ -31,6 +31,9 @@ public class Center {
     @Column(nullable = true)
     private String addr;
 
+    @Column(nullable = true)
+    private String addrDetail;
+
     @Column(nullable = true, length=20)
     private String tel;
 }
