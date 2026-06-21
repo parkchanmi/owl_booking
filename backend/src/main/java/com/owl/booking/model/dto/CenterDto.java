@@ -18,6 +18,8 @@ public class CenterDto {
     private String bizName;
 
     private String addr;
-    
+
+    private String addrDetail;
+
     private String tel;
 }
