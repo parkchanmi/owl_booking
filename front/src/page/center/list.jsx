@@ -80,13 +80,15 @@ const CenterList = () => {
         }
     };
 
-    const filteredCenters = centers.filter((center) => {
+    const filteredCenters = Array.isArray(centers) 
+    ? centers.filter((center) => {
         const text = keyword.trim().toLowerCase();
         if (!text) return true;
         return [center.name, center.bizName, center.ceoName]
             .filter(Boolean)
             .some((field) => field.toLowerCase().includes(text));
-    });
+    })
+    : [];
 
     const columns = [
         { title: '센터명', dataIndex: 'name', key: 'name' },
