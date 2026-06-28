@@ -18,16 +18,16 @@ public class MemberMembership {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(nullable = false)
+    @Column(name = "start_dat", nullable = false)
     private LocalDateTime startDat;
 
-    @Column(nullable = false)
+    @Column(name = "end_dat", nullable = false)
     private LocalDateTime endDat;
 
-    @Column(nullable = true)
+    @Column(name = "u_cnt", nullable = true)
     private Long uCnt;
 
-    @Column(nullable = true)
+    @Column(name = "h_day", nullable = true)
     private Long hDay;
 
     @ManyToOne(cascade = CascadeType.REMOVE)

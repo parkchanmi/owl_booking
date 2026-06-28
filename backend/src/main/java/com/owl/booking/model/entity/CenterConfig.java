@@ -18,19 +18,19 @@ public class CenterConfig {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(nullable = false)
+    @Column(name = "confirm_mode", nullable = false)
     private ConfirmMode confirmMode;
 
-    @Column(nullable = true)
+    @Column(name = "waitlist_capacity", nullable = true)
     private Long waitlistCapacity;
 
-    @Column(nullable = true)
+    @Column(name = "cancle_deadline_minutes", nullable = true)
     private Long cancleDeadlineMinutes;
 
-    @Column(nullable = true)
+    @Column(name = "booking_open_days", nullable = true)
     private Long bookingOpenDays;
 
-    @Column(nullable = true)
+    @Column(name = "generation_start_dat", nullable = true)
     private Long generationStartDat;
 
     @OneToOne(cascade = CascadeType.REMOVE)

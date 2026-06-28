@@ -18,13 +18,13 @@ public class HoldHistory {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(nullable = false)
+    @Column(name = "start_dat", nullable = false)
     private LocalDateTime startDat;
 
-    @Column(nullable = false)
+    @Column(name = "end_dat", nullable = false)
     private LocalDateTime endDat;
 
-    @Column(nullable = false)
+    @Column(name = "h_day", nullable = false)
     private Long hDay;
 
     @ManyToOne(cascade = CascadeType.REMOVE)

@@ -21,13 +21,13 @@ public class Membership {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "use_cnt", nullable = false)
     private Long useCnt;
 
-    @Column(nullable = false)
+    @Column(name = "duration_days", nullable = false)
     private Long durationDays;
 
-    @Column(nullable = true)
+    @Column(name = "hold_days", nullable = true)
     private Long holdDays;
 
     @Column(nullable = true)

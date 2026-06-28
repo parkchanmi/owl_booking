@@ -19,16 +19,16 @@ public class Program {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, length = 20)
+    @Column(name = "day_of_week", nullable = false, length = 20)
     private String dayOfWeek;
 
-    @Column(nullable = false, length = 20)
+    @Column(name = "start_time", nullable = false, length = 20)
     private String startTime;
 
-    @Column(nullable = false, length = 20)
+    @Column(name = "end_time", nullable = false, length = 20)
     private String endTime;
 
-    @Column(nullable = false)
+    @Column(name = "max_capacity", nullable = false)
     private Long maxCapacity;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
