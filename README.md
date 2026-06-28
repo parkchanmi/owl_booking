@@ -29,7 +29,7 @@
     * RESTful API 제공 (`/api/**`)
 
 ### 🔵 **FrontEnd (React + Vite)**
-* **실행 방식**: `/front` 경로로 이동 후 아래 명령어 실행
+* **실행 방식**: `/frontend` 경로로 이동 후 아래 명령어 실행
 * **포트**: `http://localhost:5173`
   ```bash
   npm install
@@ -52,7 +52,7 @@
 
 ## 📂 프로젝트 구조 (Project Structure)
 
-프로젝트는 `backend`와 `front`로 분리되어 관리되며, 각 디렉토리에 독립적인 설정(`.gitignore` 등)이 포함되어 있습니다.
+프로젝트는 `backend`와 `frontend`로 분리되어 관리되며, 각 디렉토리에 독립적인 설정(`.gitignore` 등)이 포함되어 있습니다.
 
 ```text
 root/
@@ -60,10 +60,10 @@ root/
 │   ├── src/main/java/          # Java 소스 코드
 │   │   └── com.owl.booking/    # 서비스 로직 및 설정
 │   ├── src/main/resources/
-│   │   ├── static/             # Front 빌드 결과물 (Git Ignore 적용)
+│   │   ├── static/             # Frontend 빌드 결과물 (Git Ignore 적용)
 │   │   └── application.properties
 │   └── .gitignore              # Backend 전용 Ignore 설정
-├── front/                      # React 기반 프론트엔드 프로젝트 (Vite)
+├── frontend/                   # React 기반 프론트엔드 프로젝트 (Vite)
 │   ├── src/                    # React 컴포넌트 및 로직
 │   ├── public/                 # 정적 리소스
 │   ├── vite.config.js          # Proxy 및 Build 경로 설정
