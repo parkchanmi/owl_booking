@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Input, Space, Card, Popconfirm, message, Flex } from 'antd';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import DashboardLayout from '../../components/DashboardLayout';
-import CenterFormModal from '../../components/center/CenterFormModal';
-import { fetchCenters, createCenter, updateCenter, deleteCenter } from '../../api/centerApi';
+import DashboardLayout from '../../../components/DashboardLayout';
+import CenterFormModal from '../../../components/center/CenterFormModal';
+import { fetchCenters, createCenter, updateCenter, deleteCenter } from '../../../api/centerApi';
 
 const CenterList = () => {
     const [centers, setCenters] = useState([]);

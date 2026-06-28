@@ -21,7 +21,7 @@ const menuItems = [
         icon: <ShopOutlined />,
         label: '센터 관리',
         children: [
-            { key: 'center-list', label: '센터 리스트', path: '/center/list' }
+            { key: 'center-list', label: '센터 리스트', path: '/admin/center/list' }
         ],
     },
     {
@@ -37,8 +37,7 @@ const menuItems = [
         icon: <ScheduleOutlined />,
         label: '수업 관리',
         children: [
-            { key: 'class-list', label: '수업 리스트' },
-            { key: 'class-schedule', label: '수업 스케줄 관리' }
+            { key: 'class-list', label: '수업 리스트', path: '/admin/class' },
         ],
     },
     {
@@ -46,9 +45,10 @@ const menuItems = [
         icon: <CalendarOutlined />,
         label: '예약 관리',
         children: [
-            { key: 'booking-wait', label: '대기 예약 관리' },
-            { key: 'booking-cancel', label: '예약 취소 관리' },
-            { key: 'booking-setting', label: '수업 예약 설정' }
+            { key: 'booking-wait', label: '대기 예약 관리', path: '/admin/booking/wait' },
+            { key: 'booking-cancel', label: '예약 취소 관리', path: '/admin/booking/cancel' },
+            { key: 'booking-setting', label: '수업 예약 설정', path: '/admin/booking/setting' },
+            { key: 'booking-schedule', label: '수업 스케줄 관리', path: '/admin/booking/schedule' },
         ],
     },
     {
