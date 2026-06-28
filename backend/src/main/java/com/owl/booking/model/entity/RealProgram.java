@@ -18,7 +18,7 @@ public class RealProgram {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(nullable = false)
+    @Column(name = "program_dat", nullable = false)
     private LocalDateTime programDat;
 
     @ManyToOne(cascade = CascadeType.REMOVE)

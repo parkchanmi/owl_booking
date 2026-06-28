@@ -21,7 +21,7 @@ public class Member {
     @Column(nullable = false, length=20)
     private MemberType type;
 
-    @Column(nullable = false)
+    @Column(name = "login_id", nullable = false, unique = true)
     private String loginId;
 
     @Column(nullable = false)

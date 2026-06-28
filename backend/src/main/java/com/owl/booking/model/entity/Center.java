@@ -19,19 +19,19 @@ public class Center {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "biz_no", nullable = false)
     private String bizNo;
 
-    @Column(nullable = false, length=20)
+    @Column(name = "ceo_name", nullable = false, length=20)
     private String ceoName;
 
-    @Column(nullable = false)
+    @Column(name = "biz_name", nullable = false)
     private String bizName;
 
     @Column(nullable = true)
     private String addr;
 
-    @Column(nullable = true)
+    @Column(name = "addr_detail", nullable = true)
     private String addrDetail;
 
     @Column(nullable = true, length=20)
