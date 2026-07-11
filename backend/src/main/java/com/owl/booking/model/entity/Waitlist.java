@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "\"waitlists\"")
+@Table(name = "waitlists")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,11 +16,11 @@ public class Waitlist {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
-    @JoinColumn(name="member_id", referencedColumnName = "id")
+    @ManyToOne
+    @JoinColumn(name = "member_id", referencedColumnName = "id")
     Member member;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
-    @JoinColumn(name="program_id", referencedColumnName = "id")
+    @ManyToOne
+    @JoinColumn(name = "real_program_id", referencedColumnName = "id")
     RealProgram program;
 }

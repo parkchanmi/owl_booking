@@ -15,4 +15,6 @@ public class RealProgramDto {
     CenterDto center;
 
     ProgramDto program;
+
+    InstructorDto instructor;
 }

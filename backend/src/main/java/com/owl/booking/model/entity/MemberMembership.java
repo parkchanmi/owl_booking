@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "\"member_membership\"")
+@Table(name = "member_membership")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,15 +30,15 @@ public class MemberMembership {
     @Column(name = "h_day", nullable = true)
     private Long hDay;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne
     @JoinColumn(name="center_id", referencedColumnName = "id")
     Center center;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne
     @JoinColumn(name="member_id", referencedColumnName = "id")
     Member member;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne
     @JoinColumn(name="membership_id", referencedColumnName = "id")
     Membership membership;
 }

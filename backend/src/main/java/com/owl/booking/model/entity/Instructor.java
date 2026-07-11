@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "\"instructor\"")
+@Table(name = "instructor")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,7 +25,7 @@ public class Instructor {
     @Column(nullable = true, length=4000)
     private String info;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne
     @JoinColumn(name="center_id", referencedColumnName = "id")
     Center center;
 }

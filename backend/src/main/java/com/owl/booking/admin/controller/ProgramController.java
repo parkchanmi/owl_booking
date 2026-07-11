@@ -3,15 +3,9 @@ package com.owl.booking.admin.controller;
 import com.owl.booking.admin.service.ProgramService;
 import com.owl.booking.model.dto.ProgramDto;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admin/programs")
@@ -38,9 +32,17 @@ public class ProgramController {
         return programService.updateProgram(id, programDto);
     }
 
+    @PatchMapping("/{id}/pause")
+    public ProgramDto pauseProgram(@PathVariable String id) {
+        return programService.pauseProgram(id);
+    }
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProgram(@PathVariable String id) {
-        programService.deleteProgram(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteProgram(@PathVariable String id) {
+        boolean deleted = programService.deleteProgram(id);
+        if (deleted) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(Map.of("action", "deactivated"));
     }
 }

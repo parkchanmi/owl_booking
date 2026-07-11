@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "\"program\"")
+@Table(name = "program")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,11 +31,15 @@ public class Program {
     @Column(name = "max_capacity", nullable = false)
     private Long maxCapacity;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean active = true;
+
+    @ManyToOne
     @JoinColumn(name="center_id", referencedColumnName = "id")
     Center center;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne
     @JoinColumn(name="instructor_id", referencedColumnName = "id")
     Instructor instructor;
 }

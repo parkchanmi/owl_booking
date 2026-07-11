@@ -8,4 +8,6 @@ export const createProgram = (program) => axios.post(BASE_URL, program).then((re
 
 export const updateProgram = (id, program) => axios.put(`${BASE_URL}/${id}`, program).then((res) => res.data);
 
+export const pauseProgram = (id) => axios.patch(`${BASE_URL}/${id}/pause`).then((r) => r.data);
+
 export const deleteProgram = (id) => axios.delete(`${BASE_URL}/${id}`);
