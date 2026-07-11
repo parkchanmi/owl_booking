@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "\"booking\"")
+@Table(name = "booking")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,11 +16,15 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
-    @JoinColumn(name="center_id", referencedColumnName = "id")
+    @ManyToOne
+    @JoinColumn(name = "center_id", referencedColumnName = "id")
     Center center;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
-    @JoinColumn(name="program_id", referencedColumnName = "id")
+    @ManyToOne
+    @JoinColumn(name = "real_program_id", referencedColumnName = "id")
     RealProgram program;
+
+    @ManyToOne
+    @JoinColumn(name = "member_id", referencedColumnName = "id")
+    Member member;
 }

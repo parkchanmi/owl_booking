@@ -18,6 +18,8 @@ public class ProgramDto {
 
     Long maxCapacity;
 
+    Boolean active;
+
     CenterDto center;
 
     InstructorDto instructor;

@@ -1,5 +1,6 @@
 package com.owl.booking.utils;
 
+import com.owl.booking.model.entity.Booking;
 import com.owl.booking.model.entity.Center;
 import com.owl.booking.model.entity.CenterConfig;
 import com.owl.booking.model.entity.CenterMember;
@@ -9,9 +10,11 @@ import com.owl.booking.model.entity.MemberMembership;
 import com.owl.booking.model.entity.Membership;
 import com.owl.booking.model.entity.Program;
 import com.owl.booking.model.entity.RealProgram;
+import com.owl.booking.model.entity.Waitlist;
 import com.owl.booking.model.entity.type.ConfirmMode;
 import com.owl.booking.model.entity.type.MemberType;
 import com.owl.booking.model.entity.type.MembershipStatus;
+import com.owl.booking.model.repository.BookingRepository;
 import com.owl.booking.model.repository.CenterConfigRepository;
 import com.owl.booking.model.repository.CenterMemberRepository;
 import com.owl.booking.model.repository.CenterRepository;
@@ -21,6 +24,7 @@ import com.owl.booking.model.repository.MemberRepository;
 import com.owl.booking.model.repository.MembershipRepository;
 import com.owl.booking.model.repository.ProgramRepository;
 import com.owl.booking.model.repository.RealProgramRepository;
+import com.owl.booking.model.repository.WaitlistRepository;
 
 import java.time.LocalDateTime;
 
@@ -44,8 +48,15 @@ public class DataInitializer implements CommandLineRunner {
     private final RealProgramRepository realProgramRepository;
     private final CenterConfigRepository centerConfigRepository;
     private final CenterMemberRepository centerMemberRepository;
+    private final BookingRepository bookingRepository;
+    private final WaitlistRepository waitlistRepository;
 
-    public DataInitializer(MemberRepository memberRepository, CenterRepository centerRepository, InstructorRepository instructorRepository, ProgramRepository programRepository, MembershipRepository membershipRepository, MemberMembershipRepository memberMembershipRepository, RealProgramRepository realProgramRepository, CenterConfigRepository centerConfigRepository, CenterMemberRepository centerMemberRepository) {
+    public DataInitializer(MemberRepository memberRepository, CenterRepository centerRepository,
+            InstructorRepository instructorRepository, ProgramRepository programRepository,
+            MembershipRepository membershipRepository, MemberMembershipRepository memberMembershipRepository,
+            RealProgramRepository realProgramRepository, CenterConfigRepository centerConfigRepository,
+            CenterMemberRepository centerMemberRepository, BookingRepository bookingRepository,
+            WaitlistRepository waitlistRepository) {
         this.memberRepository = memberRepository;
         this.centerRepository = centerRepository;
         this.instructorRepository = instructorRepository;
@@ -55,14 +66,22 @@ public class DataInitializer implements CommandLineRunner {
         this.realProgramRepository = realProgramRepository;
         this.centerConfigRepository = centerConfigRepository;
         this.centerMemberRepository = centerMemberRepository;
+        this.bookingRepository = bookingRepository;
+        this.waitlistRepository = waitlistRepository;
     }
 
     @Override
     public void run(String... args) throws Exception {
+        if (memberRepository.count() > 0) {
+            return;
+        }
+
         String encodedPassword = passwordEncoder.encode("1234");
 
-        memberRepository.save(new Member(null,MemberType.ADMIN,"admin",encodedPassword,"관리자","admin@gmail.com",null));
-        Member user = memberRepository.save(new Member(null,MemberType.USER,"user",encodedPassword,"사용자","user@gmail.com",null));
+        memberRepository.save(new Member(null, MemberType.ADMIN, "admin", encodedPassword, "관리자", "admin@gmail.com", null));
+        Member user1 = memberRepository.save(new Member(null, MemberType.USER, "user", encodedPassword, "사용자", "user@gmail.com", "010-1111-2222"));
+        Member user2 = memberRepository.save(new Member(null, MemberType.USER, "user2", encodedPassword, "김회원", "user2@gmail.com", "010-3333-4444"));
+        Member user3 = memberRepository.save(new Member(null, MemberType.USER, "user3", encodedPassword, "이회원", "user3@gmail.com", "010-5555-6666"));
 
         Center center = centerRepository.save(Center.builder()
                 .name("OWL 센터")
@@ -74,10 +93,9 @@ public class DataInitializer implements CommandLineRunner {
                 .tel("02-1234-5678")
                 .build());
 
-        centerMemberRepository.save(CenterMember.builder()
-                .center(center)
-                .member(user)
-                .build());
+        centerMemberRepository.save(CenterMember.builder().center(center).member(user1).build());
+        centerMemberRepository.save(CenterMember.builder().center(center).member(user2).build());
+        centerMemberRepository.save(CenterMember.builder().center(center).member(user3).build());
 
         centerConfigRepository.save(CenterConfig.builder()
                 .confirmMode(ConfirmMode.AUTO)
@@ -108,6 +126,7 @@ public class DataInitializer implements CommandLineRunner {
                 .startTime("10:00")
                 .endTime("11:00")
                 .maxCapacity(10L)
+                .active(true)
                 .center(center)
                 .instructor(instructor1)
                 .build());
@@ -118,6 +137,7 @@ public class DataInitializer implements CommandLineRunner {
                 .startTime("14:00")
                 .endTime("15:00")
                 .maxCapacity(8L)
+                .active(true)
                 .center(center)
                 .instructor(instructor2)
                 .build());
@@ -154,23 +174,55 @@ public class DataInitializer implements CommandLineRunner {
 
         LocalDateTime now = LocalDateTime.now();
 
-        realProgramRepository.save(RealProgram.builder()
+        RealProgram rp1 = realProgramRepository.save(RealProgram.builder()
                 .programDat(now.withHour(10).withMinute(0).withSecond(0).withNano(0))
                 .center(center)
-                .program(program1)
+                .programId(program1.getId())
+                .programName(program1.getName())
+                .dayOfWeek(program1.getDayOfWeek())
+                .startTime(program1.getStartTime())
+                .endTime(program1.getEndTime())
+                .maxCapacity(program1.getMaxCapacity())
+                .instructorId(instructor1.getId())
+                .instructorName(instructor1.getName())
                 .build());
 
-        realProgramRepository.save(RealProgram.builder()
+        RealProgram rp2 = realProgramRepository.save(RealProgram.builder()
                 .programDat(now.withHour(10).withMinute(0).withSecond(0).withNano(0).plusDays(2))
                 .center(center)
-                .program(program1)
+                .programId(program1.getId())
+                .programName(program1.getName())
+                .dayOfWeek(program1.getDayOfWeek())
+                .startTime(program1.getStartTime())
+                .endTime(program1.getEndTime())
+                .maxCapacity(program1.getMaxCapacity())
+                .instructorId(instructor1.getId())
+                .instructorName(instructor1.getName())
                 .build());
 
-        realProgramRepository.save(RealProgram.builder()
+        RealProgram rp3 = realProgramRepository.save(RealProgram.builder()
                 .programDat(now.withHour(14).withMinute(0).withSecond(0).withNano(0).plusDays(1))
                 .center(center)
-                .program(program2)
+                .programId(program2.getId())
+                .programName(program2.getName())
+                .dayOfWeek(program2.getDayOfWeek())
+                .startTime(program2.getStartTime())
+                .endTime(program2.getEndTime())
+                .maxCapacity(program2.getMaxCapacity())
+                .instructorId(instructor2.getId())
+                .instructorName(instructor2.getName())
                 .build());
+
+        // 예약 기초 데이터
+        bookingRepository.save(Booking.builder().center(center).program(rp1).member(user1).build());
+        bookingRepository.save(Booking.builder().center(center).program(rp1).member(user2).build());
+        bookingRepository.save(Booking.builder().center(center).program(rp2).member(user1).build());
+        bookingRepository.save(Booking.builder().center(center).program(rp3).member(user2).build());
+        bookingRepository.save(Booking.builder().center(center).program(rp3).member(user3).build());
+
+        // 대기 기초 데이터
+        waitlistRepository.save(Waitlist.builder().program(rp1).member(user3).build());
+        waitlistRepository.save(Waitlist.builder().program(rp3).member(user1).build());
 
         memberMembershipRepository.save(MemberMembership.builder()
                 .startDat(now)
@@ -178,7 +230,7 @@ public class DataInitializer implements CommandLineRunner {
                 .uCnt(membership10.getUseCnt())
                 .hDay(membership10.getHoldDays())
                 .center(center)
-                .member(user)
+                .member(user1)
                 .membership(membership10)
                 .build());
     }

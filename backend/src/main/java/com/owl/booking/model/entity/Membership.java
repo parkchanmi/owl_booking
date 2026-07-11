@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "\"membership\"")
+@Table(name = "membership")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -36,7 +36,7 @@ public class Membership {
     @Column(nullable = false)
     private MembershipStatus status;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne
     @JoinColumn(name="center_id", referencedColumnName = "id")
     Center center;
 }

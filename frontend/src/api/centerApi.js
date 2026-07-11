@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = '/api/centers';
+const BASE_URL = '/api/admin/centers';
 
 export const fetchCenters = () => axios.get(BASE_URL).then((res) => res.data);
 

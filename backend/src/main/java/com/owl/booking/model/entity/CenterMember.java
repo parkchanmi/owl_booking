@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "\"center_member\"")
+@Table(name = "center_member")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,11 +16,11 @@ public class CenterMember {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne
     @JoinColumn(name="center_id", referencedColumnName = "id")
     Center center;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne
     @JoinColumn(name="member_id", referencedColumnName = "id")
     Member member;
 }

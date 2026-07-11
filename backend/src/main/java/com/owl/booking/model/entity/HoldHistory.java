@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "\"hold_history\"")
+@Table(name = "hold_history")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -27,7 +27,7 @@ public class HoldHistory {
     @Column(name = "h_day", nullable = false)
     private Long hDay;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne
     @JoinColumn(name="mm_id", referencedColumnName = "id")
     MemberMembership mm;
 }
