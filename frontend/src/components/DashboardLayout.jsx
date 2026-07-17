@@ -29,7 +29,7 @@ const menuItems = [
         icon: <TeamOutlined />,
         label: '강사 관리',
         children: [
-            { key: 'instructor-list', label: '강사 리스트' }
+            { key: 'instructor-list', label: '강사 리스트', path: '/admin/instructor/list' }
         ],
     },
     {
