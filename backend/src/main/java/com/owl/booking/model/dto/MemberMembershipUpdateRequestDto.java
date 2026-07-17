@@ -1,0 +1,14 @@
+package com.owl.booking.model.dto;
+
+import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class MemberMembershipUpdateRequestDto {
+    private LocalDateTime startDat;
+    private LocalDateTime endDat;
+    private Long uCnt;
+    private Long hDay;
+}
