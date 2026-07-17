@@ -1,0 +1,10 @@
+.booking-center-select .ant-select-selector {
+    border-radius: 8px !important;
+    padding-inline: 8px !important;
+    transition: background-color 0.15s ease;
+}
+
+.booking-center-select:hover .ant-select-selector,
+.booking-center-select.ant-select-focused .ant-select-selector {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
