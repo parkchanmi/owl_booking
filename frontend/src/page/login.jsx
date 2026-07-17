@@ -25,7 +25,7 @@ const Login = () => {
 
             if (response.ok) {
                 const loginResult = await response.json();
-                const nextPath = loginResult.typeCode === 1 ? '/admin' : '/user';
+                const nextPath = loginResult.typeCode === 1 ? '/admin' : '/user/booking';
 
                 message.success('로그인되었습니다.');
                 navigate(nextPath, { replace: true });

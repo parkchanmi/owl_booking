@@ -33,6 +33,15 @@ public class CenterConfig {
     @Column(name = "generation_start_dat", nullable = true)
     private Long generationStartDat;
 
+    // 스케줄 자동생성 스케줄러 사용 여부 (센터 단일 설정)
+    @Builder.Default
+    @Column(name = "auto_generate_enabled", nullable = false)
+    private Boolean autoGenerateEnabled = true;
+
+    // 자동생성 스케줄러 실행 요일 (콤마구분, 예: "월,수,금") — 실행 시각은 매일 새벽 1시로 고정
+    @Column(name = "generation_days_of_week", length = 20)
+    private String generationDaysOfWeek;
+
     @OneToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name="center_id", referencedColumnName = "id")
     Center center;

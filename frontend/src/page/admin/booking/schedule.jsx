@@ -100,6 +100,14 @@ const BookingSchedule = () => {
         ? programs.filter((p) => p.center?.id === selectedCenter)
         : programs;
 
+    const watchedClassDate = Form.useWatch('classDate', createForm);
+
+    const availablePrograms = useMemo(() => {
+        const date = watchedClassDate || selectedDate;
+        const dow = DAY_MAP[dayjs(date).day()];
+        return filteredPrograms.filter((p) => p.dayOfWeek?.split(',').includes(dow));
+    }, [filteredPrograms, watchedClassDate, selectedDate]);
+
     const centerInstructors = instructors.filter((i) => i.center?.id === selectedCenter);
 
     const uniqueTimes = useMemo(
@@ -626,10 +634,33 @@ const BookingSchedule = () => {
             {/* 스케줄 생성 모달 */}
             <Modal title="수업 스케줄 생성" open={createOpen} onCancel={() => setCreateOpen(false)}
                 onOk={() => createForm.submit()} okText="생성" cancelText="취소" confirmLoading={submitting} destroyOnClose>
-                <Form form={createForm} layout="vertical" onFinish={handleCreate} style={{ marginTop: 16 }}>
+                <Form
+                    form={createForm}
+                    layout="vertical"
+                    onFinish={handleCreate}
+                    style={{ marginTop: 16 }}
+                    onValuesChange={(changed) => {
+                        if ('classDate' in changed) {
+                            const dow = DAY_MAP[dayjs(changed.classDate).day()];
+                            const currentProgramId = createForm.getFieldValue('programId');
+                            const stillValid = filteredPrograms.find(
+                                (p) => p.id === currentProgramId && p.dayOfWeek?.split(',').includes(dow)
+                            );
+                            if (!stillValid) createForm.setFieldValue('programId', undefined);
+                        }
+                    }}
+                >
+                    <Form.Item name="classDate" label="수업 날짜" rules={[{ required: true, message: '날짜를 선택해주세요.' }]}>
+                        <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
+                    </Form.Item>
                     <Form.Item name="programId" label="수업 선택" rules={[{ required: true, message: '수업을 선택해주세요.' }]}>
-                        <Select placeholder="수업 선택" showSearch optionFilterProp="label">
-                            {filteredPrograms.map((p) => (
+                        <Select
+                            placeholder={watchedClassDate ? `${DAY_MAP[dayjs(watchedClassDate).day()]}요일 개설 가능한 수업` : '수업 선택'}
+                            showSearch
+                            optionFilterProp="label"
+                            notFoundContent="해당 요일에 개설 가능한 수업이 없습니다."
+                        >
+                            {availablePrograms.map((p) => (
                                 <Select.Option key={p.id} value={p.id} label={p.name}>
                                     <div>{p.name}</div>
                                     <div style={{ fontSize: 11, color: '#999' }}>
@@ -639,9 +670,6 @@ const BookingSchedule = () => {
                                 </Select.Option>
                             ))}
                         </Select>
-                    </Form.Item>
-                    <Form.Item name="classDate" label="수업 날짜" rules={[{ required: true, message: '날짜를 선택해주세요.' }]}>
-                        <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
                     </Form.Item>
                 </Form>
             </Modal>
