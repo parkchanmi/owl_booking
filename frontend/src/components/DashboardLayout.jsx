@@ -46,20 +46,16 @@ const menuItems = [
         ],
     },
     {
-        key: 'ticket',
+        key: 'ticket-list',
         icon: <IdcardOutlined />,
         label: '이용권 관리',
-        children: [
-            { key: 'ticket-list', label: '이용권 리스트' }
-        ],
+        path: '/admin/ticket/list',
     },
     {
-        key: 'member',
+        key: 'member-list',
         icon: <UserOutlined />,
         label: '센터 회원 관리',
-        children: [
-            { key: 'member-list', label: '센터 회원 리스트' }
-        ],
+        path: '/admin/member/list',
     },
 ];
 
