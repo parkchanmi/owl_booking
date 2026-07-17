@@ -1,22 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Input, Space, Card, Popconfirm, message, Flex } from 'antd';
+import { Table, Button, Input, Select, Space, Card, Tag, message, Flex } from 'antd';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../../components/DashboardLayout';
 import CenterMemberFormModal from './CenterMemberFormModal';
-import { fetchCenterMembers, createCenterMember, updateCenterMember, deleteCenterMember } from '../../../api/centerMemberApi';
+import { fetchCenterMembers, registerCenterMember, createCenterMember } from '../../../api/centerMemberApi';
 import { fetchCenters } from '../../../api/centerApi';
 import { fetchMembers } from '../../../api/memberApi';
 
 const CenterMemberList = () => {
+    const navigate = useNavigate();
     const [centerMembers, setCenterMembers] = useState([]);
     const [centers, setCenters] = useState([]);
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedCenter, setSelectedCenter] = useState(null);
     const [keyword, setKeyword] = useState('');
 
     const [modalOpen, setModalOpen] = useState(false);
-    const [modalMode, setModalMode] = useState('add');
-    const [editingCenterMember, setEditingCenterMember] = useState(null);
+    const [modalMode, setModalMode] = useState('register');
     const [submitting, setSubmitting] = useState(false);
 
     const loadCenterMembers = async () => {
@@ -38,56 +40,46 @@ const CenterMemberList = () => {
         fetchMembers().then(setMembers).catch(() => message.error('회원 목록을 불러오지 못했습니다.'));
     }, []);
 
-    const openAddModal = () => {
-        setModalMode('add');
-        setEditingCenterMember(null);
+    const openRegisterModal = () => {
+        setModalMode('register');
         setModalOpen(true);
     };
 
-    const openEditModal = (record) => {
-        setModalMode('edit');
-        setEditingCenterMember(record);
+    const openLinkModal = () => {
+        setModalMode('link');
         setModalOpen(true);
     };
 
     const closeModal = () => {
         setModalOpen(false);
-        setEditingCenterMember(null);
     };
 
     const handleSubmit = async (values) => {
         setSubmitting(true);
         try {
-            if (modalMode === 'edit') {
-                await updateCenterMember(editingCenterMember.id, values);
-                message.success('센터 회원 정보가 수정되었습니다.');
-            } else {
+            if (modalMode === 'link') {
                 await createCenterMember(values);
-                message.success('센터 회원이 추가되었습니다.');
+            } else {
+                await registerCenterMember(values);
             }
+            message.success('회원이 추가되었습니다.');
             closeModal();
             loadCenterMembers();
         } catch (error) {
             console.error('센터 회원 저장 실패:', error);
-            message.error('센터 회원 저장 중 오류가 발생했습니다.');
+            if (error.response?.status === 409) {
+                message.error('이미 사용중인 아이디입니다.');
+            } else {
+                message.error('센터 회원 저장 중 오류가 발생했습니다.');
+            }
         } finally {
             setSubmitting(false);
         }
     };
 
-    const handleDelete = async (record) => {
-        try {
-            await deleteCenterMember(record.id);
-            message.success('센터 회원이 삭제되었습니다.');
-            loadCenterMembers();
-        } catch (error) {
-            console.error('센터 회원 삭제 실패:', error);
-            message.error('센터 회원 삭제 중 오류가 발생했습니다.');
-        }
-    };
-
     const filteredCenterMembers = Array.isArray(centerMembers)
         ? centerMembers.filter((cm) => {
+            if (selectedCenter && cm.center?.id !== selectedCenter) return false;
             const text = keyword.trim().toLowerCase();
             if (!text) return true;
             return [cm.center?.name, cm.member?.name, cm.member?.hp]
@@ -103,25 +95,27 @@ const CenterMemberList = () => {
         { title: '연락처', key: 'hp', render: (_, r) => r.member?.hp ?? '-' },
         { title: '이메일', key: 'email', render: (_, r) => r.member?.email ?? '-' },
         {
+            title: '상태',
+            key: 'status',
+            align: 'center',
+            width: 90,
+            render: (_, r) => {
+                const color = r.status === '이용중' ? 'green' : r.status === '정지' ? 'orange' : 'default';
+                return <Tag color={color}>{r.status ?? '미등록'}</Tag>;
+            },
+        },
+        {
             title: '관리',
             key: 'actions',
-            width: 160,
+            width: 90,
             render: (_, record) => (
-                <Space>
-                    <Button size="small" onClick={() => openEditModal(record)}>
-                        편집
-                    </Button>
-                    <Popconfirm
-                        title="센터 회원을 삭제하시겠습니까?"
-                        okText="삭제"
-                        cancelText="취소"
-                        onConfirm={() => handleDelete(record)}
-                    >
-                        <Button size="small" danger>
-                            삭제
-                        </Button>
-                    </Popconfirm>
-                </Space>
+                <Button
+                    size="small"
+                    disabled={!record.member?.id}
+                    onClick={() => navigate(`/admin/member/detail?id=${record.member.id}`)}
+                >
+                    편집
+                </Button>
             ),
         },
     ];
@@ -130,17 +124,35 @@ const CenterMemberList = () => {
         <DashboardLayout title="센터 회원 관리">
             <Card bordered={false}>
                 <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
-                    <Input
-                        placeholder="센터명, 회원명, 연락처 검색"
-                        prefix={<SearchOutlined />}
-                        value={keyword}
-                        onChange={(e) => setKeyword(e.target.value)}
-                        style={{ width: 280 }}
-                        allowClear
-                    />
-                    <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
-                        센터 회원 추가
-                    </Button>
+                    <Space>
+                        <Select
+                            style={{ width: 200 }}
+                            value={selectedCenter}
+                            onChange={setSelectedCenter}
+                            placeholder="센터 전체"
+                            allowClear
+                        >
+                            {centers.map((c) => (
+                                <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
+                            ))}
+                        </Select>
+                        <Input
+                            placeholder="센터명, 회원명, 연락처 검색"
+                            prefix={<SearchOutlined />}
+                            value={keyword}
+                            onChange={(e) => setKeyword(e.target.value)}
+                            style={{ width: 280 }}
+                            allowClear
+                        />
+                    </Space>
+                    <Space>
+                        <Button icon={<PlusOutlined />} onClick={openLinkModal}>
+                            기존회원추가
+                        </Button>
+                        <Button type="primary" icon={<PlusOutlined />} onClick={openRegisterModal}>
+                            신규회원추가
+                        </Button>
+                    </Space>
                 </Flex>
 
                 <Table
@@ -155,7 +167,6 @@ const CenterMemberList = () => {
             <CenterMemberFormModal
                 open={modalOpen}
                 mode={modalMode}
-                initialValues={editingCenterMember}
                 centers={centers}
                 members={members}
                 confirmLoading={submitting}
