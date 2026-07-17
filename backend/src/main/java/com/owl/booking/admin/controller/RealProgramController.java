@@ -2,6 +2,7 @@ package com.owl.booking.admin.controller;
 
 import com.owl.booking.model.dto.RealProgramDetailDto;
 import com.owl.booking.model.dto.RealProgramDto;
+import com.owl.booking.model.dto.RealProgramGenerateRequestDto;
 import com.owl.booking.model.dto.RealProgramListItemDto;
 import com.owl.booking.model.entity.RealProgram;
 import com.owl.booking.admin.service.RealProgramService;
@@ -59,5 +60,14 @@ public class RealProgramController {
         } catch (IllegalStateException e) {
             return ResponseEntity.status(409).body(Map.of("message", e.getMessage()));
         }
+    }
+
+    // 즉시생성: 지정한 기간 내 요일이 일치하는 운영중 수업의 스케줄을 일괄 생성
+    @PostMapping("/generate")
+    public Map<String, Integer> generateRealPrograms(@RequestBody RealProgramGenerateRequestDto request) {
+        int created = realProgramService.generate(
+                request.getCenterId(), request.getStartDate(), request.getEndDate()
+        );
+        return Map.of("generatedCount", created);
     }
 }

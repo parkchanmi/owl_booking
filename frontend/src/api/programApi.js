@@ -11,3 +11,6 @@ export const updateProgram = (id, program) => axios.put(`${BASE_URL}/${id}`, pro
 export const pauseProgram = (id) => axios.patch(`${BASE_URL}/${id}/pause`).then((r) => r.data);
 
 export const deleteProgram = (id) => axios.delete(`${BASE_URL}/${id}`);
+
+export const generateSchedules = ({ centerId, startDate, endDate }) =>
+    axios.post('/api/realprograms/generate', { centerId, startDate, endDate }).then((r) => r.data);

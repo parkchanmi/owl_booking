@@ -103,6 +103,8 @@ public class DataInitializer implements CommandLineRunner {
                 .cancleDeadlineMinutes(60L)
                 .bookingOpenDays(7L)
                 .generationStartDat(1L)
+                .autoGenerateEnabled(true)
+                .generationDaysOfWeek("월,화,수,목,금,토,일")
                 .center(center)
                 .build());
 

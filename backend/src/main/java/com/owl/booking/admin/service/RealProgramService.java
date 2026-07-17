@@ -7,12 +7,19 @@ import com.owl.booking.model.dto.RealProgramDto;
 import com.owl.booking.model.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public class RealProgramService {
@@ -200,5 +207,48 @@ public class RealProgramService {
                 .hasAttendance(hasAttendance)
                 .bookings(memberInfos)
                 .build();
+    }
+
+    private static final String[] KOREAN_DOW = {"월", "화", "수", "목", "금", "토", "일"};
+
+    private String koreanDow(LocalDate date) {
+        return KOREAN_DOW[date.getDayOfWeek().getValue() - 1];
+    }
+
+    // 날짜 범위 내 요일이 일치하는 운영중 수업의 스케줄을 생성 (이미 생성된 건 건너뜀)
+    public int generate(String centerId, LocalDate startDate, LocalDate endDate) {
+        Center center = centerRepository.findById(centerId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Center not found"));
+
+        List<Program> programs = programRepository.findByCenter_IdAndActiveTrue(centerId);
+
+        int created = 0;
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            String dow = koreanDow(date);
+            for (Program program : programs) {
+                if (program.getDayOfWeek() == null || program.getStartTime() == null) continue;
+                if (!Arrays.asList(program.getDayOfWeek().split(",")).contains(dow)) continue;
+
+                LocalDateTime programDat = LocalDateTime.of(date, LocalTime.parse(program.getStartTime()));
+                if (realProgramRepository.existsByProgramIdAndProgramDat(program.getId(), programDat)) continue;
+
+                RealProgram rp = new RealProgram();
+                rp.setProgramDat(programDat);
+                rp.setCenter(center);
+                rp.setProgramId(program.getId());
+                rp.setProgramName(program.getName());
+                rp.setDayOfWeek(program.getDayOfWeek());
+                rp.setStartTime(program.getStartTime());
+                rp.setEndTime(program.getEndTime());
+                rp.setMaxCapacity(program.getMaxCapacity());
+                if (program.getInstructor() != null) {
+                    rp.setInstructorId(program.getInstructor().getId());
+                    rp.setInstructorName(program.getInstructor().getName());
+                }
+                realProgramRepository.save(rp);
+                created++;
+            }
+        }
+        return created;
     }
 }

@@ -21,5 +21,9 @@ public class CenterConfigDto {
 
     private Long generationStartDat;
 
+    private Boolean autoGenerateEnabled;
+
+    private String generationDaysOfWeek;
+
     private CenterDto center;
 }
