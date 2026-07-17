@@ -1,18 +1,25 @@
 package com.owl.booking.admin.service;
 
 import com.owl.booking.model.dto.CenterDto;
+import com.owl.booking.model.dto.CenterMemberRegisterRequestDto;
 import com.owl.booking.model.dto.MemberDto;
 import com.owl.booking.model.dto.CenterMemberDto;
 import com.owl.booking.model.entity.Center;
 import com.owl.booking.model.entity.Member;
 import com.owl.booking.model.entity.CenterMember;
+import com.owl.booking.model.entity.type.MemberType;
 import com.owl.booking.model.repository.CenterRepository;
+import com.owl.booking.model.repository.HoldHistoryRepository;
+import com.owl.booking.model.repository.MemberMembershipRepository;
 import com.owl.booking.model.repository.MemberRepository;
 import com.owl.booking.model.repository.CenterMemberRepository;
+import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
@@ -21,15 +28,24 @@ public class CenterMemberService {
     private final CenterMemberRepository centerMemberRepository;
     private final CenterRepository centerRepository;
     private final MemberRepository memberRepository;
+    private final MemberMembershipRepository memberMembershipRepository;
+    private final HoldHistoryRepository holdHistoryRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public CenterMemberService(
             CenterMemberRepository centerMemberRepository,
             CenterRepository centerRepository,
-            MemberRepository memberRepository
+            MemberRepository memberRepository,
+            MemberMembershipRepository memberMembershipRepository,
+            HoldHistoryRepository holdHistoryRepository,
+            PasswordEncoder passwordEncoder
     ) {
         this.centerMemberRepository = centerMemberRepository;
         this.centerRepository = centerRepository;
         this.memberRepository = memberRepository;
+        this.memberMembershipRepository = memberMembershipRepository;
+        this.holdHistoryRepository = holdHistoryRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<CenterMemberDto> getAllCenterMembers() {
@@ -53,6 +69,33 @@ public class CenterMemberService {
 
         centerMember.setCenter(findCenter(centerMemberDto.getCenter()));
         centerMember.setMember(findMember(centerMemberDto.getMember()));
+
+        return toDto(centerMemberRepository.save(centerMember));
+    }
+
+    // 신규 회원 계정을 생성함과 동시에 센터에 연결
+    public CenterMemberDto registerAndLink(CenterMemberRegisterRequestDto request) {
+        if (memberRepository.findByLoginId(request.getLoginId()) != null) {
+            throw new ResponseStatusException(CONFLICT, "이미 사용중인 아이디입니다.");
+        }
+
+        Center center = centerRepository.findById(request.getCenterId())
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Center not found"));
+
+        Member member = Member.builder()
+                .type(MemberType.USER)
+                .loginId(request.getLoginId())
+                .pwd(passwordEncoder.encode(request.getPwd()))
+                .name(request.getName())
+                .email(request.getEmail())
+                .hp(request.getHp())
+                .build();
+        memberRepository.save(member);
+
+        CenterMember centerMember = CenterMember.builder()
+                .center(center)
+                .member(member)
+                .build();
 
         return toDto(centerMemberRepository.save(centerMember));
     }
@@ -92,7 +135,28 @@ public class CenterMemberService {
         dto.setId(centerMember.getId());
         dto.setCenter(toCenterDto(centerMember.getCenter()));
         dto.setMember(toMemberDto(centerMember.getMember()));
+        dto.setStatus(computeStatus(centerMember.getMember()));
         return dto;
+    }
+
+    // 이용중 / 정지 / 미등록 판정 (정지가 이용중보다 우선)
+    private String computeStatus(Member member) {
+        if (member == null) {
+            return "미등록";
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        boolean onHold = holdHistoryRepository.findByMm_Member_Id(member.getId()).stream()
+                .anyMatch(h -> !now.isBefore(h.getStartDat()) && !now.isAfter(h.getEndDat()));
+        if (onHold) {
+            return "정지";
+        }
+
+        boolean active = memberMembershipRepository.findByMember_Id(member.getId()).stream()
+                .anyMatch(mm -> !now.isBefore(mm.getStartDat()) && !now.isAfter(mm.getEndDat()));
+
+        return active ? "이용중" : "미등록";
     }
 
     private CenterDto toCenterDto(Center center) {

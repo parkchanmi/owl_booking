@@ -6,8 +6,11 @@ import com.owl.booking.model.repository.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public class MemberService {
@@ -38,5 +41,10 @@ public class MemberService {
 
     public List<Member> getAllMembers() {
         return memberRepository.findAll();
+    }
+
+    public Member findById(String id) {
+        return memberRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Member not found"));
     }
 }

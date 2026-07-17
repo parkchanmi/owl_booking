@@ -2,6 +2,7 @@ package com.owl.booking.admin.controller;
 
 import com.owl.booking.admin.service.CenterMemberService;
 import com.owl.booking.model.dto.CenterMemberDto;
+import com.owl.booking.model.dto.CenterMemberRegisterRequestDto;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,6 +32,11 @@ public class CenterMemberController {
     @PostMapping
     public CenterMemberDto createCenterMember(@RequestBody CenterMemberDto centerMemberDto) {
         return centerMemberService.createCenterMember(centerMemberDto);
+    }
+
+    @PostMapping("/register")
+    public CenterMemberDto registerCenterMember(@RequestBody CenterMemberRegisterRequestDto request) {
+        return centerMemberService.registerAndLink(request);
     }
 
     @PutMapping("/{id}")
