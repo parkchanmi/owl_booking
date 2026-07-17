@@ -17,28 +17,22 @@ const { Title, Text } = Typography;
 
 const menuItems = [
     {
-        key: 'center',
+        key: 'center-list',
         icon: <ShopOutlined />,
         label: '센터 관리',
-        children: [
-            { key: 'center-list', label: '센터 리스트', path: '/admin/center/list' }
-        ],
+        path: '/admin/center/list',
     },
     {
-        key: 'instructor',
+        key: 'instructor-list',
         icon: <TeamOutlined />,
         label: '강사 관리',
-        children: [
-            { key: 'instructor-list', label: '강사 리스트', path: '/admin/instructor/list' }
-        ],
+        path: '/admin/instructor/list',
     },
     {
-        key: 'class',
+        key: 'class-list',
         icon: <ScheduleOutlined />,
         label: '수업 관리',
-        children: [
-            { key: 'class-list', label: '수업 리스트', path: '/admin/class' },
-        ],
+        path: '/admin/class',
     },
     {
         key: 'booking',
@@ -73,14 +67,19 @@ const menuItems = [
 const keyToPath = {};
 const pathToKey = {};
 const keyToParentKey = {};
-menuItems.forEach((group) => {
-    (group.children || []).forEach((item) => {
-        keyToParentKey[item.key] = group.key;
-        if (item.path) {
-            keyToPath[item.key] = item.path;
-            pathToKey[item.path] = item.key;
-        }
-    });
+menuItems.forEach((item) => {
+    if (item.children) {
+        item.children.forEach((child) => {
+            keyToParentKey[child.key] = item.key;
+            if (child.path) {
+                keyToPath[child.key] = child.path;
+                pathToKey[child.path] = child.key;
+            }
+        });
+    } else if (item.path) {
+        keyToPath[item.key] = item.path;
+        pathToKey[item.path] = item.key;
+    }
 });
 
 const DashboardLayout = ({ title = 'Dashboard', userLabel = '부엉이 관리자님', children }) => {
@@ -95,11 +94,14 @@ const DashboardLayout = ({ title = 'Dashboard', userLabel = '부엉이 관리자
     const selectedKey = pathToKey[location.pathname];
     const selectedKeys = useMemo(() => (selectedKey ? [selectedKey] : []), [selectedKey]);
 
-    const [openKeys, setOpenKeys] = useState(() => (selectedKey ? [keyToParentKey[selectedKey]] : []));
+    const [openKeys, setOpenKeys] = useState(() => {
+        const parentKey = selectedKey ? keyToParentKey[selectedKey] : undefined;
+        return parentKey ? [parentKey] : [];
+    });
 
     useEffect(() => {
-        if (selectedKey) {
-            const parentKey = keyToParentKey[selectedKey];
+        const parentKey = selectedKey ? keyToParentKey[selectedKey] : undefined;
+        if (parentKey) {
             setOpenKeys((prev) => (prev.includes(parentKey) ? prev : [...prev, parentKey]));
         }
     }, [selectedKey]);
