@@ -1,14 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import {
     Card, Table, Button, Input, Space, Popconfirm,
-    Modal, Form, Select, InputNumber, TimePicker, message, Flex, Radio, Tag,
+    Modal, Form, Select, InputNumber, TimePicker, DatePicker, Switch, message, Flex, Radio, Tag,
 } from 'antd';
-import { PlusOutlined, SearchOutlined, PauseCircleOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, PauseCircleOutlined, DeleteOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import DashboardLayout from '../../../components/DashboardLayout';
-import { fetchPrograms, createProgram, updateProgram, pauseProgram, deleteProgram } from '../../../api/programApi';
+import {
+    fetchPrograms, createProgram, updateProgram, pauseProgram, deleteProgram,
+    generateSchedules,
+} from '../../../api/programApi';
 import { fetchCenters } from '../../../api/centerApi';
 import { fetchInstructors } from '../../../api/instructorApi';
+import { fetchCenterConfig, updateCenterConfig } from '../../../api/centerConfigApi';
+
+const { RangePicker } = DatePicker;
 
 const DAY_ORDER = ['월', '화', '수', '목', '금', '토', '일'];
 const DAY_OPTIONS = DAY_ORDER.map((d) => ({ value: d, label: d }));
@@ -26,6 +32,12 @@ const ClassList = () => {
     const [editingProgram, setEditingProgram] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [form] = Form.useForm();
+
+    const [autoGenerateEnabled, setAutoGenerateEnabled] = useState(true);
+    const [autoGenerateSaving, setAutoGenerateSaving] = useState(false);
+    const [generateOpen, setGenerateOpen] = useState(false);
+    const [generating, setGenerating] = useState(false);
+    const [generateForm] = Form.useForm();
 
     const loadPrograms = async () => {
         setLoading(true);
@@ -49,6 +61,13 @@ const ClassList = () => {
             .catch(() => message.error('센터 목록을 불러오지 못했습니다.'));
         fetchInstructors().then(setInstructors).catch(() => message.error('강사 목록을 불러오지 못했습니다.'));
     }, []);
+
+    useEffect(() => {
+        if (!selectedCenter) return;
+        fetchCenterConfig(selectedCenter)
+            .then((config) => setAutoGenerateEnabled(config.autoGenerateEnabled !== false))
+            .catch(() => message.error('자동생성 설정을 불러오지 못했습니다.'));
+    }, [selectedCenter]);
 
     const filtered = programs.filter((p) => {
         if (selectedCenter && p.center?.id !== selectedCenter) return false;
@@ -143,6 +162,42 @@ const ClassList = () => {
         }
     };
 
+    const handleToggleAutoGenerate = async (checked) => {
+        setAutoGenerateSaving(true);
+        try {
+            await updateCenterConfig(selectedCenter, { autoGenerateEnabled: checked });
+            setAutoGenerateEnabled(checked);
+            message.success(checked ? '자동생성이 켜졌습니다.' : '자동생성이 꺼졌습니다.');
+        } catch {
+            message.error('자동생성 설정 변경 중 오류가 발생했습니다.');
+        } finally {
+            setAutoGenerateSaving(false);
+        }
+    };
+
+    const openGenerateModal = () => {
+        generateForm.resetFields();
+        setGenerateOpen(true);
+    };
+
+    const handleGenerate = async (values) => {
+        setGenerating(true);
+        try {
+            const [start, end] = values.dateRange;
+            const res = await generateSchedules({
+                centerId: selectedCenter,
+                startDate: start.format('YYYY-MM-DD'),
+                endDate: end.format('YYYY-MM-DD'),
+            });
+            message.success(`${res.generatedCount}개의 스케줄이 생성되었습니다.`);
+            setGenerateOpen(false);
+        } catch {
+            message.error('스케줄 생성 중 오류가 발생했습니다.');
+        } finally {
+            setGenerating(false);
+        }
+    };
+
     const columns = [
         {
             title: '수업명',
@@ -222,6 +277,15 @@ const ClassList = () => {
     return (
         <DashboardLayout title="수업 관리">
             <Card bordered={false}>
+                <Flex justify="flex-end" align="center" gap={8} style={{ marginBottom: 12 }}>
+                    <span style={{ fontSize: 13, color: '#666' }}>자동생성 (운영중 수업 대상)</span>
+                    <Switch
+                        checked={autoGenerateEnabled}
+                        loading={autoGenerateSaving}
+                        disabled={!selectedCenter}
+                        onChange={handleToggleAutoGenerate}
+                    />
+                </Flex>
                 <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
                     <Space>
                         <Select
@@ -242,9 +306,14 @@ const ClassList = () => {
                             allowClear
                         />
                     </Space>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
-                        수업 추가
-                    </Button>
+                    <Space>
+                        <Button icon={<ThunderboltOutlined />} onClick={openGenerateModal} disabled={!selectedCenter}>
+                            즉시생성
+                        </Button>
+                        <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
+                            수업 추가
+                        </Button>
+                    </Space>
                 </Flex>
 
                 <Table
@@ -349,6 +418,28 @@ const ClassList = () => {
                             <Radio value={true}>운영</Radio>
                             <Radio value={false}>중지</Radio>
                         </Radio.Group>
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            <Modal
+                title="스케줄 즉시생성"
+                open={generateOpen}
+                onCancel={() => setGenerateOpen(false)}
+                onOk={() => generateForm.submit()}
+                okText="생성"
+                cancelText="취소"
+                confirmLoading={generating}
+                destroyOnClose
+            >
+                <Form form={generateForm} layout="vertical" onFinish={handleGenerate} style={{ marginTop: 16 }}>
+                    <Form.Item
+                        name="dateRange"
+                        label="생성 기간"
+                        extra="선택한 센터의 운영중인 수업 중, 기간 내 요일이 일치하는 스케줄을 생성합니다. 이미 생성된 스케줄은 건너뜁니다."
+                        rules={[{ required: true, message: '시작일과 종료일을 선택해주세요.' }]}
+                    >
+                        <RangePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
                     </Form.Item>
                 </Form>
             </Modal>
