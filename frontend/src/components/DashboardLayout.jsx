@@ -39,9 +39,7 @@ const menuItems = [
         icon: <CalendarOutlined />,
         label: '예약 관리',
         children: [
-            { key: 'booking-wait', label: '대기 예약 관리', path: '/admin/booking/wait' },
-            { key: 'booking-cancel', label: '예약 취소 관리', path: '/admin/booking/cancel' },
-            { key: 'booking-setting', label: '수업 예약 설정', path: '/admin/booking/setting' },
+            { key: 'booking-index', label: '예약 설정', path: '/admin/booking' },
             { key: 'booking-schedule', label: '수업 스케줄 관리', path: '/admin/booking/schedule' },
         ],
     },

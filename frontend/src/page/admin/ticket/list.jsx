@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Input, Space, Card, Popconfirm, message, Flex, Tag } from 'antd';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import DashboardLayout from '../../../components/DashboardLayout';
+import '../adminList.css';
 import TicketFormModal from './TicketFormModal';
 import { fetchMemberships, createMembership, updateMembership, deleteMembership } from '../../../api/membershipApi';
 import { fetchCenters } from '../../../api/centerApi';
@@ -138,7 +139,7 @@ const TicketList = () => {
     return (
         <DashboardLayout title="이용권 관리">
             <Card bordered={false}>
-                <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
+                <Flex justify="space-between" align="center" className="admin-list-toolbar">
                     <Input
                         placeholder="이용권명, 센터명 검색"
                         prefix={<SearchOutlined />}
