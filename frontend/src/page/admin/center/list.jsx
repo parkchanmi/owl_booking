@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Input, Space, Card, Popconfirm, message, Flex } from 'antd';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import DashboardLayout from '../../../components/DashboardLayout';
+import '../adminList.css';
 import CenterFormModal from './CenterFormModal';
 import { fetchCenters, createCenter, updateCenter, deleteCenter } from '../../../api/centerApi';
 
@@ -128,7 +129,7 @@ const CenterList = () => {
     return (
         <DashboardLayout title="센터 관리">
             <Card bordered={false}>
-                <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
+                <Flex justify="space-between" align="center" className="admin-list-toolbar">
                     <Input
                         placeholder="센터명, 상호, 대표자명 검색"
                         prefix={<SearchOutlined />}
