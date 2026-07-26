@@ -7,18 +7,24 @@ import com.owl.booking.model.dto.CenterMemberDto;
 import com.owl.booking.model.entity.Center;
 import com.owl.booking.model.entity.Member;
 import com.owl.booking.model.entity.CenterMember;
+import com.owl.booking.model.entity.type.MemberStatus;
 import com.owl.booking.model.entity.type.MemberType;
+import com.owl.booking.model.repository.AttendanceRepository;
+import com.owl.booking.model.repository.BookingRepository;
 import com.owl.booking.model.repository.CenterRepository;
 import com.owl.booking.model.repository.HoldHistoryRepository;
 import com.owl.booking.model.repository.MemberMembershipRepository;
 import com.owl.booking.model.repository.MemberRepository;
 import com.owl.booking.model.repository.CenterMemberRepository;
-import java.time.LocalDateTime;
+import com.owl.booking.model.repository.WaitlistRepository;
+import jakarta.transaction.Transactional;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -30,6 +36,9 @@ public class CenterMemberService {
     private final MemberRepository memberRepository;
     private final MemberMembershipRepository memberMembershipRepository;
     private final HoldHistoryRepository holdHistoryRepository;
+    private final AttendanceRepository attendanceRepository;
+    private final BookingRepository bookingRepository;
+    private final WaitlistRepository waitlistRepository;
     private final PasswordEncoder passwordEncoder;
 
     public CenterMemberService(
@@ -38,6 +47,9 @@ public class CenterMemberService {
             MemberRepository memberRepository,
             MemberMembershipRepository memberMembershipRepository,
             HoldHistoryRepository holdHistoryRepository,
+            AttendanceRepository attendanceRepository,
+            BookingRepository bookingRepository,
+            WaitlistRepository waitlistRepository,
             PasswordEncoder passwordEncoder
     ) {
         this.centerMemberRepository = centerMemberRepository;
@@ -45,6 +57,9 @@ public class CenterMemberService {
         this.memberRepository = memberRepository;
         this.memberMembershipRepository = memberMembershipRepository;
         this.holdHistoryRepository = holdHistoryRepository;
+        this.attendanceRepository = attendanceRepository;
+        this.bookingRepository = bookingRepository;
+        this.waitlistRepository = waitlistRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -55,9 +70,14 @@ public class CenterMemberService {
     }
 
     public CenterMemberDto createCenterMember(CenterMemberDto centerMemberDto) {
+        Center center = findCenter(centerMemberDto.getCenter());
+        Member member = findMember(centerMemberDto.getMember());
+        validateNotWithdrawn(member);
+        validateNotLinked(center.getId(), member.getId());
+
         CenterMember centerMember = CenterMember.builder()
-                .center(findCenter(centerMemberDto.getCenter()))
-                .member(findMember(centerMemberDto.getMember()))
+                .center(center)
+                .member(member)
                 .build();
 
         return toDto(centerMemberRepository.save(centerMember));
@@ -84,6 +104,7 @@ public class CenterMemberService {
 
         Member member = Member.builder()
                 .type(MemberType.USER)
+                .status(MemberStatus.ACTIVE)
                 .loginId(request.getLoginId())
                 .pwd(passwordEncoder.encode(request.getPwd()))
                 .name(request.getName())
@@ -108,6 +129,31 @@ public class CenterMemberService {
         centerMemberRepository.deleteById(id);
     }
 
+    @Transactional
+    public boolean withdrawCenterMember(String id) {
+        CenterMember centerMember = centerMemberRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "CenterMember not found"));
+        Member member = centerMember.getMember();
+        if (member == null) {
+            centerMemberRepository.deleteById(id);
+            return true;
+        }
+
+        boolean hasUsageHistory = memberMembershipRepository.existsByMember_Id(member.getId())
+                || attendanceRepository.existsByMember_Id(member.getId());
+        if (hasUsageHistory) {
+            member.setStatus(MemberStatus.WITHDRAWN);
+            memberRepository.save(member);
+            return false;
+        }
+
+        bookingRepository.deleteByMember_Id(member.getId());
+        waitlistRepository.deleteByMember_Id(member.getId());
+        centerMemberRepository.deleteByMember_Id(member.getId());
+        memberRepository.delete(member);
+        return true;
+    }
+
     private Center findCenter(CenterDto centerDto) {
         if (centerDto == null || centerDto.getId() == null) {
             return null;
@@ -124,6 +170,18 @@ public class CenterMemberService {
 
         return memberRepository.findById(memberDto.getId())
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Member not found"));
+    }
+
+    private void validateNotLinked(String centerId, String memberId) {
+        if (centerMemberRepository.existsByCenter_IdAndMember_Id(centerId, memberId)) {
+            throw new ResponseStatusException(CONFLICT, "Member already linked to center");
+        }
+    }
+
+    private void validateNotWithdrawn(Member member) {
+        if (member != null && member.getStatus() == MemberStatus.WITHDRAWN) {
+            throw new ResponseStatusException(BAD_REQUEST, "Withdrawn member cannot be linked");
+        }
     }
 
     private CenterMemberDto toDto(CenterMember centerMember) {
@@ -144,17 +202,22 @@ public class CenterMemberService {
         if (member == null) {
             return "미등록";
         }
+        if (member.getStatus() == MemberStatus.WITHDRAWN) {
+            return "탈퇴";
+        }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDate today = LocalDate.now();
 
         boolean onHold = holdHistoryRepository.findByMm_Member_Id(member.getId()).stream()
-                .anyMatch(h -> !now.isBefore(h.getStartDat()) && !now.isAfter(h.getEndDat()));
+                .anyMatch(h -> !today.isBefore(h.getStartDat().toLocalDate())
+                        && !today.isAfter(h.getEndDat().toLocalDate()));
         if (onHold) {
-            return "정지";
+            return "정지중";
         }
 
         boolean active = memberMembershipRepository.findByMember_Id(member.getId()).stream()
-                .anyMatch(mm -> !now.isBefore(mm.getStartDat()) && !now.isAfter(mm.getEndDat()));
+                .anyMatch(mm -> !today.isBefore(mm.getStartDat().toLocalDate())
+                        && !today.isAfter(mm.getEndDat().toLocalDate()));
 
         return active ? "이용중" : "미등록";
     }
@@ -188,6 +251,7 @@ public class CenterMemberService {
         memberDto.setName(member.getName());
         memberDto.setEmail(member.getEmail());
         memberDto.setHp(member.getHp());
+        memberDto.setStatus(member.getStatus());
         return memberDto;
     }
 }

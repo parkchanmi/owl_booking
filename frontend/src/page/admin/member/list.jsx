@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Input, Select, Space, Card, Tag, message, Flex } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { Table, Button, Input, Select, Space, Card, Tag, message, Flex, Popconfirm } from 'antd';
+import { DeleteOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../../components/DashboardLayout';
 import '../adminList.css';
 import CenterMemberFormModal from './CenterMemberFormModal';
-import { fetchCenterMembers, registerCenterMember, createCenterMember } from '../../../api/centerMemberApi';
+import { fetchCenterMembers, registerCenterMember, createCenterMember, withdrawCenterMember } from '../../../api/centerMemberApi';
 import { fetchCenters } from '../../../api/centerApi';
 import { fetchMembers } from '../../../api/memberApi';
 
@@ -56,6 +56,16 @@ const CenterMemberList = () => {
     };
 
     const handleSubmit = async (values) => {
+        if (modalMode === 'link') {
+            const duplicate = centerMembers.some((cm) => (
+                cm.center?.id === values.center?.id && cm.member?.id === values.member?.id
+            ));
+            if (duplicate) {
+                message.error('이미 해당 센터에 추가된 회원입니다.');
+                return;
+            }
+        }
+
         setSubmitting(true);
         try {
             if (modalMode === 'link') {
@@ -75,6 +85,17 @@ const CenterMemberList = () => {
             }
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleWithdraw = async (record) => {
+        try {
+            const result = await withdrawCenterMember(record.id);
+            message.success(result.deleted ? '회원 정보가 삭제되었습니다.' : '이력이 있어 탈퇴 상태로 변경되었습니다.');
+            loadCenterMembers();
+            fetchMembers().then(setMembers).catch(() => {});
+        } catch (error) {
+            message.error(error.response?.data?.message ?? '회원 탈퇴 처리 중 오류가 발생했습니다.');
         }
     };
 
@@ -101,7 +122,7 @@ const CenterMemberList = () => {
             align: 'center',
             width: 90,
             render: (_, r) => {
-                const color = r.status === '이용중' ? 'green' : r.status === '정지' ? 'orange' : 'default';
+                const color = r.status === '이용중' ? 'green' : r.status === '정지중' ? 'orange' : r.status === '탈퇴' ? 'red' : 'default';
                 return <Tag color={color}>{r.status ?? '미등록'}</Tag>;
             },
         },
@@ -110,13 +131,24 @@ const CenterMemberList = () => {
             key: 'actions',
             width: 90,
             render: (_, record) => (
-                <Button
-                    size="small"
-                    disabled={!record.member?.id}
-                    onClick={() => navigate(`/admin/member/detail?id=${record.member.id}`)}
-                >
-                    편집
-                </Button>
+                <Space size={4}>
+                    <Button
+                        size="small"
+                        disabled={!record.member?.id}
+                        onClick={() => navigate(`/admin/member/detail?id=${record.member.id}&centerId=${record.center?.id ?? ''}`)}
+                    >
+                        편집
+                    </Button>
+                    <Popconfirm
+                        title="회원 탈퇴 처리하시겠습니까?"
+                        okText="탈퇴"
+                        cancelText="취소"
+                        disabled={!record.member?.id || record.status === '탈퇴'}
+                        onConfirm={() => handleWithdraw(record)}
+                    >
+                        <Button size="small" danger icon={<DeleteOutlined />} disabled={!record.member?.id || record.status === '탈퇴'} />
+                    </Popconfirm>
+                </Space>
             ),
         },
     ];
