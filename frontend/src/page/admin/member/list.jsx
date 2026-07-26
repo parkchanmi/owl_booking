@@ -3,6 +3,7 @@ import { Table, Button, Input, Select, Space, Card, Tag, message, Flex } from 'a
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../../components/DashboardLayout';
+import '../adminList.css';
 import CenterMemberFormModal from './CenterMemberFormModal';
 import { fetchCenterMembers, registerCenterMember, createCenterMember } from '../../../api/centerMemberApi';
 import { fetchCenters } from '../../../api/centerApi';
@@ -123,7 +124,7 @@ const CenterMemberList = () => {
     return (
         <DashboardLayout title="센터 회원 관리">
             <Card bordered={false}>
-                <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
+                <Flex justify="space-between" align="center" className="admin-list-toolbar">
                     <Space>
                         <Select
                             style={{ width: 200 }}

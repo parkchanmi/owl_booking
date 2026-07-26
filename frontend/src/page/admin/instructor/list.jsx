@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Input, Space, Card, Popconfirm, message, Flex } from 'antd';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import DashboardLayout from '../../../components/DashboardLayout';
+import '../adminList.css';
 import InstructorFormModal from './InstructorFormModal';
 import { fetchInstructors, createInstructor, updateInstructor, deleteInstructor } from '../../../api/instructorApi';
 
@@ -121,7 +122,7 @@ const InstructorList = () => {
     return (
         <DashboardLayout title="강사 관리">
             <Card bordered={false}>
-                <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
+                <Flex justify="space-between" align="center" className="admin-list-toolbar">
                     <Input
                         placeholder="강사 이름, 연락처 검색"
                         prefix={<SearchOutlined />}
