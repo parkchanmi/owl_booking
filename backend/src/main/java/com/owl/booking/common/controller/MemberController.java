@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -74,6 +75,11 @@ public class MemberController {
     @GetMapping("/{id}")
     public Member getMember(@PathVariable String id) {
         return memberService.findById(id);
+    }
+
+    @PutMapping("/{id}/contact")
+    public Member updateMemberContact(@PathVariable String id, @RequestBody Member member) {
+        return memberService.updateContact(id, member);
     }
 
     @PostMapping("/login")

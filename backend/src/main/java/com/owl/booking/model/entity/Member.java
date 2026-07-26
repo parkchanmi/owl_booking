@@ -1,6 +1,7 @@
 package com.owl.booking.model.entity;
 
 import com.owl.booking.model.entity.type.MemberType;
+import com.owl.booking.model.entity.type.MemberStatus;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -35,4 +36,9 @@ public class Member {
 
     @Column(nullable = true, length=20)
     private String hp;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private MemberStatus status = MemberStatus.ACTIVE;
 }

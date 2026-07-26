@@ -12,4 +12,6 @@ public interface WaitlistRepository extends JpaRepository<Waitlist, String> {
     List<Waitlist> findByProgram(RealProgram program);
 
     void deleteByProgram(RealProgram program);
+
+    void deleteByMember_Id(String memberId);
 }
