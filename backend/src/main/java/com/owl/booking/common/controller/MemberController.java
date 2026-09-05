@@ -57,6 +57,15 @@ public class MemberController {
         Map<String, Object> memberInfo = new HashMap<>();
         memberInfo.put("loginId", authentication.getName()); // 로그인 아이디
         memberInfo.put("authorities", authentication.getAuthorities()); // 권한 목록
+        Member member = memberService.findByLoginId(authentication.getName());
+        if (member != null) {
+            memberInfo.put("id", member.getId());
+            memberInfo.put("name", member.getName());
+            memberInfo.put("email", member.getEmail());
+            memberInfo.put("hp", member.getHp());
+            memberInfo.put("type", member.getType());
+            memberInfo.put("typeCode", getMemberTypeCode(member.getType()));
+        }
 
         return ResponseEntity.ok(memberInfo);
     }

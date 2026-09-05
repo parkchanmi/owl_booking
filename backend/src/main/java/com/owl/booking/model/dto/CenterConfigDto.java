@@ -25,5 +25,11 @@ public class CenterConfigDto {
 
     private String generationDaysOfWeek;
 
+    private String roleLabelsJson;
+
+    private String roleMenuPermissionsJson;
+
+    private String roleMemberMappingsJson;
+
     private CenterDto center;
 }

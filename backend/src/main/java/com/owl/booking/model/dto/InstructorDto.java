@@ -15,5 +15,7 @@ public class InstructorDto {
 
     String info;
 
+    MemberDto member;
+
     CenterDto center;
 }

@@ -1,21 +1,21 @@
 package com.owl.booking.admin.service;
 
 import com.owl.booking.model.dto.CenterDto;
+import com.owl.booking.model.dto.CenterMemberDto;
 import com.owl.booking.model.dto.CenterMemberRegisterRequestDto;
 import com.owl.booking.model.dto.MemberDto;
-import com.owl.booking.model.dto.CenterMemberDto;
 import com.owl.booking.model.entity.Center;
-import com.owl.booking.model.entity.Member;
 import com.owl.booking.model.entity.CenterMember;
+import com.owl.booking.model.entity.Member;
 import com.owl.booking.model.entity.type.MemberStatus;
 import com.owl.booking.model.entity.type.MemberType;
 import com.owl.booking.model.repository.AttendanceRepository;
 import com.owl.booking.model.repository.BookingRepository;
+import com.owl.booking.model.repository.CenterMemberRepository;
 import com.owl.booking.model.repository.CenterRepository;
 import com.owl.booking.model.repository.HoldHistoryRepository;
 import com.owl.booking.model.repository.MemberMembershipRepository;
 import com.owl.booking.model.repository.MemberRepository;
-import com.owl.booking.model.repository.CenterMemberRepository;
 import com.owl.booking.model.repository.WaitlistRepository;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
@@ -93,7 +93,6 @@ public class CenterMemberService {
         return toDto(centerMemberRepository.save(centerMember));
     }
 
-    // 신규 회원 계정을 생성함과 동시에 센터에 연결
     public CenterMemberDto registerAndLink(CenterMemberRegisterRequestDto request) {
         if (memberRepository.findByLoginId(request.getLoginId()) != null) {
             throw new ResponseStatusException(CONFLICT, "이미 사용중인 아이디입니다.");
@@ -135,6 +134,11 @@ public class CenterMemberService {
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "CenterMember not found"));
         Member member = centerMember.getMember();
         if (member == null) {
+            centerMemberRepository.deleteById(id);
+            return true;
+        }
+
+        if (member.getType() == MemberType.ADMIN) {
             centerMemberRepository.deleteById(id);
             return true;
         }
@@ -197,7 +201,6 @@ public class CenterMemberService {
         return dto;
     }
 
-    // 이용중 / 정지 / 미등록 판정 (정지가 이용중보다 우선)
     private String computeStatus(Member member) {
         if (member == null) {
             return "미등록";
@@ -205,19 +208,22 @@ public class CenterMemberService {
         if (member.getStatus() == MemberStatus.WITHDRAWN) {
             return "탈퇴";
         }
+        if (member.getType() == MemberType.ADMIN) {
+            return "이용중";
+        }
 
         LocalDate today = LocalDate.now();
 
         boolean onHold = holdHistoryRepository.findByMm_Member_Id(member.getId()).stream()
-                .anyMatch(h -> !today.isBefore(h.getStartDat().toLocalDate())
-                        && !today.isAfter(h.getEndDat().toLocalDate()));
+                .anyMatch(hold -> !today.isBefore(hold.getStartDat().toLocalDate())
+                        && !today.isAfter(hold.getEndDat().toLocalDate()));
         if (onHold) {
             return "정지중";
         }
 
         boolean active = memberMembershipRepository.findByMember_Id(member.getId()).stream()
-                .anyMatch(mm -> !today.isBefore(mm.getStartDat().toLocalDate())
-                        && !today.isAfter(mm.getEndDat().toLocalDate()));
+                .anyMatch(memberMembership -> !today.isBefore(memberMembership.getStartDat().toLocalDate())
+                        && !today.isAfter(memberMembership.getEndDat().toLocalDate()));
 
         return active ? "이용중" : "미등록";
     }

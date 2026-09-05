@@ -2,6 +2,7 @@ package com.owl.booking.admin.controller;
 
 import com.owl.booking.admin.service.CenterConfigService;
 import com.owl.booking.model.dto.CenterConfigDto;
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -17,6 +18,11 @@ public class CenterConfigController {
 
     public CenterConfigController(CenterConfigService centerConfigService) {
         this.centerConfigService = centerConfigService;
+    }
+
+    @GetMapping
+    public List<CenterConfigDto> getConfigs() {
+        return centerConfigService.getAll();
     }
 
     @GetMapping("/{centerId}")
