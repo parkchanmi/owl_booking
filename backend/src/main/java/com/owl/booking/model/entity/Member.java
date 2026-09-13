@@ -1,5 +1,6 @@
 package com.owl.booking.model.entity;
 
+import com.owl.booking.model.entity.type.MemberProvider;
 import com.owl.booking.model.entity.type.MemberType;
 import com.owl.booking.model.entity.type.MemberStatus;
 
@@ -36,6 +37,14 @@ public class Member {
 
     @Column(nullable = true, length=20)
     private String hp;
+
+    @Column(nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private MemberProvider provider = MemberProvider.LOCAL;
+
+    @Column(name = "provider_id", length = 100)
+    private String providerId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

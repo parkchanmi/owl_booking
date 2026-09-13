@@ -5,8 +5,9 @@ import com.owl.booking.model.entity.Center;
 import com.owl.booking.model.entity.CenterConfig;
 import com.owl.booking.model.entity.CenterMember;
 import com.owl.booking.model.entity.Member;
-import com.owl.booking.model.entity.type.MemberStatus;
+import com.owl.booking.model.entity.type.MemberProvider;
 import com.owl.booking.model.entity.type.MemberType;
+import com.owl.booking.model.entity.type.MemberStatus;
 import com.owl.booking.model.entity.type.ConfirmMode;
 import com.owl.booking.model.repository.CenterConfigRepository;
 import com.owl.booking.model.repository.CenterMemberRepository;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -128,6 +130,25 @@ public class MemberService {
     public Member findById(String id) {
         return memberRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Member not found"));
+    }
+
+    public Member findOrCreateByKakao(KakaoOAuthService.KakaoUserInfo kakaoUserInfo) {
+        Member existing = memberRepository.findByProviderAndProviderId(MemberProvider.KAKAO, kakaoUserInfo.providerId());
+        if (existing != null) {
+            return existing;
+        }
+
+        Member newMember = Member.builder()
+                .type(MemberType.USER)
+                .provider(MemberProvider.KAKAO)
+                .providerId(kakaoUserInfo.providerId())
+                .loginId("kakao_" + kakaoUserInfo.providerId())
+                .pwd(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .name(kakaoUserInfo.nickname())
+                .email("")
+                .build();
+
+        return memberRepository.save(newMember);
     }
 
     public Member updateContact(String id, Member request) {
