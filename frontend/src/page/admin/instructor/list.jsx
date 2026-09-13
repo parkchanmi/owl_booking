@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Flex, Input, Popconfirm, Select, Space, Table, message } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Card, Input, Popconfirm, Select, Space, Table, message } from 'antd';
+import { PlusOutlined, SearchOutlined, TeamOutlined } from '@ant-design/icons';
 import DashboardLayout from '../../../components/DashboardLayout';
+import AdminPageToolbar from '../../../components/AdminPageToolbar';
 import '../adminList.css';
 import InstructorFormModal from './InstructorFormModal';
 import { createInstructor, deleteInstructor, fetchInstructors, updateInstructor } from '../../../api/instructorApi';
@@ -176,33 +177,35 @@ const InstructorList = () => {
 
     return (
         <DashboardLayout title="강사 관리">
-            <Card bordered={false}>
-                <Flex justify="space-between" align="center" className="admin-list-toolbar">
-                    <Space>
-                        <Select
-                            style={{ width: 200 }}
-                            value={selectedCenter}
-                            onChange={setSelectedCenter}
-                            placeholder="센터 선택"
-                        >
-                            {centers.map((center) => (
-                                <Select.Option key={center.id} value={center.id}>{center.name}</Select.Option>
-                            ))}
-                        </Select>
-                        <Input
-                            placeholder="센터명, 강사 이름, 연락처 검색"
-                            prefix={<SearchOutlined />}
-                            value={keyword}
-                            onChange={(event) => setKeyword(event.target.value)}
-                            style={{ width: 300 }}
-                            allowClear
-                        />
-                    </Space>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
-                        강사 추가
-                    </Button>
-                </Flex>
+            <AdminPageToolbar
+                icon={<TeamOutlined />}
+                title="강사 관리"
+                description="센터에 연결된 관리자 사용자를 강사로 등록하고 관리합니다."
+            >
+                <Select
+                    style={{ width: 200 }}
+                    value={selectedCenter}
+                    onChange={setSelectedCenter}
+                    placeholder="센터 선택"
+                >
+                    {centers.map((center) => (
+                        <Select.Option key={center.id} value={center.id}>{center.name}</Select.Option>
+                    ))}
+                </Select>
+                <Input
+                    placeholder="센터명, 강사 이름, 연락처 검색"
+                    prefix={<SearchOutlined />}
+                    value={keyword}
+                    onChange={(event) => setKeyword(event.target.value)}
+                    style={{ width: 300 }}
+                    allowClear
+                />
+                <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
+                    강사 추가
+                </Button>
+            </AdminPageToolbar>
 
+            <Card bordered={false}>
                 <Table
                     rowKey="id"
                     columns={columns}

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Input, Space, Card, Popconfirm, message, Flex, Tag } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { Table, Button, Input, Space, Card, Popconfirm, message, Tag, Select } from 'antd';
+import { IdcardOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import DashboardLayout from '../../../components/DashboardLayout';
+import AdminPageToolbar from '../../../components/AdminPageToolbar';
 import '../adminList.css';
 import TicketFormModal from './TicketFormModal';
 import { fetchMemberships, createMembership, updateMembership, deleteMembership } from '../../../api/membershipApi';
@@ -13,6 +14,7 @@ const TicketList = () => {
     const [memberships, setMemberships] = useState([]);
     const [centers, setCenters] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedCenter, setSelectedCenter] = useState(null);
     const [keyword, setKeyword] = useState('');
 
     const [modalOpen, setModalOpen] = useState(false);
@@ -35,10 +37,20 @@ const TicketList = () => {
 
     useEffect(() => {
         loadMemberships();
-        fetchCenters().then(setCenters).catch(() => message.error('센터 목록을 불러오지 못했습니다.'));
+        fetchCenters()
+            .then((data) => {
+                const list = Array.isArray(data) ? data : [];
+                setCenters(list);
+                if (list.length > 0) setSelectedCenter(list[0].id);
+            })
+            .catch(() => message.error('센터 목록을 불러오지 못했습니다.'));
     }, []);
 
     const openAddModal = () => {
+        if (!selectedCenter) {
+            message.info('먼저 센터를 선택해주세요.');
+            return;
+        }
         setModalMode('add');
         setEditingMembership(null);
         setModalOpen(true);
@@ -88,6 +100,7 @@ const TicketList = () => {
 
     const filteredMemberships = Array.isArray(memberships)
         ? memberships.filter((m) => {
+            if (!selectedCenter || m.center?.id !== selectedCenter) return false;
             const text = keyword.trim().toLowerCase();
             if (!text) return true;
             return [m.name, m.center?.name]
@@ -138,21 +151,35 @@ const TicketList = () => {
 
     return (
         <DashboardLayout title="이용권 관리">
-            <Card bordered={false}>
-                <Flex justify="space-between" align="center" className="admin-list-toolbar">
-                    <Input
-                        placeholder="이용권명, 센터명 검색"
-                        prefix={<SearchOutlined />}
-                        value={keyword}
-                        onChange={(e) => setKeyword(e.target.value)}
-                        style={{ width: 280 }}
-                        allowClear
-                    />
-                    <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
-                        이용권 추가
-                    </Button>
-                </Flex>
+            <AdminPageToolbar
+                icon={<IdcardOutlined />}
+                title="이용권 관리"
+                description="센터별 이용권의 횟수, 기간, 가격과 상태를 관리합니다."
+            >
+                <Select
+                    style={{ width: 200 }}
+                    value={selectedCenter}
+                    onChange={setSelectedCenter}
+                    placeholder="센터 선택"
+                >
+                    {centers.map((center) => (
+                        <Select.Option key={center.id} value={center.id}>{center.name}</Select.Option>
+                    ))}
+                </Select>
+                <Input
+                    placeholder="이용권명, 센터명 검색"
+                    prefix={<SearchOutlined />}
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    style={{ width: 280 }}
+                    allowClear
+                />
+                <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
+                    이용권 추가
+                </Button>
+            </AdminPageToolbar>
 
+            <Card bordered={false}>
                 <Table
                     rowKey="id"
                     columns={columns}
@@ -166,6 +193,7 @@ const TicketList = () => {
                 open={modalOpen}
                 mode={modalMode}
                 initialValues={editingMembership}
+                selectedCenterId={selectedCenter}
                 centers={centers}
                 confirmLoading={submitting}
                 onCancel={closeModal}

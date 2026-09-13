@@ -11,7 +11,7 @@ const STATUS_OPTIONS = [
     { value: 'EXPIRED', label: '만료' },
 ];
 
-const TicketFormModal = ({ open, mode, initialValues, centers, confirmLoading, onCancel, onSubmit }) => {
+const TicketFormModal = ({ open, mode, initialValues, selectedCenterId, centers, confirmLoading, onCancel, onSubmit }) => {
     const [form] = Form.useForm();
     const isEdit = mode === 'edit';
 
@@ -28,12 +28,12 @@ const TicketFormModal = ({ open, mode, initialValues, centers, confirmLoading, o
                         status: initialValues.status,
                         centerId: initialValues.center?.id,
                     }
-                    : { status: 'ACTIVE' }
+                    : { status: 'ACTIVE', centerId: selectedCenterId }
             );
         } else {
             form.resetFields();
         }
-    }, [open, initialValues, form]);
+    }, [open, initialValues, selectedCenterId, form]);
 
     const handleOk = () => {
         form.validateFields().then((values) => {
@@ -65,7 +65,7 @@ const TicketFormModal = ({ open, mode, initialValues, centers, confirmLoading, o
         >
             <Form form={form} layout="vertical" requiredMark={false}>
                 <Form.Item name="centerId" label="센터" style={itemStyle} rules={[{ required: true, message: '센터를 선택해주세요.' }]}>
-                    <Select placeholder="센터 선택">
+                    <Select placeholder="센터 선택" disabled={Boolean(selectedCenterId)}>
                         {(centers || []).map((c) => (
                             <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
                         ))}

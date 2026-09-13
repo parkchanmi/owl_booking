@@ -14,6 +14,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import axios from 'axios';
 import DashboardLayout from '../../../components/DashboardLayout';
+import AdminPageToolbar from '../../../components/AdminPageToolbar';
 import { fetchCenters } from '../../../api/centerApi';
 import { fetchPrograms } from '../../../api/programApi';
 import { fetchInstructors } from '../../../api/instructorApi';
@@ -497,17 +498,19 @@ const BookingSchedule = () => {
     return (
         <DashboardLayout title="수업 스케줄 관리">
             <ConfigProvider locale={koKR}>
-                {/* 센터 선택 */}
-                <Card bordered={false} style={{ marginBottom: 16 }}>
-                    <Flex align="center" gap={12}>
-                        <span style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>센터 선택</span>
-                        <Select style={{ width: 240 }} value={selectedCenter} onChange={setSelectedCenter}>
-                            {centers.map((c) => (
-                                <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
-                            ))}
-                        </Select>
-                    </Flex>
-                </Card>
+                <AdminPageToolbar
+                    icon={<CalendarOutlined />}
+                    title="수업 스케줄 관리"
+                    description="센터별 스케줄을 조회하고 예약, 출결, 대기 현황을 관리합니다."
+                >
+                    <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>스케줄 생성</Button>
+                    {viewSegmented}
+                    <Select style={{ width: 220 }} value={selectedCenter} onChange={setSelectedCenter} placeholder="센터 선택">
+                        {centers.map((c) => (
+                            <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
+                        ))}
+                    </Select>
+                </AdminPageToolbar>
 
                 {viewMode === 'list' ? (
                     /* ── 리스트 뷰 ── */
@@ -529,10 +532,6 @@ const BookingSchedule = () => {
                                 <Select value={listInstructorId} onChange={setListInstructorId} style={{ width: 110 }} size="small" allowClear placeholder="강사 전체">
                                     {centerInstructors.map((i) => <Select.Option key={i.id} value={i.id}>{i.name}</Select.Option>)}
                                 </Select>
-                            </Space>
-                            <Space>
-                                <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>스케줄 생성</Button>
-                                {viewSegmented}
                             </Space>
                         </Flex>
                         <Table
@@ -574,10 +573,6 @@ const BookingSchedule = () => {
                                             <Button size="small" icon={<RightOutlined />}
                                                 onClick={() => onChange(value.add(1, 'month'))} />
                                         </Flex>
-                                        <Space>
-                                            <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>스케줄 생성</Button>
-                                            {viewSegmented}
-                                        </Space>
                                     </Flex>
                                 )}
                             />

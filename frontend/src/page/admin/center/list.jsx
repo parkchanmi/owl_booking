@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Input, Space, Card, Popconfirm, message, Flex } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { Table, Button, Input, Space, Card, Popconfirm, message } from 'antd';
+import { PlusOutlined, SearchOutlined, ShopOutlined } from '@ant-design/icons';
 import DashboardLayout from '../../../components/DashboardLayout';
+import AdminPageToolbar from '../../../components/AdminPageToolbar';
 import '../adminList.css';
 import CenterFormModal from './CenterFormModal';
 import { fetchCenters, createCenter, updateCenter, deleteCenter } from '../../../api/centerApi';
@@ -128,21 +129,25 @@ const CenterList = () => {
 
     return (
         <DashboardLayout title="센터 관리">
-            <Card bordered={false}>
-                <Flex justify="space-between" align="center" className="admin-list-toolbar">
-                    <Input
-                        placeholder="센터명, 상호, 대표자명 검색"
-                        prefix={<SearchOutlined />}
-                        value={keyword}
-                        onChange={(e) => setKeyword(e.target.value)}
-                        style={{ width: 280 }}
-                        allowClear
-                    />
-                    <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
-                        센터 추가
-                    </Button>
-                </Flex>
+            <AdminPageToolbar
+                icon={<ShopOutlined />}
+                title="센터 관리"
+                description="센터 정보와 사업자 정보를 조회하고 관리합니다."
+            >
+                <Input
+                    placeholder="센터명, 상호, 대표자명 검색"
+                    prefix={<SearchOutlined />}
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    style={{ width: 280 }}
+                    allowClear
+                />
+                <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
+                    센터 추가
+                </Button>
+            </AdminPageToolbar>
 
+            <Card bordered={false}>
                 <Table
                     rowKey="id"
                     columns={columns}

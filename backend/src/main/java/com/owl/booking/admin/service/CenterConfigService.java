@@ -18,7 +18,7 @@ public class CenterConfigService {
     private static final String DEFAULT_ROLE_LABELS_JSON =
             "{\"OWNER\":\"총관리자\",\"MANAGER\":\"매니저\",\"INSTRUCTOR\":\"강사\"}";
     private static final String DEFAULT_ROLE_MENU_PERMISSIONS_JSON =
-            "{\"OWNER\":[\"center-list\",\"instructor-list\",\"instructor-attendance\",\"class-list\",\"booking-index\",\"booking-schedule\",\"ticket-list\",\"member-list\",\"permission-list\"],\"MANAGER\":[\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"ticket-list\",\"member-list\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}";
+            "{\"OWNER\":[\"center-list\",\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"member-list\",\"permission-list\"],\"MANAGER\":[\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"member-list\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}";
     private static final String DEFAULT_ROLE_MEMBER_MAPPINGS_JSON =
             "{\"OWNER\":[],\"MANAGER\":[],\"INSTRUCTOR\":[]}";
 

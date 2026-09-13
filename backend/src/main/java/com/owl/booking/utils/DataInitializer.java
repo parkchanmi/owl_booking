@@ -113,7 +113,7 @@ public class DataInitializer implements CommandLineRunner {
                 .autoGenerateEnabled(true)
                 .generationDaysOfWeek("월,화,수,목,금,토,일")
                 .roleLabelsJson("{\"OWNER\":\"총관리자\",\"MANAGER\":\"매니저\",\"INSTRUCTOR\":\"강사\"}")
-                .roleMenuPermissionsJson("{\"OWNER\":[\"center-list\",\"instructor-list\",\"instructor-attendance\",\"class-list\",\"booking-index\",\"booking-schedule\",\"ticket-list\",\"member-list\",\"permission-list\"],\"MANAGER\":[\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"ticket-list\",\"member-list\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}")
+                .roleMenuPermissionsJson("{\"OWNER\":[\"center-list\",\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"member-list\",\"permission-list\"],\"MANAGER\":[\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"member-list\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}")
                 .roleMemberMappingsJson("{\"OWNER\":[\"" + admin.getId() + "\"],\"MANAGER\":[],\"INSTRUCTOR\":[\"" + instructorMember1.getId() + "\",\"" + instructorMember2.getId() + "\"]}")
                 .center(center)
                 .build());
