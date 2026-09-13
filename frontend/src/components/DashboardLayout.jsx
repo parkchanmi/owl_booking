@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
-    AuditOutlined,
     BellOutlined,
     CalendarOutlined,
     IdcardOutlined,
@@ -36,12 +35,6 @@ const menuItems = [
         path: '/admin/instructor/list',
     },
     {
-        key: 'instructor-attendance',
-        icon: <AuditOutlined />,
-        label: '강사용 출결',
-        path: '/admin/instructor/attendance',
-    },
-    {
         key: 'class-list',
         icon: <ScheduleOutlined />,
         label: '수업 관리',
@@ -54,6 +47,7 @@ const menuItems = [
         children: [
             { key: 'booking-index', label: '예약 설정', path: '/admin/booking' },
             { key: 'booking-schedule', label: '수업 스케줄 관리', path: '/admin/booking/schedule' },
+            { key: 'instructor-attendance', label: '강사용 출결', path: '/admin/instructor/attendance' },
         ],
     },
     {
@@ -273,7 +267,10 @@ const DashboardLayoutFrame = ({ title = 'Dashboard', userLabel = '-', children }
                     width={240}
                     style={{ boxShadow: '2px 0 8px 0 rgba(29,35,41,.05)', zIndex: 10 }}
                 >
-                    <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 18, color: '#1890ff' }}>
+                    <div
+                        onClick={() => navigate('/')}
+                        style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 18, color: '#1890ff', cursor: 'pointer' }}
+                    >
                         {collapsed ? 'OWL' : 'OWL BOOKING'}
                     </div>
                     <Menu

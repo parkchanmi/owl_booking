@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Flex, Input, Popconfirm, Select, Space, Table, Tabs, Tag, message } from 'antd';
-import { DeleteOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Card, Input, Popconfirm, Select, Space, Table, Tabs, Tag, message } from 'antd';
+import { DeleteOutlined, PlusOutlined, SearchOutlined, UserOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../../components/DashboardLayout';
+import AdminPageToolbar from '../../../components/AdminPageToolbar';
 import '../adminList.css';
 import CenterMemberFormModal from './CenterMemberFormModal';
 import { createCenterMember, fetchCenterMembers, registerCenterMember, withdrawCenterMember } from '../../../api/centerMemberApi';
@@ -47,7 +48,11 @@ const CenterMemberList = () => {
     useEffect(() => {
         loadCenterMembers();
         fetchCenters()
-            .then((data) => setCenters(Array.isArray(data) ? data : []))
+            .then((data) => {
+                const list = Array.isArray(data) ? data : [];
+                setCenters(list);
+                if (list.length > 0) setSelectedCenter(list[0].id);
+            })
             .catch(() => message.error('센터 목록을 불러오지 못했습니다.'));
     }, []);
 
@@ -125,7 +130,7 @@ const CenterMemberList = () => {
     const filteredCenterMembers = useMemo(() => (
         (Array.isArray(centerMembers) ? centerMembers : []).filter((centerMember) => {
             if (centerMember.type !== activeType) return false;
-            if (selectedCenter && centerMember.center?.id !== selectedCenter) return false;
+            if (!selectedCenter || centerMember.center?.id !== selectedCenter) return false;
 
             const text = keyword.trim().toLowerCase();
             if (!text) return true;
@@ -184,6 +189,39 @@ const CenterMemberList = () => {
 
     return (
         <DashboardLayout title="센터 회원 관리">
+            <AdminPageToolbar
+                icon={<UserOutlined />}
+                title="센터 회원 관리"
+                description="센터에 연결된 회원과 관리자 매핑을 구분해 관리합니다."
+            >
+                <Select
+                    style={{ width: 200 }}
+                    value={selectedCenter}
+                    onChange={setSelectedCenter}
+                    placeholder="센터 선택"
+                >
+                    {centers.map((center) => (
+                        <Select.Option key={center.id} value={center.id}>{center.name}</Select.Option>
+                    ))}
+                </Select>
+                <Input
+                    placeholder="센터명, 이름, 연락처 검색"
+                    prefix={<SearchOutlined />}
+                    value={keyword}
+                    onChange={(event) => setKeyword(event.target.value)}
+                    style={{ width: 280 }}
+                    allowClear
+                />
+                <Button icon={<PlusOutlined />} onClick={openLinkModal}>
+                    기존{TYPE_LABELS[activeType]}추가
+                </Button>
+                {activeType === 'USER' && (
+                    <Button type="primary" icon={<PlusOutlined />} onClick={openRegisterModal}>
+                        신규회원추가
+                    </Button>
+                )}
+            </AdminPageToolbar>
+
             <Card bordered={false}>
                 <Tabs
                     activeKey={activeType}
@@ -193,40 +231,6 @@ const CenterMemberList = () => {
                         { key: 'ADMIN', label: '관리자' },
                     ]}
                 />
-
-                <Flex justify="space-between" align="center" className="admin-list-toolbar">
-                    <Space>
-                        <Select
-                            style={{ width: 200 }}
-                            value={selectedCenter}
-                            onChange={setSelectedCenter}
-                            placeholder="센터 전체"
-                            allowClear
-                        >
-                            {centers.map((center) => (
-                                <Select.Option key={center.id} value={center.id}>{center.name}</Select.Option>
-                            ))}
-                        </Select>
-                        <Input
-                            placeholder="센터명, 이름, 연락처 검색"
-                            prefix={<SearchOutlined />}
-                            value={keyword}
-                            onChange={(event) => setKeyword(event.target.value)}
-                            style={{ width: 280 }}
-                            allowClear
-                        />
-                    </Space>
-                    <Space>
-                        <Button icon={<PlusOutlined />} onClick={openLinkModal}>
-                            기존{TYPE_LABELS[activeType]}추가
-                        </Button>
-                        {activeType === 'USER' && (
-                            <Button type="primary" icon={<PlusOutlined />} onClick={openRegisterModal}>
-                                신규회원추가
-                            </Button>
-                        )}
-                    </Space>
-                </Flex>
 
                 <Table
                     rowKey="id"

@@ -3,9 +3,10 @@ import {
     Card, Table, Button, Input, Space, Popconfirm,
     Modal, Form, Select, InputNumber, TimePicker, DatePicker, Switch, message, Flex, Radio, Tag,
 } from 'antd';
-import { PlusOutlined, SearchOutlined, PauseCircleOutlined, DeleteOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, PauseCircleOutlined, DeleteOutlined, ThunderboltOutlined, ScheduleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import DashboardLayout from '../../../components/DashboardLayout';
+import AdminPageToolbar from '../../../components/AdminPageToolbar';
 import '../adminList.css';
 import {
     fetchPrograms, createProgram, updateProgram, pauseProgram, deleteProgram,
@@ -277,48 +278,46 @@ const ClassList = () => {
 
     return (
         <DashboardLayout title="수업 관리">
-            <Card bordered={false}>
-                <div className="admin-list-toolbar">
-                    <Flex justify="flex-end" align="center" gap={8} style={{ marginBottom: 12 }}>
-                        <span style={{ fontSize: 13, color: '#666' }}>자동생성 (운영중 수업 대상)</span>
-                        <Switch
-                            checked={autoGenerateEnabled}
-                            loading={autoGenerateSaving}
-                            disabled={!selectedCenter}
-                            onChange={handleToggleAutoGenerate}
-                        />
-                    </Flex>
-                    <Flex justify="space-between" align="center">
-                        <Space>
-                            <Select
-                                style={{ width: 200 }}
-                                value={selectedCenter}
-                                onChange={setSelectedCenter}
-                            >
-                                {centers.map((c) => (
-                                    <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
-                                ))}
-                            </Select>
-                            <Input
-                                placeholder="수업명, 강사명 검색"
-                                prefix={<SearchOutlined />}
-                                value={keyword}
-                                onChange={(e) => setKeyword(e.target.value)}
-                                style={{ width: 220 }}
-                                allowClear
-                            />
-                        </Space>
-                        <Space>
-                            <Button icon={<ThunderboltOutlined />} onClick={openGenerateModal} disabled={!selectedCenter}>
-                                즉시생성
-                            </Button>
-                            <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
-                                수업 추가
-                            </Button>
-                        </Space>
-                    </Flex>
-                </div>
+            <AdminPageToolbar
+                icon={<ScheduleOutlined />}
+                title="수업 관리"
+                description="센터별 수업 정보와 스케줄 자동생성 설정을 관리합니다."
+            >
+                <Select
+                    style={{ width: 200 }}
+                    value={selectedCenter}
+                    onChange={setSelectedCenter}
+                >
+                    {centers.map((c) => (
+                        <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
+                    ))}
+                </Select>
+                <Input
+                    placeholder="수업명, 강사명 검색"
+                    prefix={<SearchOutlined />}
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    style={{ width: 220 }}
+                    allowClear
+                />
+                <Space size={6}>
+                    <span style={{ fontSize: 13, color: '#666' }}>자동생성</span>
+                    <Switch
+                        checked={autoGenerateEnabled}
+                        loading={autoGenerateSaving}
+                        disabled={!selectedCenter}
+                        onChange={handleToggleAutoGenerate}
+                    />
+                </Space>
+                <Button icon={<ThunderboltOutlined />} onClick={openGenerateModal} disabled={!selectedCenter}>
+                    즉시생성
+                </Button>
+                <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
+                    수업 추가
+                </Button>
+            </AdminPageToolbar>
 
+            <Card bordered={false}>
                 <Table
                     rowKey="id"
                     columns={columns}
