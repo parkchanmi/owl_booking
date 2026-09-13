@@ -6,6 +6,7 @@ import com.owl.booking.model.entity.CenterConfig;
 import com.owl.booking.model.entity.type.ConfirmMode;
 import com.owl.booking.model.repository.CenterConfigRepository;
 import com.owl.booking.model.repository.CenterRepository;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -13,6 +14,13 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public class CenterConfigService {
+
+    private static final String DEFAULT_ROLE_LABELS_JSON =
+            "{\"OWNER\":\"총관리자\",\"MANAGER\":\"매니저\",\"INSTRUCTOR\":\"강사\"}";
+    private static final String DEFAULT_ROLE_MENU_PERMISSIONS_JSON =
+            "{\"OWNER\":[\"center-list\",\"instructor-list\",\"instructor-attendance\",\"class-list\",\"booking-index\",\"booking-schedule\",\"ticket-list\",\"member-list\",\"permission-list\"],\"MANAGER\":[\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"ticket-list\",\"member-list\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}";
+    private static final String DEFAULT_ROLE_MEMBER_MAPPINGS_JSON =
+            "{\"OWNER\":[],\"MANAGER\":[],\"INSTRUCTOR\":[]}";
 
     private final CenterConfigRepository centerConfigRepository;
     private final CenterRepository centerRepository;
@@ -28,6 +36,12 @@ public class CenterConfigService {
         return toDto(config);
     }
 
+    public List<CenterConfigDto> getAll() {
+        return centerConfigRepository.findAll().stream()
+                .map(this::toDto)
+                .toList();
+    }
+
     public CenterConfigDto updateByCenterId(String centerId, CenterConfigDto dto) {
         CenterConfig config = centerConfigRepository.findByCenter_Id(centerId)
                 .orElseGet(() -> createDefault(centerId));
@@ -39,6 +53,9 @@ public class CenterConfigService {
         if (dto.getGenerationStartDat() != null) config.setGenerationStartDat(dto.getGenerationStartDat());
         if (dto.getAutoGenerateEnabled() != null) config.setAutoGenerateEnabled(dto.getAutoGenerateEnabled());
         if (dto.getGenerationDaysOfWeek() != null) config.setGenerationDaysOfWeek(dto.getGenerationDaysOfWeek());
+        if (dto.getRoleLabelsJson() != null) config.setRoleLabelsJson(dto.getRoleLabelsJson());
+        if (dto.getRoleMenuPermissionsJson() != null) config.setRoleMenuPermissionsJson(dto.getRoleMenuPermissionsJson());
+        if (dto.getRoleMemberMappingsJson() != null) config.setRoleMemberMappingsJson(dto.getRoleMemberMappingsJson());
 
         return toDto(centerConfigRepository.save(config));
     }
@@ -52,6 +69,9 @@ public class CenterConfigService {
                 .generationStartDat(14L)
                 .autoGenerateEnabled(true)
                 .generationDaysOfWeek("월,화,수,목,금,토,일")
+                .roleLabelsJson(DEFAULT_ROLE_LABELS_JSON)
+                .roleMenuPermissionsJson(DEFAULT_ROLE_MENU_PERMISSIONS_JSON)
+                .roleMemberMappingsJson(DEFAULT_ROLE_MEMBER_MAPPINGS_JSON)
                 .center(center)
                 .build();
         return centerConfigRepository.save(config);
@@ -67,6 +87,9 @@ public class CenterConfigService {
         dto.setGenerationStartDat(config.getGenerationStartDat());
         dto.setAutoGenerateEnabled(config.getAutoGenerateEnabled());
         dto.setGenerationDaysOfWeek(config.getGenerationDaysOfWeek());
+        dto.setRoleLabelsJson(config.getRoleLabelsJson() != null ? config.getRoleLabelsJson() : DEFAULT_ROLE_LABELS_JSON);
+        dto.setRoleMenuPermissionsJson(config.getRoleMenuPermissionsJson() != null ? config.getRoleMenuPermissionsJson() : DEFAULT_ROLE_MENU_PERMISSIONS_JSON);
+        dto.setRoleMemberMappingsJson(config.getRoleMemberMappingsJson() != null ? config.getRoleMemberMappingsJson() : DEFAULT_ROLE_MEMBER_MAPPINGS_JSON);
         return dto;
     }
 }

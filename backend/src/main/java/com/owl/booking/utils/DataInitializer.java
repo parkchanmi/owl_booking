@@ -98,6 +98,8 @@ public class DataInitializer implements CommandLineRunner {
         centerMemberRepository.save(CenterMember.builder().center(center).member(user1).build());
         centerMemberRepository.save(CenterMember.builder().center(center).member(user2).build());
         centerMemberRepository.save(CenterMember.builder().center(center).member(user3).build());
+        centerMemberRepository.save(CenterMember.builder().center(center).member(instructorAdmin1).build());
+        centerMemberRepository.save(CenterMember.builder().center(center).member(instructorAdmin2).build());
 
         centerConfigRepository.save(CenterConfig.builder()
                 .confirmMode(ConfirmMode.AUTO)
@@ -107,6 +109,9 @@ public class DataInitializer implements CommandLineRunner {
                 .generationStartDat(1L)
                 .autoGenerateEnabled(true)
                 .generationDaysOfWeek("월,화,수,목,금,토,일")
+                .roleLabelsJson("{\"OWNER\":\"총관리자\",\"MANAGER\":\"매니저\",\"INSTRUCTOR\":\"강사\"}")
+                .roleMenuPermissionsJson("{\"OWNER\":[\"center-list\",\"instructor-list\",\"instructor-attendance\",\"class-list\",\"booking-index\",\"booking-schedule\",\"ticket-list\",\"member-list\",\"permission-list\"],\"MANAGER\":[\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"ticket-list\",\"member-list\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}")
+                .roleMemberMappingsJson("{\"OWNER\":[],\"MANAGER\":[],\"INSTRUCTOR\":[]}")
                 .center(center)
                 .build());
 
@@ -114,6 +119,7 @@ public class DataInitializer implements CommandLineRunner {
                 .name("김강사")
                 .hp("010-1234-5678")
                 .info("필라테스 전문 강사, 경력 5년")
+                .member(instructorAdmin1)
                 .center(center)
                 .build());
 
@@ -121,6 +127,7 @@ public class DataInitializer implements CommandLineRunner {
                 .name("이강사")
                 .hp("010-9876-5432")
                 .info("요가 전문 강사, 경력 3년")
+                .member(instructorAdmin2)
                 .center(center)
                 .build());
 

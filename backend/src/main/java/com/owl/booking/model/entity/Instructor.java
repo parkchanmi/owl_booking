@@ -26,6 +26,10 @@ public class Instructor {
     private String info;
 
     @ManyToOne
+    @JoinColumn(name="member_id", referencedColumnName = "id")
+    Member member;
+
+    @ManyToOne
     @JoinColumn(name="center_id", referencedColumnName = "id")
     Center center;
 }

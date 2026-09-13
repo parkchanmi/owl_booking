@@ -42,6 +42,15 @@ public class CenterConfig {
     @Column(name = "generation_days_of_week", length = 20)
     private String generationDaysOfWeek;
 
+    @Column(name = "role_labels_json", columnDefinition = "TEXT")
+    private String roleLabelsJson;
+
+    @Column(name = "role_menu_permissions_json", columnDefinition = "TEXT")
+    private String roleMenuPermissionsJson;
+
+    @Column(name = "role_member_mappings_json", columnDefinition = "TEXT")
+    private String roleMemberMappingsJson;
+
     @OneToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name="center_id", referencedColumnName = "id")
     Center center;

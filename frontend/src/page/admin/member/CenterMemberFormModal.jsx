@@ -1,20 +1,51 @@
 import React, { useEffect } from 'react';
-import { Modal, Form, Select, Input, Typography, Space } from 'antd';
+import { Form, Input, Modal, Select, Space, Typography } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 
 const { Title } = Typography;
 
 const itemStyle = { marginBottom: 14 };
 
-const CenterMemberFormModal = ({ open, mode, centers, members, confirmLoading, onCancel, onSubmit }) => {
+const TYPE_LABELS = {
+    USER: '회원',
+    ADMIN: '관리자',
+};
+
+const CenterMemberFormModal = ({
+    open,
+    mode,
+    memberType = 'USER',
+    selectedCenterId,
+    centers,
+    members,
+    centerMembers,
+    confirmLoading,
+    onCancel,
+    onSubmit,
+}) => {
     const [form] = Form.useForm();
     const isLink = mode === 'link';
+    const typeLabel = TYPE_LABELS[memberType] ?? '회원';
+    const watchedCenterId = Form.useWatch('centerId', form);
 
     useEffect(() => {
-        if (!open) {
+        if (open) {
+            form.setFieldsValue({ centerId: selectedCenterId });
+        } else {
             form.resetFields();
         }
-    }, [open, form]);
+    }, [open, selectedCenterId, form]);
+
+    const memberOptions = (members || [])
+        .filter((member) => member.type === memberType)
+        .filter((member) => member.status !== 'WITHDRAWN')
+        .filter((member) => !watchedCenterId || !(centerMembers || []).some((centerMember) => (
+            centerMember.center?.id === watchedCenterId && centerMember.member?.id === member.id
+        )))
+        .map((member) => ({
+            value: member.id,
+            label: `${member.name ?? '-'} (${member.loginId ?? '아이디 없음'})`,
+        }));
 
     const handleOk = () => {
         form.validateFields().then((values) => {
@@ -38,12 +69,12 @@ const CenterMemberFormModal = ({ open, mode, centers, members, confirmLoading, o
 
     return (
         <Modal
-            title={
+            title={(
                 <Space align="center" size={10}>
                     <UserOutlined style={{ fontSize: 18, color: '#1890ff' }} />
-                    <Title level={5} style={{ margin: 0 }}>{isLink ? '기존 회원 추가' : '신규 회원 추가'}</Title>
+                    <Title level={5} style={{ margin: 0 }}>{isLink ? `기존 ${typeLabel} 추가` : '신규 회원 추가'}</Title>
                 </Space>
-            }
+            )}
             open={open}
             onOk={handleOk}
             onCancel={onCancel}
@@ -51,7 +82,7 @@ const CenterMemberFormModal = ({ open, mode, centers, members, confirmLoading, o
             okText="추가"
             cancelText="취소"
             centered
-            destroyOnClose
+            destroyOnHidden
             styles={{
                 header: { paddingBottom: 16, marginBottom: 8, borderBottom: '1px solid #f0f0f0' },
                 body: { paddingTop: 8 },
@@ -59,23 +90,21 @@ const CenterMemberFormModal = ({ open, mode, centers, members, confirmLoading, o
         >
             <Form form={form} layout="vertical" requiredMark={false}>
                 <Form.Item name="centerId" label="센터" style={itemStyle} rules={[{ required: true, message: '센터를 선택해주세요.' }]}>
-                    <Select placeholder="센터 선택">
-                        {(centers || []).map((c) => (
-                            <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
+                    <Select placeholder="센터 선택" disabled>
+                        {(centers || []).map((center) => (
+                            <Select.Option key={center.id} value={center.id}>{center.name}</Select.Option>
                         ))}
                     </Select>
                 </Form.Item>
 
                 {isLink ? (
-                    <Form.Item name="memberId" label="회원" style={itemStyle} rules={[{ required: true, message: '회원을 선택해주세요.' }]}>
+                    <Form.Item name="memberId" label={typeLabel} style={itemStyle} rules={[{ required: true, message: `${typeLabel}를 선택해주세요.` }]}>
                         <Select
-                            placeholder="회원 선택"
+                            placeholder={`${typeLabel} 선택`}
                             showSearch
                             optionFilterProp="label"
-                            options={(members || []).filter((m) => m.status !== 'WITHDRAWN').map((m) => ({
-                                value: m.id,
-                                label: `${m.name} (${m.loginId})`,
-                            }))}
+                            options={memberOptions}
+                            notFoundContent={`추가 가능한 ${typeLabel}가 없습니다.`}
                         />
                     </Form.Item>
                 ) : (
