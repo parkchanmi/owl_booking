@@ -22,7 +22,7 @@ public class KakaoOAuthService {
 
     private static final Logger log = LoggerFactory.getLogger(KakaoOAuthService.class);
 
-    @Value("${kakao.client-id}")
+    @Value("${kakao.client-id:}")
     private String clientId;
 
     @Value("${kakao.client-secret:}")
@@ -51,6 +51,13 @@ public class KakaoOAuthService {
     }
 
     private String requestAccessToken(String code) {
+        if (clientId == null || clientId.isBlank()) {
+            throw new IllegalStateException("카카오 client-id가 설정되지 않았습니다.");
+        }
+        if (redirectUri == null || redirectUri.isBlank()) {
+            throw new IllegalStateException("카카오 redirect-uri가 설정되지 않았습니다.");
+        }
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
