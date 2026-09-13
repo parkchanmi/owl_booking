@@ -13,10 +13,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.owl.booking.model.dto.MemberDto;
+import com.owl.booking.model.dto.MemberJoinRequestDto;
 import com.owl.booking.model.entity.Member;
 import com.owl.booking.model.entity.type.MemberType;
+import com.owl.booking.model.repository.CenterMemberRepository;
 import com.owl.booking.common.service.MemberService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,9 +41,11 @@ public class MemberController {
     private PasswordEncoder passwordEncoder; // SecurityConfig에서 등록한 빈(Bean)
 
     private final MemberService memberService;
+    private final CenterMemberRepository centerMemberRepository;
 
-    public MemberController(MemberService memberService) {
+    public MemberController(MemberService memberService, CenterMemberRepository centerMemberRepository) {
         this.memberService = memberService;
+        this.centerMemberRepository = centerMemberRepository;
     }
 
     @GetMapping("/info")
@@ -59,26 +65,34 @@ public class MemberController {
         memberInfo.put("authorities", authentication.getAuthorities()); // 권한 목록
         Member member = memberService.findByLoginId(authentication.getName());
         if (member != null) {
+            boolean hasAdminCenter = hasAdminCenter(member);
             memberInfo.put("id", member.getId());
             memberInfo.put("name", member.getName());
             memberInfo.put("email", member.getEmail());
             memberInfo.put("hp", member.getHp());
             memberInfo.put("type", member.getType());
-            memberInfo.put("typeCode", getMemberTypeCode(member.getType()));
+            memberInfo.put("typeCode", getLoginTypeCode(hasAdminCenter));
+            memberInfo.put("hasAdminCenter", hasAdminCenter);
         }
 
         return ResponseEntity.ok(memberInfo);
     }
 
     @PostMapping("/join")
-    public Member createMember(@RequestBody Member member) {
-        member.setType(MemberType.USER);
-        return memberService.createMember(member);
+    public Member createMember(@RequestBody MemberJoinRequestDto request) {
+        return memberService.join(request);
     }
 
     @GetMapping
     public List<Member> getMembers() {
         return memberService.getAllMembers();
+    }
+
+    @GetMapping("/search")
+    public List<MemberDto> searchMembers(@RequestParam MemberType type, @RequestParam String keyword) {
+        return memberService.searchMembers(type, keyword).stream()
+                .map(this::toDto)
+                .toList();
     }
 
     @GetMapping("/{id}")
@@ -102,7 +116,8 @@ public class MemberController {
             if (passwordEncoder.matches(member.getPwd(), foundMember.getPwd())) {
                 
                 // 3. 일치하면 인증 토큰 생성 및 세션 저장 (이전 코드 활용)
-                String role = foundMember.getType() == MemberType.ADMIN ? "ROLE_ADMIN" : "ROLE_USER";
+                boolean hasAdminCenter = hasAdminCenter(foundMember);
+                String role = hasAdminCenter ? "ROLE_ADMIN" : "ROLE_USER";
                 UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
                         foundMember.getLoginId(), null, List.of(new SimpleGrantedAuthority(role)));
 
@@ -115,7 +130,8 @@ public class MemberController {
                 loginResult.put("loginId", foundMember.getLoginId());
                 loginResult.put("name", foundMember.getName());
                 loginResult.put("type", foundMember.getType());
-                loginResult.put("typeCode", getMemberTypeCode(foundMember.getType()));
+                loginResult.put("typeCode", getLoginTypeCode(hasAdminCenter));
+                loginResult.put("hasAdminCenter", hasAdminCenter);
 
                 return ResponseEntity.ok(loginResult);
             }
@@ -123,8 +139,25 @@ public class MemberController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(false);
     }
 
-    private int getMemberTypeCode(MemberType type) {
-        return type == MemberType.ADMIN ? 1 : 2;
+    private int getLoginTypeCode(boolean hasAdminCenter) {
+        return hasAdminCenter ? 1 : 2;
+    }
+
+    private boolean hasAdminCenter(Member member) {
+        return member != null && member.getId() != null
+                && centerMemberRepository.existsByMember_IdAndType(member.getId(), MemberType.ADMIN);
+    }
+
+    private MemberDto toDto(Member member) {
+        MemberDto dto = new MemberDto();
+        dto.setId(member.getId());
+        dto.setType(member.getType());
+        dto.setLoginId(member.getLoginId());
+        dto.setName(member.getName());
+        dto.setEmail(member.getEmail());
+        dto.setHp(member.getHp());
+        dto.setStatus(member.getStatus());
+        return dto;
     }
 
     @PostMapping("/logout")

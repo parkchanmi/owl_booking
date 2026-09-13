@@ -38,7 +38,7 @@ const InstructorList = () => {
             const data = await fetchCenterMembers();
             setCenterMembers(Array.isArray(data) ? data : []);
         } catch {
-            message.error('센터 관리자 목록을 불러오지 못했습니다.');
+            message.error('센터 회원 목록을 불러오지 못했습니다.');
         }
     };
 
@@ -54,12 +54,12 @@ const InstructorList = () => {
             .catch(() => message.error('센터 목록을 불러오지 못했습니다.'));
     }, []);
 
-    const adminUsers = useMemo(() => (
+    const adminMembers = useMemo(() => (
         centerMembers
             .filter((centerMember) => (
                 centerMember.center?.id === selectedCenter
                 && centerMember.member?.id
-                && centerMember.member?.type === 'ADMIN'
+                && centerMember.type === 'ADMIN'
                 && centerMember.member?.status !== 'WITHDRAWN'
             ))
             .map((centerMember) => centerMember.member)
@@ -87,7 +87,7 @@ const InstructorList = () => {
     };
 
     const handleSubmit = async (values) => {
-        const selectedMember = adminUsers.find((member) => member.id === values.member?.id);
+        const selectedMember = adminMembers.find((member) => member.id === values.member?.id);
         const centerId = values.center?.id ?? selectedCenter;
 
         setSubmitting(true);
@@ -95,7 +95,7 @@ const InstructorList = () => {
             const payload = {
                 ...values,
                 center: centerId ? { id: centerId } : null,
-                name: values.name || selectedMember?.name,
+                name: selectedMember?.name,
                 hp: values.hp || selectedMember?.hp,
             };
 
@@ -146,7 +146,7 @@ const InstructorList = () => {
 
     const columns = [
         { title: '센터', key: 'center', render: (_, row) => row.center?.name ?? '-' },
-        { title: '강사 이름', dataIndex: 'name', key: 'name' },
+        { title: '강사 이름', key: 'name', render: (_, row) => row.member?.name ?? row.name ?? '-' },
         { title: '연결 사용자', key: 'member', render: (_, row) => (row.member?.name ? `${row.member.name} (${row.member.loginId ?? '-'})` : '-') },
         { title: '연락처', dataIndex: 'hp', key: 'hp' },
         { title: '강사 소개', dataIndex: 'info', key: 'info', ellipsis: true },
@@ -218,7 +218,7 @@ const InstructorList = () => {
                 initialValues={editingInstructor}
                 selectedCenterId={selectedCenter}
                 centers={centers}
-                members={adminUsers}
+                members={adminMembers}
                 confirmLoading={submitting}
                 onCancel={closeModal}
                 onSubmit={handleSubmit}

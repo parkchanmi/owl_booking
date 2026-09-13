@@ -48,7 +48,6 @@ const InstructorFormModal = ({
         if (!member) return;
 
         form.setFieldsValue({
-            name: form.getFieldValue('name') || member.name,
             hp: form.getFieldValue('hp') || member.hp,
         });
     };
@@ -90,9 +89,9 @@ const InstructorFormModal = ({
 
                 <Form.Item
                     name={['member', 'id']}
-                    label="연결 관리자 사용자"
+                    label="연결 관리자"
                     style={itemStyle}
-                    rules={[{ required: true, message: '강사로 연결할 관리자 사용자를 선택해주세요.' }]}
+                    rules={[{ required: true, message: '강사로 연결할 관리자를 선택해주세요.' }]}
                 >
                     <Select
                         placeholder="센터에 등록된 관리자 선택"
@@ -105,10 +104,6 @@ const InstructorFormModal = ({
                         }))}
                         notFoundContent={<Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="센터에 등록된 관리자가 없습니다." />}
                     />
-                </Form.Item>
-
-                <Form.Item name="name" label="강사 이름" style={itemStyle} rules={[{ required: true, message: '강사 이름을 입력해주세요.' }]}>
-                    <Input placeholder="강사 이름 입력" />
                 </Form.Item>
 
                 <Form.Item name="hp" label="강사 연락처" style={itemStyle}>

@@ -72,12 +72,14 @@ public class CenterMemberService {
     public CenterMemberDto createCenterMember(CenterMemberDto centerMemberDto) {
         Center center = findCenter(centerMemberDto.getCenter());
         Member member = findMember(centerMemberDto.getMember());
+        MemberType type = resolveType(centerMemberDto.getType());
         validateNotWithdrawn(member);
-        validateNotLinked(center.getId(), member.getId());
+        validateNotLinked(center.getId(), member.getId(), type);
 
         CenterMember centerMember = CenterMember.builder()
                 .center(center)
                 .member(member)
+                .type(type)
                 .build();
 
         return toDto(centerMemberRepository.save(centerMember));
@@ -89,6 +91,7 @@ public class CenterMemberService {
 
         centerMember.setCenter(findCenter(centerMemberDto.getCenter()));
         centerMember.setMember(findMember(centerMemberDto.getMember()));
+        centerMember.setType(resolveType(centerMemberDto.getType()));
 
         return toDto(centerMemberRepository.save(centerMember));
     }
@@ -115,6 +118,7 @@ public class CenterMemberService {
         CenterMember centerMember = CenterMember.builder()
                 .center(center)
                 .member(member)
+                .type(MemberType.USER)
                 .build();
 
         return toDto(centerMemberRepository.save(centerMember));
@@ -138,7 +142,7 @@ public class CenterMemberService {
             return true;
         }
 
-        if (member.getType() == MemberType.ADMIN) {
+        if (centerMember.getType() == MemberType.ADMIN) {
             centerMemberRepository.deleteById(id);
             return true;
         }
@@ -149,6 +153,11 @@ public class CenterMemberService {
             member.setStatus(MemberStatus.WITHDRAWN);
             memberRepository.save(member);
             return false;
+        }
+
+        if (centerMemberRepository.findByMember_Id(member.getId()).size() > 1) {
+            centerMemberRepository.deleteById(id);
+            return true;
         }
 
         bookingRepository.deleteByMember_Id(member.getId());
@@ -176,8 +185,8 @@ public class CenterMemberService {
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Member not found"));
     }
 
-    private void validateNotLinked(String centerId, String memberId) {
-        if (centerMemberRepository.existsByCenter_IdAndMember_Id(centerId, memberId)) {
+    private void validateNotLinked(String centerId, String memberId, MemberType type) {
+        if (centerMemberRepository.existsByCenter_IdAndMember_IdAndType(centerId, memberId, type)) {
             throw new ResponseStatusException(CONFLICT, "Member already linked to center");
         }
     }
@@ -186,6 +195,10 @@ public class CenterMemberService {
         if (member != null && member.getStatus() == MemberStatus.WITHDRAWN) {
             throw new ResponseStatusException(BAD_REQUEST, "Withdrawn member cannot be linked");
         }
+    }
+
+    private MemberType resolveType(MemberType type) {
+        return type == null ? MemberType.USER : type;
     }
 
     private CenterMemberDto toDto(CenterMember centerMember) {
@@ -197,18 +210,20 @@ public class CenterMemberService {
         dto.setId(centerMember.getId());
         dto.setCenter(toCenterDto(centerMember.getCenter()));
         dto.setMember(toMemberDto(centerMember.getMember()));
-        dto.setStatus(computeStatus(centerMember.getMember()));
+        dto.setType(resolveType(centerMember.getType()));
+        dto.setStatus(computeStatus(centerMember));
         return dto;
     }
 
-    private String computeStatus(Member member) {
+    private String computeStatus(CenterMember centerMember) {
+        Member member = centerMember.getMember();
         if (member == null) {
             return "미등록";
         }
         if (member.getStatus() == MemberStatus.WITHDRAWN) {
             return "탈퇴";
         }
-        if (member.getType() == MemberType.ADMIN) {
+        if (centerMember.getType() == MemberType.ADMIN) {
             return "이용중";
         }
 

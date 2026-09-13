@@ -1,5 +1,6 @@
 package com.owl.booking.model.dto;
 
+import com.owl.booking.model.entity.type.MemberType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,6 +13,8 @@ public class CenterMemberDto {
     CenterDto center;
 
     MemberDto member;
+
+    MemberType type;
 
     // 이용중 / 정지 / 미등록 - 조회 시 계산되는 값
     String status;

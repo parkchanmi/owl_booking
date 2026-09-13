@@ -31,7 +31,10 @@ const Join = () => {
     console.log('Success:', values);
     
     // 실제 백엔드로 보낼 데이터 추출
-    const userData = values.user;
+    const userData = {
+      ...values.user,
+      userType,
+    };
     
     // axios나 fetch를 이용해 Spring Boot로 전송
     insertMember(userData);
