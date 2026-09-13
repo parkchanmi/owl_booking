@@ -50,7 +50,7 @@ public class InstructorService {
         validateCenterAdmin(center, member);
 
         Instructor instructor = Instructor.builder()
-                .name(instructorDto.getName())
+                .name(member.getName())
                 .hp(instructorDto.getHp())
                 .info(instructorDto.getInfo())
                 .member(member)
@@ -67,7 +67,7 @@ public class InstructorService {
         Member member = findMember(instructorDto.getMember());
         validateCenterAdmin(center, member);
 
-        instructor.setName(instructorDto.getName());
+        instructor.setName(member.getName());
         instructor.setHp(instructorDto.getHp());
         instructor.setInfo(instructorDto.getInfo());
         instructor.setMember(member);
@@ -108,18 +108,15 @@ public class InstructorService {
 
         Member member = memberRepository.findById(memberDto.getId())
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Member not found"));
-        if (member.getType() != MemberType.ADMIN) {
-            throw new ResponseStatusException(BAD_REQUEST, "Instructor must be linked to admin user");
-        }
         return member;
     }
 
     private void validateCenterAdmin(Center center, Member member) {
         if (member == null) {
-            throw new ResponseStatusException(BAD_REQUEST, "Instructor must be linked to admin user");
+            throw new ResponseStatusException(BAD_REQUEST, "Instructor must be linked to admin member");
         }
-        if (!centerMemberRepository.existsByCenter_IdAndMember_Id(center.getId(), member.getId())) {
-            throw new ResponseStatusException(BAD_REQUEST, "Admin user must be linked to selected center");
+        if (!centerMemberRepository.existsByCenter_IdAndMember_IdAndType(center.getId(), member.getId(), MemberType.ADMIN)) {
+            throw new ResponseStatusException(BAD_REQUEST, "Admin member must be linked to selected center");
         }
     }
 

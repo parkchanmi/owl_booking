@@ -7,7 +7,6 @@ import '../adminList.css';
 import CenterMemberFormModal from './CenterMemberFormModal';
 import { createCenterMember, fetchCenterMembers, registerCenterMember, withdrawCenterMember } from '../../../api/centerMemberApi';
 import { fetchCenters } from '../../../api/centerApi';
-import { fetchMembers } from '../../../api/memberApi';
 
 const TYPE_LABELS = {
     USER: '회원',
@@ -24,7 +23,6 @@ const CenterMemberList = () => {
     const navigate = useNavigate();
     const [centerMembers, setCenterMembers] = useState([]);
     const [centers, setCenters] = useState([]);
-    const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedCenter, setSelectedCenter] = useState(null);
     const [keyword, setKeyword] = useState('');
@@ -46,21 +44,11 @@ const CenterMemberList = () => {
         }
     };
 
-    const loadMembers = async () => {
-        try {
-            const data = await fetchMembers();
-            setMembers(Array.isArray(data) ? data : []);
-        } catch {
-            message.error('회원 목록을 불러오지 못했습니다.');
-        }
-    };
-
     useEffect(() => {
         loadCenterMembers();
         fetchCenters()
             .then((data) => setCenters(Array.isArray(data) ? data : []))
             .catch(() => message.error('센터 목록을 불러오지 못했습니다.'));
-        loadMembers();
     }, []);
 
     const openRegisterModal = () => {
@@ -94,6 +82,7 @@ const CenterMemberList = () => {
         if (modalMode === 'link') {
             const duplicate = centerMembers.some((centerMember) => (
                 centerMember.center?.id === values.center?.id && centerMember.member?.id === values.member?.id
+                && centerMember.type === values.type
             ));
             if (duplicate) {
                 message.error(`이미 해당 센터에 추가된 ${TYPE_LABELS[activeType]}입니다.`);
@@ -111,7 +100,6 @@ const CenterMemberList = () => {
             message.success(`${TYPE_LABELS[activeType]}이 추가되었습니다.`);
             closeModal();
             loadCenterMembers();
-            loadMembers();
         } catch (error) {
             console.error('센터 회원 저장 실패:', error);
             if (error.response?.status === 409) {
@@ -129,7 +117,6 @@ const CenterMemberList = () => {
             const result = await withdrawCenterMember(record.id);
             message.success(result.deleted ? '사용자 연결이 삭제되었습니다.' : '이력이 있어 탈퇴 상태로 변경되었습니다.');
             loadCenterMembers();
-            loadMembers();
         } catch (error) {
             message.error(error.response?.data?.message ?? '탈퇴 처리 중 오류가 발생했습니다.');
         }
@@ -137,7 +124,7 @@ const CenterMemberList = () => {
 
     const filteredCenterMembers = useMemo(() => (
         (Array.isArray(centerMembers) ? centerMembers : []).filter((centerMember) => {
-            if (centerMember.member?.type !== activeType) return false;
+            if (centerMember.type !== activeType) return false;
             if (selectedCenter && centerMember.center?.id !== selectedCenter) return false;
 
             const text = keyword.trim().toLowerCase();
@@ -154,7 +141,7 @@ const CenterMemberList = () => {
 
     const columns = [
         { title: '센터', key: 'center', render: (_, row) => row.center?.name ?? '-' },
-        { title: '구분', key: 'type', width: 90, align: 'center', render: (_, row) => TYPE_LABELS[row.member?.type] ?? '-' },
+        { title: '구분', key: 'type', width: 90, align: 'center', render: (_, row) => TYPE_LABELS[row.type] ?? '-' },
         { title: '이름', key: 'memberName', render: (_, row) => row.member?.name ?? '-' },
         { title: '아이디', key: 'loginId', render: (_, row) => row.member?.loginId ?? '-' },
         { title: '연락처', key: 'hp', render: (_, row) => row.member?.hp ?? '-' },
@@ -256,7 +243,6 @@ const CenterMemberList = () => {
                 memberType={activeType}
                 selectedCenterId={selectedCenter}
                 centers={centers}
-                members={members}
                 centerMembers={centerMembers}
                 confirmLoading={submitting}
                 onCancel={closeModal}

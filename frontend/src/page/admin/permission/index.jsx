@@ -98,7 +98,7 @@ const PermissionIndex = () => {
             .filter((centerMember) => (
                 centerMember.center?.id === selectedCenter
                 && centerMember.member?.id
-                && centerMember.member?.type === 'ADMIN'
+                && centerMember.type === 'ADMIN'
             ))
             .map((centerMember) => ({
                 ...centerMember.member,

@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
-import { Form, Input, Modal, Select, Space, Typography } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
+import React, { useEffect, useState } from 'react';
+import { Empty, Form, Input, List, Modal, Radio, Select, Space, Spin, Typography } from 'antd';
+import { SearchOutlined, UserOutlined } from '@ant-design/icons';
+import { searchMembers } from '../../../api/memberApi';
 
-const { Title } = Typography;
+const { Text, Title } = Typography;
 
 const itemStyle = { marginBottom: 14 };
 
@@ -17,35 +18,67 @@ const CenterMemberFormModal = ({
     memberType = 'USER',
     selectedCenterId,
     centers,
-    members,
     centerMembers,
     confirmLoading,
     onCancel,
     onSubmit,
 }) => {
     const [form] = Form.useForm();
+    const [searchKeyword, setSearchKeyword] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [searching, setSearching] = useState(false);
+    const [searched, setSearched] = useState(false);
     const isLink = mode === 'link';
     const typeLabel = TYPE_LABELS[memberType] ?? '회원';
     const watchedCenterId = Form.useWatch('centerId', form);
+    const watchedMemberId = Form.useWatch('memberId', form);
 
     useEffect(() => {
         if (open) {
             form.setFieldsValue({ centerId: selectedCenterId });
+            setSearchKeyword('');
+            setSearchResults([]);
+            setSearched(false);
+            form.setFieldsValue({ memberId: undefined });
         } else {
             form.resetFields();
+            setSearchKeyword('');
+            setSearchResults([]);
+            setSearched(false);
         }
-    }, [open, selectedCenterId, form]);
+    }, [open, selectedCenterId, memberType, form]);
 
-    const memberOptions = (members || [])
-        .filter((member) => member.type === memberType)
-        .filter((member) => member.status !== 'WITHDRAWN')
-        .filter((member) => !watchedCenterId || !(centerMembers || []).some((centerMember) => (
-            centerMember.center?.id === watchedCenterId && centerMember.member?.id === member.id
-        )))
-        .map((member) => ({
-            value: member.id,
-            label: `${member.name ?? '-'} (${member.loginId ?? '아이디 없음'})`,
-        }));
+    const isAlreadyLinked = (memberId) => (
+        !!watchedCenterId && (centerMembers || []).some((centerMember) => (
+            centerMember.center?.id === watchedCenterId && centerMember.member?.id === memberId
+            && centerMember.type === memberType
+        ))
+    );
+
+    const handleSearch = async (value = searchKeyword) => {
+        const keyword = value.trim();
+        form.setFieldsValue({ memberId: undefined });
+
+        if (!keyword) {
+            setSearchResults([]);
+            setSearched(false);
+            return;
+        }
+
+        setSearching(true);
+        setSearched(true);
+        try {
+            const data = await searchMembers({ keyword, type: memberType });
+            const linkableMembers = (Array.isArray(data) ? data : [])
+                .filter((member) => !isAlreadyLinked(member.id));
+            setSearchResults(linkableMembers);
+        } catch (error) {
+            console.error('회원 검색 실패:', error);
+            setSearchResults([]);
+        } finally {
+            setSearching(false);
+        }
+    };
 
     const handleOk = () => {
         form.validateFields().then((values) => {
@@ -53,6 +86,7 @@ const CenterMemberFormModal = ({
                 onSubmit({
                     center: values.centerId ? { id: values.centerId } : null,
                     member: values.memberId ? { id: values.memberId } : null,
+                    type: memberType,
                 });
             } else {
                 onSubmit({
@@ -98,15 +132,72 @@ const CenterMemberFormModal = ({
                 </Form.Item>
 
                 {isLink ? (
-                    <Form.Item name="memberId" label={typeLabel} style={itemStyle} rules={[{ required: true, message: `${typeLabel}를 선택해주세요.` }]}>
-                        <Select
-                            placeholder={`${typeLabel} 선택`}
-                            showSearch
-                            optionFilterProp="label"
-                            options={memberOptions}
-                            notFoundContent={`추가 가능한 ${typeLabel}가 없습니다.`}
-                        />
-                    </Form.Item>
+                    <>
+                        <Form.Item label={`${typeLabel} 검색`} style={itemStyle}>
+                            <Input.Search
+                                placeholder="아이디 또는 이름 입력"
+                                enterButton="검색"
+                                prefix={<SearchOutlined />}
+                                value={searchKeyword}
+                                onChange={(event) => setSearchKeyword(event.target.value)}
+                                onSearch={handleSearch}
+                                allowClear
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="memberId"
+                            label="검색 결과"
+                            style={itemStyle}
+                            rules={[{ required: true, message: `추가할 ${typeLabel}를 검색 결과에서 선택해주세요.` }]}
+                        >
+                            {searching ? (
+                                <Radio.Group style={{ width: '100%' }} disabled>
+                                    <div style={{ minHeight: 128, padding: '32px 0', textAlign: 'center' }}>
+                                        <Spin />
+                                    </div>
+                                </Radio.Group>
+                            ) : (
+                                <Radio.Group style={{ width: '100%' }}>
+                                    <div style={{ minHeight: 128 }}>
+                                        <List
+                                            bordered
+                                            dataSource={searchResults}
+                                            locale={{
+                                                emptyText: searched
+                                                    ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={`추가 가능한 ${typeLabel}이 없습니다.`} />
+                                                    : '아이디 또는 이름으로 검색해주세요.',
+                                            }}
+                                            renderItem={(member) => {
+                                                const selected = watchedMemberId === member.id;
+                                                return (
+                                                    <List.Item
+                                                        onClick={() => {
+                                                            form.setFieldsValue({ memberId: member.id });
+                                                        }}
+                                                        style={{
+                                                            cursor: 'pointer',
+                                                            background: selected ? '#e6f4ff' : undefined,
+                                                            borderColor: selected ? '#91caff' : undefined,
+                                                        }}
+                                                    >
+                                                        <Radio value={member.id}>
+                                                            <Space direction="vertical" size={2}>
+                                                                <Text strong>{member.name ?? '-'}</Text>
+                                                                <Text type="secondary">
+                                                                    {member.loginId ?? '아이디 없음'} · {member.email ?? '이메일 없음'}
+                                                                </Text>
+                                                            </Space>
+                                                        </Radio>
+                                                    </List.Item>
+                                                );
+                                            }}
+                                        />
+                                    </div>
+                                </Radio.Group>
+                            )}
+                        </Form.Item>
+                    </>
                 ) : (
                     <>
                         <Form.Item name="loginId" label="아이디" style={itemStyle} rules={[{ required: true, message: '아이디를 입력해주세요.' }]}>

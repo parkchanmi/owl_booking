@@ -1,5 +1,6 @@
 package com.owl.booking.model.entity;
 
+import com.owl.booking.model.entity.type.MemberType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,4 +24,9 @@ public class CenterMember {
     @ManyToOne
     @JoinColumn(name="member_id", referencedColumnName = "id")
     Member member;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    MemberType type = MemberType.USER;
 }

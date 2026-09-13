@@ -80,7 +80,9 @@ public class DataInitializer implements CommandLineRunner {
 
         String encodedPassword = passwordEncoder.encode("1234");
 
-        memberRepository.save(new Member(null, MemberType.ADMIN, "admin", encodedPassword, "관리자", "admin@gmail.com", null, MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
+        Member admin = memberRepository.save(new Member(null, MemberType.ADMIN, "admin", encodedPassword, "관리자", "admin@gmail.com", null, MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
+        Member instructorMember1 = memberRepository.save(new Member(null, MemberType.USER, "instructor1", encodedPassword, "김강사", "instructor1@gmail.com", "010-1234-5678", MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
+        Member instructorMember2 = memberRepository.save(new Member(null, MemberType.USER, "instructor2", encodedPassword, "이강사", "instructor2@gmail.com", "010-9876-5432", MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
         Member user1 = memberRepository.save(new Member(null, MemberType.USER, "user", encodedPassword, "사용자", "user@gmail.com", "010-1111-2222", MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
         Member user2 = memberRepository.save(new Member(null, MemberType.USER, "user2", encodedPassword, "김회원", "user2@gmail.com", "010-3333-4444", MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
         Member user3 = memberRepository.save(new Member(null, MemberType.USER, "user3", encodedPassword, "이회원", "user3@gmail.com", "010-5555-6666", MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
@@ -95,11 +97,12 @@ public class DataInitializer implements CommandLineRunner {
                 .tel("02-1234-5678")
                 .build());
 
-        centerMemberRepository.save(CenterMember.builder().center(center).member(user1).build());
-        centerMemberRepository.save(CenterMember.builder().center(center).member(user2).build());
-        centerMemberRepository.save(CenterMember.builder().center(center).member(user3).build());
-        centerMemberRepository.save(CenterMember.builder().center(center).member(instructorAdmin1).build());
-        centerMemberRepository.save(CenterMember.builder().center(center).member(instructorAdmin2).build());
+        centerMemberRepository.save(CenterMember.builder().center(center).member(user1).type(MemberType.USER).build());
+        centerMemberRepository.save(CenterMember.builder().center(center).member(user2).type(MemberType.USER).build());
+        centerMemberRepository.save(CenterMember.builder().center(center).member(user3).type(MemberType.USER).build());
+        centerMemberRepository.save(CenterMember.builder().center(center).member(admin).type(MemberType.ADMIN).build());
+        centerMemberRepository.save(CenterMember.builder().center(center).member(instructorMember1).type(MemberType.ADMIN).build());
+        centerMemberRepository.save(CenterMember.builder().center(center).member(instructorMember2).type(MemberType.ADMIN).build());
 
         centerConfigRepository.save(CenterConfig.builder()
                 .confirmMode(ConfirmMode.AUTO)
@@ -111,23 +114,23 @@ public class DataInitializer implements CommandLineRunner {
                 .generationDaysOfWeek("월,화,수,목,금,토,일")
                 .roleLabelsJson("{\"OWNER\":\"총관리자\",\"MANAGER\":\"매니저\",\"INSTRUCTOR\":\"강사\"}")
                 .roleMenuPermissionsJson("{\"OWNER\":[\"center-list\",\"instructor-list\",\"instructor-attendance\",\"class-list\",\"booking-index\",\"booking-schedule\",\"ticket-list\",\"member-list\",\"permission-list\"],\"MANAGER\":[\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"ticket-list\",\"member-list\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}")
-                .roleMemberMappingsJson("{\"OWNER\":[],\"MANAGER\":[],\"INSTRUCTOR\":[]}")
+                .roleMemberMappingsJson("{\"OWNER\":[\"" + admin.getId() + "\"],\"MANAGER\":[],\"INSTRUCTOR\":[\"" + instructorMember1.getId() + "\",\"" + instructorMember2.getId() + "\"]}")
                 .center(center)
                 .build());
 
         Instructor instructor1 = instructorRepository.save(Instructor.builder()
-                .name("김강사")
+                .name(instructorMember1.getName())
                 .hp("010-1234-5678")
                 .info("필라테스 전문 강사, 경력 5년")
-                .member(instructorAdmin1)
+                .member(instructorMember1)
                 .center(center)
                 .build());
 
         Instructor instructor2 = instructorRepository.save(Instructor.builder()
-                .name("이강사")
+                .name(instructorMember2.getName())
                 .hp("010-9876-5432")
                 .info("요가 전문 강사, 경력 3년")
-                .member(instructorAdmin2)
+                .member(instructorMember2)
                 .center(center)
                 .build());
 

@@ -146,6 +146,7 @@ const MemberDetail = () => {
     const currentCenterMember = useMemo(() => (
         centerMembers.find((cm) => (
             cm.member?.id === memberId && (!centerId || cm.center?.id === centerId)
+            && cm.type === 'USER'
         ))
     ), [centerId, centerMembers, memberId]);
 
@@ -609,8 +610,8 @@ const MemberDetail = () => {
                                 </Tag>
                             </Descriptions.Item>
                             <Descriptions.Item label="회원구분">
-                                <Tag color={member?.type === 'ADMIN' ? 'purple' : 'blue'}>
-                                    {member?.type === 'ADMIN' ? '관리자' : '일반회원'}
+                                <Tag color={currentCenterMember?.type === 'ADMIN' ? 'purple' : 'blue'}>
+                                    {currentCenterMember?.type === 'ADMIN' ? '관리자' : '일반회원'}
                                 </Tag>
                             </Descriptions.Item>
                         </Descriptions>
