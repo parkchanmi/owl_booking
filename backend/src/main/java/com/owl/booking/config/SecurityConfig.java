@@ -25,7 +25,7 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/api/member/login", "/api/member/join", "/api/member/logout").permitAll()
+                    .requestMatchers("/api/member/login", "/api/member/join", "/api/member/logout", "/api/member/oauth/**").permitAll()
                     .requestMatchers("/", "/index.html", "/static/**", "/assets/**", "/favicon.ico").permitAll()
                     // 2. 모든 요청을 허용하도록 설정된 상태
                     .anyRequest().permitAll()

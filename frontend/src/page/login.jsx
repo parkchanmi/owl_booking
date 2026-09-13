@@ -1,13 +1,21 @@
 import React, { useState } from "react";
-import { Button, Checkbox, Form, Input, Card, Typography, Flex, message } from 'antd';
+import { Button, Checkbox, Divider, Form, Input, Card, Typography, Flex, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
 const { Title, Text, Link } = Typography;
 
+const KAKAO_CLIENT_ID = import.meta.env.VITE_KAKAO_CLIENT_ID;
+const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
+
 const Login = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+
+    const handleKakaoLogin = () => {
+        const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}&response_type=code`;
+        window.location.href = kakaoAuthUrl;
+    };
 
     const onFinish = async (values) => {
         setLoading(true);
@@ -73,7 +81,19 @@ const Login = () => {
                             로그인
                         </Button>
                     </Form.Item>
-                    
+
+                    <Divider plain style={{ margin: '8px 0 20px' }}>또는</Divider>
+
+                    <Form.Item>
+                        <Button
+                            block
+                            onClick={handleKakaoLogin}
+                            style={{ height: 40, fontSize: 16, backgroundColor: '#FEE500', borderColor: '#FEE500', color: 'rgba(0,0,0,0.85)' }}
+                        >
+                            카카오로 로그인
+                        </Button>
+                    </Form.Item>
+
                     <div style={{ textAlign: 'center' }}>
                         <Text type="secondary">계정이 없으신가요? </Text>
                         <Link onClick={() => navigate('/join')}>회원가입</Link>
