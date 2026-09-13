@@ -1,0 +1,212 @@
+/* ==========================================================================
+   OwlFit My Page Workspace Stylesheet
+   Design reference: uiux/mypage/code.html
+   ========================================================================== */
+
+@keyframes bell-ring {
+  0% { transform: rotate(0); }
+  15% { transform: rotate(14deg); }
+  30% { transform: rotate(-12deg); }
+  45% { transform: rotate(8deg); }
+  60% { transform: rotate(-6deg); }
+  75% { transform: rotate(3deg); }
+  100% { transform: rotate(0); }
+}
+
+.bell-hover:hover .bell-icon,
+.bell-hover:hover svg {
+  animation: bell-ring 0.8s ease-in-out both;
+  transform-origin: top center;
+  display: inline-block;
+}
+
+/* Page Background & Ambient Glows */
+.mypage-workspace-page {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  background-color: #FAF9FD;
+  color: #18181B;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 40px;
+}
+
+.font-num {
+  font-family: 'Plus Jakarta Sans', 'Pretendard', sans-serif;
+}
+
+.ambient-glow-tl {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle at 10% 4%, rgba(196, 181, 253, 0.28) 0%, rgba(243, 232, 255, 0.15) 35%, transparent 70%);
+}
+
+.ambient-glow-br {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle at 92% 92%, rgba(221, 214, 254, 0.3) 0%, rgba(237, 233, 254, 0.12) 40%, transparent 70%);
+}
+
+.clay-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 36px -8px rgba(112, 110, 180, 0.08), 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.modal-backdrop {
+  background-color: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Living Interaction 1: 대기 승격 Card Glow & CTA Pulse */
+@keyframes subtleAmbientGlow {
+  0%, 100% { box-shadow: 0 4px 20px -2px rgba(255, 107, 53, 0.08), 0 0 0 1px rgba(255, 107, 53, 0.2); }
+  50% { box-shadow: 0 8px 28px -2px rgba(255, 107, 53, 0.2), 0 0 0 1.5px rgba(255, 107, 53, 0.45); }
+}
+
+@keyframes ctaPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.waitlist-promoted-card {
+  animation: subtleAmbientGlow 3s ease-in-out infinite;
+}
+
+.cta-pulse-btn {
+  animation: ctaPulse 2.4s ease-in-out infinite;
+}
+
+/* Living Interaction 2: Timeline Sub-Cards Hover Lift-Up & Floating State */
+.timeline-subcard {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.timeline-subcard:hover {
+  transform: translateY(-2.5px);
+  box-shadow: 0 12px 30px -4px rgba(112, 110, 180, 0.1), 0 1px 2px rgba(91, 59, 168, 0.06);
+  border-color: rgba(139, 92, 246, 0.35);
+}
+
+.action-cancel-link {
+  color: #94A3B8;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.action-cancel-link:hover {
+  color: #E11D48;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Floating Carousel Nav Arrow buttons */
+.carousel-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 12px rgba(91, 59, 168, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.carousel-nav-btn:hover {
+  transform: translateY(-50%) scale(1.08);
+  background: #FFFFFF;
+  box-shadow: 0 6px 16px rgba(109, 40, 217, 0.25);
+}
+
+.pass-content-fade {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* Sub Tab active indicator transition */
+.sub-tab-btn {
+  position: relative;
+  padding-bottom: 12px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  border: none;
+  background: transparent;
+}
+
+.sub-tab-btn.active {
+  color: #6D28D9;
+  font-weight: 700;
+}
+
+.sub-tab-btn:not(.active) {
+  color: #71717A;
+  font-weight: 500;
+}
+
+.sub-tab-btn:not(.active):hover {
+  color: #18181B;
+}
+
+.sub-tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #6D28D9;
+  border-radius: 2px;
+  transform: scaleX(0);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sub-tab-btn.active::after {
+  transform: scaleX(1);
+}
+
+/* Custom Mini Calendar Cell */
+.calendar-date-cell {
+  width: 34px;
+  height: 38px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.calendar-date-cell:hover {
+  background-color: rgba(243, 232, 255, 0.6);
+}
+
+.calendar-date-cell.today {
+  background-color: #F5F3FF !important;
+}
+
+.calendar-date-cell.selected {
+  background-color: #EDE9FE !important;
+  font-weight: 700;
+}
+
