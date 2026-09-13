@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.owl.booking.model.entity.Member;
 import com.owl.booking.model.entity.type.MemberType;
 import com.owl.booking.common.service.MemberService;
+import com.owl.booking.common.service.KakaoOAuthService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -36,9 +37,11 @@ public class MemberController {
     private PasswordEncoder passwordEncoder; // SecurityConfig에서 등록한 빈(Bean)
 
     private final MemberService memberService;
+    private final KakaoOAuthService kakaoOAuthService;
 
-    public MemberController(MemberService memberService) {
+    public MemberController(MemberService memberService, KakaoOAuthService kakaoOAuthService) {
         this.memberService = memberService;
+        this.kakaoOAuthService = kakaoOAuthService;
     }
 
     @GetMapping("/info")
@@ -78,34 +81,44 @@ public class MemberController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Member member, HttpServletRequest request) {
-    
+
         // 1. DB에서 해당 아이디의 회원 정보 가져오기
         Member foundMember = memberService.findByLoginId(member.getLoginId());
 
         if (foundMember != null) {
             // 2. 비밀번호 비교: passwordEncoder.matches(평문, 암호문)
             if (passwordEncoder.matches(member.getPwd(), foundMember.getPwd())) {
-                
-                // 3. 일치하면 인증 토큰 생성 및 세션 저장 (이전 코드 활용)
-                String role = foundMember.getType() == MemberType.ADMIN ? "ROLE_ADMIN" : "ROLE_USER";
-                UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
-                        foundMember.getLoginId(), null, List.of(new SimpleGrantedAuthority(role)));
-
-                SecurityContext context = SecurityContextHolder.getContext();
-                context.setAuthentication(token);
-                HttpSession session = request.getSession(true);
-                session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-
-                Map<String, Object> loginResult = new HashMap<>();
-                loginResult.put("loginId", foundMember.getLoginId());
-                loginResult.put("name", foundMember.getName());
-                loginResult.put("type", foundMember.getType());
-                loginResult.put("typeCode", getMemberTypeCode(foundMember.getType()));
-
-                return ResponseEntity.ok(loginResult);
+                // 3. 일치하면 인증 토큰 생성 및 세션 저장
+                return ResponseEntity.ok(createSessionAndBuildResult(foundMember, request));
             }
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(false);
+    }
+
+    @PostMapping("/oauth/kakao")
+    public ResponseEntity<?> kakaoLogin(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        KakaoOAuthService.KakaoUserInfo userInfo = kakaoOAuthService.getUserInfo(body.get("code"));
+        Member member = memberService.findOrCreateByKakao(userInfo);
+
+        return ResponseEntity.ok(createSessionAndBuildResult(member, request));
+    }
+
+    private Map<String, Object> createSessionAndBuildResult(Member member, HttpServletRequest request) {
+        String role = member.getType() == MemberType.ADMIN ? "ROLE_ADMIN" : "ROLE_USER";
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                member.getLoginId(), null, List.of(new SimpleGrantedAuthority(role)));
+
+        SecurityContext context = SecurityContextHolder.getContext();
+        context.setAuthentication(token);
+        HttpSession session = request.getSession(true);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+
+        Map<String, Object> loginResult = new HashMap<>();
+        loginResult.put("loginId", member.getLoginId());
+        loginResult.put("name", member.getName());
+        loginResult.put("type", member.getType());
+        loginResult.put("typeCode", getMemberTypeCode(member.getType()));
+        return loginResult;
     }
 
     private int getMemberTypeCode(MemberType type) {
