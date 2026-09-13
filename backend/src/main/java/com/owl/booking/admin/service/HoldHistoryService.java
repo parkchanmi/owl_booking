@@ -10,13 +10,16 @@ import com.owl.booking.model.entity.Center;
 import com.owl.booking.model.entity.HoldHistory;
 import com.owl.booking.model.entity.MemberMembership;
 import com.owl.booking.model.entity.Membership;
+import com.owl.booking.model.entity.type.MemberStatus;
 import com.owl.booking.model.repository.HoldHistoryRepository;
 import com.owl.booking.model.repository.MemberMembershipRepository;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
@@ -43,11 +46,14 @@ public class HoldHistoryService {
     public HoldHistoryDto createHoldHistory(HoldHistoryCreateRequestDto request) {
         MemberMembership mm = memberMembershipRepository.findById(request.getMmId())
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "MemberMembership not found"));
+        validateNotWithdrawn(mm);
+        long hDay = calculateHDay(request.getStartDat(), request.getEndDat());
+        validateHoldPeriod(mm, request.getStartDat(), request.getEndDat(), hDay, null);
 
         HoldHistory holdHistory = HoldHistory.builder()
                 .startDat(request.getStartDat())
                 .endDat(request.getEndDat())
-                .hDay(calculateHDay(request.getStartDat(), request.getEndDat()))
+                .hDay(hDay)
                 .mm(mm)
                 .build();
 
@@ -57,10 +63,13 @@ public class HoldHistoryService {
     public HoldHistoryDto updateHoldHistory(String id, HoldHistoryUpdateRequestDto request) {
         HoldHistory holdHistory = holdHistoryRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "HoldHistory not found"));
+        validateNotWithdrawn(holdHistory.getMm());
+        long hDay = calculateHDay(request.getStartDat(), request.getEndDat());
+        validateHoldPeriod(holdHistory.getMm(), request.getStartDat(), request.getEndDat(), hDay, holdHistory.getId());
 
         holdHistory.setStartDat(request.getStartDat());
         holdHistory.setEndDat(request.getEndDat());
-        holdHistory.setHDay(calculateHDay(request.getStartDat(), request.getEndDat()));
+        holdHistory.setHDay(hDay);
 
         return toDto(holdHistoryRepository.save(holdHistory));
     }
@@ -72,8 +81,56 @@ public class HoldHistoryService {
         holdHistoryRepository.deleteById(id);
     }
 
-    private long calculateHDay(java.time.LocalDateTime startDat, java.time.LocalDateTime endDat) {
+    private long calculateHDay(LocalDateTime startDat, LocalDateTime endDat) {
+        if (startDat == null || endDat == null || endDat.toLocalDate().isBefore(startDat.toLocalDate())) {
+            throw new ResponseStatusException(BAD_REQUEST, "Invalid hold date range");
+        }
         return ChronoUnit.DAYS.between(startDat.toLocalDate(), endDat.toLocalDate()) + 1;
+    }
+
+    private void validateNotWithdrawn(MemberMembership mm) {
+        if (mm != null && mm.getMember() != null && mm.getMember().getStatus() == MemberStatus.WITHDRAWN) {
+            throw new ResponseStatusException(BAD_REQUEST, "Withdrawn member cannot be changed");
+        }
+    }
+
+    private void validateHoldPeriod(
+            MemberMembership mm,
+            LocalDateTime startDat,
+            LocalDateTime endDat,
+            long hDay,
+            String excludedId
+    ) {
+        if (startDat.toLocalDate().isBefore(mm.getStartDat().toLocalDate())
+                || endDat.toLocalDate().isAfter(mm.getEndDat().toLocalDate())) {
+            throw new ResponseStatusException(BAD_REQUEST, "Hold date range must be within membership date range");
+        }
+
+        boolean overlaps = holdHistoryRepository.findByMm_Id(mm.getId()).stream()
+                .filter(history -> excludedId == null || !excludedId.equals(history.getId()))
+                .anyMatch(history -> rangesOverlap(startDat, endDat, history.getStartDat(), history.getEndDat()));
+        if (overlaps) {
+            throw new ResponseStatusException(BAD_REQUEST, "Hold date range overlaps existing hold history");
+        }
+
+        long usedHoldDays = holdHistoryRepository.findByMm_Id(mm.getId()).stream()
+                .filter(history -> excludedId == null || !excludedId.equals(history.getId()))
+                .mapToLong(HoldHistory::getHDay)
+                .sum();
+        long availableHoldDays = mm.getHDay() == null ? 0L : mm.getHDay();
+        if (usedHoldDays + hDay > availableHoldDays) {
+            throw new ResponseStatusException(BAD_REQUEST, "Hold days exceed remaining hold days");
+        }
+    }
+
+    private boolean rangesOverlap(
+            LocalDateTime startA,
+            LocalDateTime endA,
+            LocalDateTime startB,
+            LocalDateTime endB
+    ) {
+        return !endA.toLocalDate().isBefore(startB.toLocalDate())
+                && !startA.toLocalDate().isAfter(endB.toLocalDate());
     }
 
     private HoldHistoryDto toDto(HoldHistory holdHistory) {

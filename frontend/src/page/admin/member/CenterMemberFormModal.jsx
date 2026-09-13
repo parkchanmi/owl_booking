@@ -72,7 +72,7 @@ const CenterMemberFormModal = ({ open, mode, centers, members, confirmLoading, o
                             placeholder="회원 선택"
                             showSearch
                             optionFilterProp="label"
-                            options={(members || []).map((m) => ({
+                            options={(members || []).filter((m) => m.status !== 'WITHDRAWN').map((m) => ({
                                 value: m.id,
                                 label: `${m.name} (${m.loginId})`,
                             }))}

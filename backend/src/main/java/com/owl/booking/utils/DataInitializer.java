@@ -13,6 +13,7 @@ import com.owl.booking.model.entity.RealProgram;
 import com.owl.booking.model.entity.Waitlist;
 import com.owl.booking.model.entity.type.ConfirmMode;
 import com.owl.booking.model.entity.type.MemberProvider;
+import com.owl.booking.model.entity.type.MemberStatus;
 import com.owl.booking.model.entity.type.MemberType;
 import com.owl.booking.model.entity.type.MembershipStatus;
 import com.owl.booking.model.repository.BookingRepository;
@@ -79,10 +80,10 @@ public class DataInitializer implements CommandLineRunner {
 
         String encodedPassword = passwordEncoder.encode("1234");
 
-        memberRepository.save(new Member(null, MemberType.ADMIN, "admin", encodedPassword, "관리자", "admin@gmail.com", null, MemberProvider.LOCAL, null));
-        Member user1 = memberRepository.save(new Member(null, MemberType.USER, "user", encodedPassword, "사용자", "user@gmail.com", "010-1111-2222", MemberProvider.LOCAL, null));
-        Member user2 = memberRepository.save(new Member(null, MemberType.USER, "user2", encodedPassword, "김회원", "user2@gmail.com", "010-3333-4444", MemberProvider.LOCAL, null));
-        Member user3 = memberRepository.save(new Member(null, MemberType.USER, "user3", encodedPassword, "이회원", "user3@gmail.com", "010-5555-6666", MemberProvider.LOCAL, null));
+        memberRepository.save(new Member(null, MemberType.ADMIN, "admin", encodedPassword, "관리자", "admin@gmail.com", null, MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
+        Member user1 = memberRepository.save(new Member(null, MemberType.USER, "user", encodedPassword, "사용자", "user@gmail.com", "010-1111-2222", MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
+        Member user2 = memberRepository.save(new Member(null, MemberType.USER, "user2", encodedPassword, "김회원", "user2@gmail.com", "010-3333-4444", MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
+        Member user3 = memberRepository.save(new Member(null, MemberType.USER, "user3", encodedPassword, "이회원", "user3@gmail.com", "010-5555-6666", MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
 
         Center center = centerRepository.save(Center.builder()
                 .name("OWL 센터")

@@ -1,6 +1,7 @@
 package com.owl.booking.model.dto;
 
 import com.owl.booking.model.entity.type.MemberType;
+import com.owl.booking.model.entity.type.MemberStatus;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -22,4 +23,6 @@ public class MemberDto {
     String email;
 
     String hp;
+
+    MemberStatus status;
 }

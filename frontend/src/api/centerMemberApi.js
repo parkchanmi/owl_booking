@@ -11,3 +11,5 @@ export const registerCenterMember = (payload) => axios.post(`${BASE_URL}/registe
 export const updateCenterMember = (id, centerMember) => axios.put(`${BASE_URL}/${id}`, centerMember).then((res) => res.data);
 
 export const deleteCenterMember = (id) => axios.delete(`${BASE_URL}/${id}`);
+
+export const withdrawCenterMember = (id) => axios.post(`${BASE_URL}/${id}/withdraw`).then((res) => res.data);

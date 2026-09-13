@@ -4,6 +4,7 @@ import com.owl.booking.admin.service.CenterMemberService;
 import com.owl.booking.model.dto.CenterMemberDto;
 import com.owl.booking.model.dto.CenterMemberRegisterRequestDto;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,5 +49,11 @@ public class CenterMemberController {
     public ResponseEntity<Void> deleteCenterMember(@PathVariable String id) {
         centerMemberService.deleteCenterMember(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/withdraw")
+    public Map<String, Object> withdrawCenterMember(@PathVariable String id) {
+        boolean deleted = centerMemberService.withdrawCenterMember(id);
+        return Map.of("deleted", deleted);
     }
 }
