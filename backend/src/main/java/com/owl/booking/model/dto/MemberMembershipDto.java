@@ -1,6 +1,7 @@
 package com.owl.booking.model.dto;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,6 +14,8 @@ public class MemberMembershipDto {
     LocalDateTime startDat;
 
     LocalDateTime endDat;
+    LocalDate paymentDate;
+    Long purchasePrice;
 
     Long uCnt;
 

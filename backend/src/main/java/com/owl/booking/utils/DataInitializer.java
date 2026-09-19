@@ -1,5 +1,6 @@
 package com.owl.booking.utils;
 
+import com.owl.booking.admin.service.MembershipRefundService;
 import com.owl.booking.model.entity.Booking;
 import com.owl.booking.model.entity.Center;
 import com.owl.booking.model.entity.CenterConfig;
@@ -47,6 +48,7 @@ public class DataInitializer implements CommandLineRunner {
     private final ProgramRepository programRepository;
     private final MembershipRepository membershipRepository;
     private final MemberMembershipRepository memberMembershipRepository;
+    private final MembershipRefundService membershipRefundService;
     private final RealProgramRepository realProgramRepository;
     private final CenterConfigRepository centerConfigRepository;
     private final CenterMemberRepository centerMemberRepository;
@@ -56,6 +58,7 @@ public class DataInitializer implements CommandLineRunner {
     public DataInitializer(MemberRepository memberRepository, CenterRepository centerRepository,
             InstructorRepository instructorRepository, ProgramRepository programRepository,
             MembershipRepository membershipRepository, MemberMembershipRepository memberMembershipRepository,
+            MembershipRefundService membershipRefundService,
             RealProgramRepository realProgramRepository, CenterConfigRepository centerConfigRepository,
             CenterMemberRepository centerMemberRepository, BookingRepository bookingRepository,
             WaitlistRepository waitlistRepository) {
@@ -65,6 +68,7 @@ public class DataInitializer implements CommandLineRunner {
         this.programRepository = programRepository;
         this.membershipRepository = membershipRepository;
         this.memberMembershipRepository = memberMembershipRepository;
+        this.membershipRefundService = membershipRefundService;
         this.realProgramRepository = realProgramRepository;
         this.centerConfigRepository = centerConfigRepository;
         this.centerMemberRepository = centerMemberRepository;
@@ -113,7 +117,7 @@ public class DataInitializer implements CommandLineRunner {
                 .autoGenerateEnabled(true)
                 .generationDaysOfWeek("월,화,수,목,금,토,일")
                 .roleLabelsJson("{\"OWNER\":\"총관리자\",\"MANAGER\":\"매니저\",\"INSTRUCTOR\":\"강사\"}")
-                .roleMenuPermissionsJson("{\"OWNER\":[\"center-list\",\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"member-list\",\"permission-list\"],\"MANAGER\":[\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"member-list\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}")
+                .roleMenuPermissionsJson("{\"OWNER\":[\"center-list\",\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"sales\",\"member-list\",\"permission-list\"],\"MANAGER\":[\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"sales\",\"member-list\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}")
                 .roleMemberMappingsJson("{\"OWNER\":[\"" + admin.getId() + "\"],\"MANAGER\":[],\"INSTRUCTOR\":[\"" + instructorMember1.getId() + "\",\"" + instructorMember2.getId() + "\"]}")
                 .center(center)
                 .build());
@@ -156,7 +160,7 @@ public class DataInitializer implements CommandLineRunner {
                 .instructor(instructor2)
                 .build());
 
-        membershipRepository.save(Membership.builder()
+        Membership membership30 = membershipRepository.save(Membership.builder()
                 .name("1개월 기본권")
                 .useCnt(30L)
                 .durationDays(30L)
@@ -241,11 +245,26 @@ public class DataInitializer implements CommandLineRunner {
         memberMembershipRepository.save(MemberMembership.builder()
                 .startDat(now)
                 .endDat(now.plusDays(membership10.getDurationDays()))
+                .paymentDate(now.toLocalDate())
                 .uCnt(membership10.getUseCnt())
+                .purchasePrice(membership10.getPrice())
                 .hDay(membership10.getHoldDays())
                 .center(center)
                 .member(user1)
                 .membership(membership10)
                 .build());
+
+        MemberMembership refundedMembership = memberMembershipRepository.save(MemberMembership.builder()
+                .startDat(now.minusDays(10))
+                .endDat(now.plusDays(20))
+                .paymentDate(now.minusDays(10).toLocalDate())
+                .uCnt(membership30.getUseCnt())
+                .purchasePrice(membership30.getPrice())
+                .hDay(membership30.getHoldDays())
+                .center(center)
+                .member(user1)
+                .membership(membership30)
+                .build());
+        membershipRefundService.refund(refundedMembership.getId());
     }
 }

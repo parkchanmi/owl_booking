@@ -33,6 +33,12 @@ public class CenterConfig {
     @Column(name = "generation_start_dat", nullable = true)
     private Long generationStartDat;
 
+    @Column(name = "refund_count_threshold_percent")
+    private Integer refundCountThresholdPercent;
+
+    @Column(name = "refund_period_threshold_percent")
+    private Integer refundPeriodThresholdPercent;
+
     // 스케줄 자동생성 스케줄러 사용 여부 (센터 단일 설정)
     @Builder.Default
     @Column(name = "auto_generate_enabled", nullable = false)

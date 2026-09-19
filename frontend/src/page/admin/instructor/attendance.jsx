@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Card, ConfigProvider, Descriptions, Empty, Flex, Input, Select, Space, Spin, Table, Tag, message } from 'antd';
+import { Button, Card, ConfigProvider, Descriptions, Empty, Input, Select, Space, Spin, Table, Tag, message } from 'antd';
 import koKR from 'antd/locale/ko_KR';
 import { AuditOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import axios from 'axios';
 import DashboardLayout from '../../../components/DashboardLayout';
+import AdminPageToolbar from '../../../components/AdminPageToolbar';
 import { fetchInstructors } from '../../../api/instructorApi';
 
 dayjs.locale('ko');
@@ -15,6 +16,27 @@ const ATTENDANCE_URL = '/api/attendance';
 const DAY_MAP = ['일', '월', '화', '수', '목', '금', '토'];
 const YEAR_OPTIONS = Array.from({ length: 5 }, (_, index) => dayjs().year() - 1 + index);
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => index + 1);
+
+const AttendanceCell = ({ value, onToggle }) => (
+    <Space size={4}>
+        <Button
+            size="small"
+            type={value === 'PRESENT' ? 'primary' : 'default'}
+            style={value === 'PRESENT' ? { background: '#52c41a', borderColor: '#52c41a' } : {}}
+            onClick={() => onToggle('PRESENT')}
+        >
+            출석
+        </Button>
+        <Button
+            size="small"
+            type={value === 'ABSENT' ? 'primary' : 'default'}
+            danger={value === 'ABSENT'}
+            onClick={() => onToggle('ABSENT')}
+        >
+            결석
+        </Button>
+    </Space>
+);
 
 const InstructorAttendance = () => {
     const [memberInfo, setMemberInfo] = useState(null);
@@ -138,30 +160,6 @@ const InstructorAttendance = () => {
         }
     };
 
-    const AttendanceCell = ({ memberId }) => {
-        const value = attendanceMap[memberId];
-        return (
-            <Space size={4}>
-                <Button
-                    size="small"
-                    type={value === 'PRESENT' ? 'primary' : 'default'}
-                    style={value === 'PRESENT' ? { background: '#52c41a', borderColor: '#52c41a' } : {}}
-                    onClick={() => toggleAttendance(memberId, 'PRESENT')}
-                >
-                    출석
-                </Button>
-                <Button
-                    size="small"
-                    type={value === 'ABSENT' ? 'primary' : 'default'}
-                    danger={value === 'ABSENT'}
-                    onClick={() => toggleAttendance(memberId, 'ABSENT')}
-                >
-                    결석
-                </Button>
-            </Space>
-        );
-    };
-
     const scheduleColumns = [
         { title: '센터', key: 'center', width: 130, render: (_, row) => row.center?.name ?? '-' },
         { title: '수업명', key: 'programName', render: (_, row) => row.program?.name ?? '-' },
@@ -196,39 +194,43 @@ const InstructorAttendance = () => {
             title: '출결',
             width: 150,
             align: 'center',
-            render: (_, row) => <AttendanceCell memberId={row.memberId} />,
+            render: (_, row) => (
+                <AttendanceCell
+                    value={attendanceMap[row.memberId]}
+                    onToggle={(status) => toggleAttendance(row.memberId, status)}
+                />
+            ),
         },
     ];
 
     return (
         <DashboardLayout title="강사용 출결">
             <ConfigProvider locale={koKR}>
-                <Spin spinning={loading}>
-                    <Card bordered={false} style={{ marginBottom: 16 }}>
-                        <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
-                            <Space wrap>
-                                <Select value={listYear} onChange={setListYear} style={{ width: 100 }} allowClear placeholder="연도 전체">
-                                    {YEAR_OPTIONS.map((year) => <Select.Option key={year} value={year}>{year}년</Select.Option>)}
-                                </Select>
-                                <Select value={listMonth} onChange={setListMonth} style={{ width: 100 }} allowClear placeholder="월 전체">
-                                    {MONTH_OPTIONS.map((month) => <Select.Option key={month} value={month}>{month}월</Select.Option>)}
-                                </Select>
-                                <Input
-                                    placeholder="센터명, 수업명 검색"
-                                    prefix={<SearchOutlined />}
-                                    value={keyword}
-                                    onChange={(event) => setKeyword(event.target.value)}
-                                    style={{ width: 240 }}
-                                    allowClear
-                                />
-                            </Space>
-                            <Button icon={<ReloadOutlined />} onClick={loadData}>
-                                새로고침
-                            </Button>
-                        </Flex>
-                    </Card>
+                <AdminPageToolbar
+                    icon={<AuditOutlined />}
+                    title="강사용 출결"
+                    description="담당 수업 스케줄을 조회하고 예약 회원의 출결을 처리합니다."
+                >
+                        <Select value={listYear} onChange={setListYear} style={{ width: 100 }} allowClear placeholder="연도 전체">
+                            {YEAR_OPTIONS.map((year) => <Select.Option key={year} value={year}>{year}년</Select.Option>)}
+                        </Select>
+                        <Select value={listMonth} onChange={setListMonth} style={{ width: 100 }} allowClear placeholder="월 전체">
+                            {MONTH_OPTIONS.map((month) => <Select.Option key={month} value={month}>{month}월</Select.Option>)}
+                        </Select>
+                        <Input
+                            placeholder="센터명, 수업명 검색"
+                            prefix={<SearchOutlined />}
+                            value={keyword}
+                            onChange={(event) => setKeyword(event.target.value)}
+                            style={{ width: 240 }}
+                            allowClear
+                        />
+                        <Button icon={<ReloadOutlined />} onClick={loadData}>
+                            새로고침
+                        </Button>
+                </AdminPageToolbar>
 
-                    {matchedInstructorIds.length === 0 ? (
+                {!loading && matchedInstructorIds.length === 0 ? (
                         <Empty
                             description="로그인 사용자와 일치하는 강사 정보가 없습니다."
                             style={{ padding: '48px 0' }}
@@ -239,6 +241,7 @@ const InstructorAttendance = () => {
                                 rowKey="id"
                                 columns={scheduleColumns}
                                 dataSource={filteredSchedules}
+                                loading={loading}
                                 pagination={{ pageSize: 15, showSizeChanger: false }}
                                 locale={{ emptyText: '해당 수업 스케줄이 없습니다.' }}
                             />
@@ -277,7 +280,6 @@ const InstructorAttendance = () => {
                             </Spin>
                         </Card>
                     )}
-                </Spin>
             </ConfigProvider>
         </DashboardLayout>
     );

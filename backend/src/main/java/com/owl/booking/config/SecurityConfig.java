@@ -27,6 +27,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/api/member/login", "/api/member/join", "/api/member/logout", "/api/member/oauth/**").permitAll()
                     .requestMatchers("/", "/index.html", "/static/**", "/assets/**", "/favicon.ico").permitAll()
+                    .requestMatchers("/api/admin/sales", "/api/admin/membermemberships/refunds",
+                            "/api/admin/membermemberships/*/refund", "/api/admin/membermemberships/*/refund-preview")
+                    .hasRole("ADMIN")
                     // 2. 모든 요청을 허용하도록 설정된 상태
                     .anyRequest().permitAll()
                 );

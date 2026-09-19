@@ -112,7 +112,7 @@ const TicketList = () => {
     const columns = [
         { title: '이용권명', dataIndex: 'name', key: 'name' },
         { title: '센터', key: 'center', render: (_, r) => r.center?.name ?? '-' },
-        { title: '이용 횟수', dataIndex: 'useCnt', key: 'useCnt', align: 'center', render: (v) => (v != null ? `${v}회` : '-') },
+        { title: '이용 횟수', dataIndex: 'useCnt', key: 'useCnt', align: 'center', render: (v) => (v != null ? `${v}회` : '무제한') },
         { title: '이용 기간', dataIndex: 'durationDays', key: 'durationDays', align: 'center', render: (v) => (v != null ? `${v}일` : '-') },
         { title: '보류 가능 일수', dataIndex: 'holdDays', key: 'holdDays', align: 'center', render: (v) => (v != null ? `${v}일` : '-') },
         { title: '가격', dataIndex: 'price', key: 'price', align: 'right', render: (v) => (v != null ? `${v.toLocaleString()}원` : '-') },
@@ -154,7 +154,7 @@ const TicketList = () => {
             <AdminPageToolbar
                 icon={<IdcardOutlined />}
                 title="이용권 관리"
-                description="센터별 이용권의 횟수, 기간, 가격과 상태를 관리합니다."
+                description="센터별 이용권의 이용 기준, 기간, 가격과 상태를 관리합니다."
             >
                 <Select
                     style={{ width: 200 }}

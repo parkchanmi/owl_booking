@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, Select, Typography, Space } from 'antd';
+import { Modal, Form, Input, InputNumber, Segmented, Select, Typography, Space } from 'antd';
 import { IdcardOutlined } from '@ant-design/icons';
 
 const { Title } = Typography;
@@ -14,6 +14,7 @@ const STATUS_OPTIONS = [
 const TicketFormModal = ({ open, mode, initialValues, selectedCenterId, centers, confirmLoading, onCancel, onSubmit }) => {
     const [form] = Form.useForm();
     const isEdit = mode === 'edit';
+    const usageType = Form.useWatch('usageType', form);
 
     useEffect(() => {
         if (open) {
@@ -21,6 +22,7 @@ const TicketFormModal = ({ open, mode, initialValues, selectedCenterId, centers,
                 initialValues
                     ? {
                         name: initialValues.name,
+                        usageType: initialValues.useCnt == null ? 'UNLIMITED' : 'LIMITED',
                         useCnt: initialValues.useCnt,
                         durationDays: initialValues.durationDays,
                         holdDays: initialValues.holdDays,
@@ -28,7 +30,7 @@ const TicketFormModal = ({ open, mode, initialValues, selectedCenterId, centers,
                         status: initialValues.status,
                         centerId: initialValues.center?.id,
                     }
-                    : { status: 'ACTIVE', centerId: selectedCenterId }
+                    : { usageType: 'LIMITED', status: 'ACTIVE', centerId: selectedCenterId }
             );
         } else {
             form.resetFields();
@@ -37,8 +39,12 @@ const TicketFormModal = ({ open, mode, initialValues, selectedCenterId, centers,
 
     const handleOk = () => {
         form.validateFields().then((values) => {
-            const { centerId, ...rest } = values;
-            onSubmit({ ...rest, center: centerId ? { id: centerId } : null });
+            const { centerId, usageType: selectedUsageType, ...rest } = values;
+            onSubmit({
+                ...rest,
+                useCnt: selectedUsageType === 'UNLIMITED' ? null : values.useCnt,
+                center: centerId ? { id: centerId } : null,
+            });
         });
     };
 
@@ -76,9 +82,15 @@ const TicketFormModal = ({ open, mode, initialValues, selectedCenterId, centers,
                     <Input placeholder="이용권명 입력" />
                 </Form.Item>
 
-                <Form.Item name="useCnt" label="이용 횟수" style={itemStyle} rules={[{ required: true, message: '이용 횟수를 입력해주세요.' }]}>
-                    <InputNumber min={1} addonAfter="회" style={{ width: '100%' }} />
+                <Form.Item name="usageType" label="이용 기준" style={itemStyle}>
+                    <Segmented block options={[{ label: '횟수 제한', value: 'LIMITED' }, { label: '기간 내 무제한', value: 'UNLIMITED' }]} />
                 </Form.Item>
+
+                {usageType !== 'UNLIMITED' && (
+                    <Form.Item name="useCnt" label="이용 횟수" style={itemStyle} rules={[{ required: true, message: '이용 횟수를 입력해주세요.' }]}>
+                        <InputNumber min={1} precision={0} addonAfter="회" style={{ width: '100%' }} />
+                    </Form.Item>
+                )}
 
                 <Form.Item name="durationDays" label="이용 기간" style={itemStyle} rules={[{ required: true, message: '이용 기간을 입력해주세요.' }]}>
                     <InputNumber min={1} addonAfter="일" style={{ width: '100%' }} />
@@ -89,7 +101,14 @@ const TicketFormModal = ({ open, mode, initialValues, selectedCenterId, centers,
                 </Form.Item>
 
                 <Form.Item name="price" label="가격" style={itemStyle} rules={[{ required: true, message: '가격을 입력해주세요.' }]}>
-                    <InputNumber min={0} addonAfter="원" style={{ width: '100%' }} />
+                    <InputNumber
+                        min={0}
+                        precision={0}
+                        formatter={(value) => value == null ? '' : String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                        parser={(value) => value?.replace(/,/g, '') ?? ''}
+                        addonAfter="원"
+                        style={{ width: '100%' }}
+                    />
                 </Form.Item>
 
                 <Form.Item name="status" label="상태" style={itemStyle} rules={[{ required: true, message: '상태를 선택해주세요.' }]}>
