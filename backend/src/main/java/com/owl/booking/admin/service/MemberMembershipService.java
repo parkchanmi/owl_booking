@@ -60,12 +60,16 @@ public class MemberMembershipService {
 
     public List<MemberMembershipDto> getByMemberId(String memberId) {
         return memberMembershipRepository.findByMember_Id(memberId).stream()
+                .filter(mm -> mm.getRefundedAt() == null)
                 .map(this::toDto)
                 .toList();
     }
 
     // 이용권 등록: 이용권 템플릿(Membership) 기준으로 종료일/이용가능횟수/보류가능일수를 계산하여 발급
     public MemberMembershipDto createMemberMembership(MemberMembershipCreateRequestDto request) {
+        if (request.getPaymentDate() == null) {
+            throw new ResponseStatusException(BAD_REQUEST, "Payment date is required");
+        }
         Member member = memberRepository.findById(request.getMemberId())
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Member not found"));
         validateNotWithdrawn(member);
@@ -85,7 +89,9 @@ public class MemberMembershipService {
         MemberMembership mm = MemberMembership.builder()
                 .startDat(startDat)
                 .endDat(endDat)
+                .paymentDate(request.getPaymentDate())
                 .uCnt(membership.getUseCnt())
+                .purchasePrice(membership.getPrice())
                 .hDay(membership.getHoldDays())
                 .center(center)
                 .member(member)
@@ -99,6 +105,9 @@ public class MemberMembershipService {
     public MemberMembershipDto updateEditableFields(String id, MemberMembershipUpdateRequestDto request) {
         MemberMembership mm = memberMembershipRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "MemberMembership not found"));
+        if (mm.getRefundedAt() != null) {
+            throw new ResponseStatusException(BAD_REQUEST, "Refunded membership cannot be edited");
+        }
         validateNotWithdrawn(mm.getMember());
         validateDateRange(request.getStartDat(), request.getEndDat());
         validateNoMembershipOverlap(mm.getMember().getId(), request.getStartDat(), request.getEndDat(), mm.getId());
@@ -131,6 +140,7 @@ public class MemberMembershipService {
     ) {
         boolean overlaps = memberMembershipRepository.findByMember_Id(memberId).stream()
                 .filter(mm -> excludedId == null || !excludedId.equals(mm.getId()))
+                .filter(mm -> mm.getRefundedAt() == null)
                 .anyMatch(mm -> rangesOverlap(startDat, endDat, mm.getStartDat(), mm.getEndDat()));
         if (overlaps) {
             throw new ResponseStatusException(BAD_REQUEST, "Membership date range overlaps existing membership");
@@ -152,6 +162,8 @@ public class MemberMembershipService {
         dto.setId(mm.getId());
         dto.setStartDat(mm.getStartDat());
         dto.setEndDat(mm.getEndDat());
+        dto.setPaymentDate(mm.getPaymentDate() != null ? mm.getPaymentDate() : mm.getStartDat().toLocalDate());
+        dto.setPurchasePrice(mm.getPurchasePrice() != null ? mm.getPurchasePrice() : mm.getMembership().getPrice());
         dto.setUCnt(mm.getUCnt());
         dto.setHDay(mm.getHDay());
         dto.setActualUsedCount(calculateUsedCount(mm));
@@ -162,7 +174,7 @@ public class MemberMembershipService {
         return dto;
     }
 
-    private long calculateUsedCount(MemberMembership mm) {
+    long calculateUsedCount(MemberMembership mm) {
         if (mm.getMember() == null || mm.getCenter() == null) {
             return 0L;
         }

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
     BellOutlined,
+    BarChartOutlined,
     CalendarOutlined,
     IdcardOutlined,
     LogoutOutlined,
@@ -15,6 +16,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { fetchCenterConfig, fetchCenterConfigs } from '../api/centerConfigApi';
 import { fetchCenters } from '../api/centerApi';
+import { parseMenuPermissions } from '../utils/menuPermissions';
 
 const { Header, Content, Sider } = Layout;
 const { Title, Text } = Typography;
@@ -45,8 +47,8 @@ const menuItems = [
         icon: <CalendarOutlined />,
         label: '예약 관리',
         children: [
-            { key: 'booking-index', label: '예약 설정', path: '/admin/booking' },
-            { key: 'booking-schedule', label: '수업 스케줄 관리', path: '/admin/booking/schedule' },
+            { key: 'booking-index', label: '센터별 환경설정', path: '/admin/setting' },
+            { key: 'booking-schedule', label: '수업 스케줄 관리', path: '/admin/booking' },
             { key: 'instructor-attendance', label: '강사용 출결', path: '/admin/instructor/attendance' },
         ],
     },
@@ -55,6 +57,12 @@ const menuItems = [
         icon: <IdcardOutlined />,
         label: '이용권 관리',
         path: '/admin/ticket/list',
+    },
+    {
+        key: 'sales',
+        icon: <BarChartOutlined />,
+        label: '매출 관리',
+        path: '/admin/sales',
     },
     {
         key: 'member-list',
@@ -213,7 +221,7 @@ const DashboardLayoutFrame = ({ title = 'Dashboard', userLabel = '-', children }
 
                 (Array.isArray(configs) ? configs : []).forEach((config) => {
                     const mappings = parseJson(config.roleMemberMappingsJson, {});
-                    const permissions = parseJson(config.roleMenuPermissionsJson, {});
+                    const permissions = parseMenuPermissions(config.roleMenuPermissionsJson);
 
                     Object.entries(mappings).forEach(([roleKey, memberIds]) => {
                         const ids = Array.isArray(memberIds) ? memberIds : [];

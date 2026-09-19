@@ -1,6 +1,7 @@
 package com.owl.booking.model.entity;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,11 +25,20 @@ public class MemberMembership {
     @Column(name = "end_dat", nullable = false)
     private LocalDateTime endDat;
 
+    @Column(name = "payment_date")
+    private LocalDate paymentDate;
+
     @Column(name = "u_cnt", nullable = true)
     private Long uCnt;
 
     @Column(name = "h_day", nullable = true)
     private Long hDay;
+
+    @Column(name = "purchase_price")
+    private Long purchasePrice;
+
+    @Column(name = "refunded_at")
+    private LocalDateTime refundedAt;
 
     @ManyToOne
     @JoinColumn(name="center_id", referencedColumnName = "id")

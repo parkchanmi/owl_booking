@@ -16,13 +16,13 @@ import {
     Table,
     Tag,
 } from 'antd';
-import { DeleteOutlined, EditOutlined, LeftOutlined, PauseCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, LeftOutlined, PauseCircleOutlined, PlusOutlined, RollbackOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import DashboardLayout from '../../../components/DashboardLayout';
 import { fetchCenterMembers } from '../../../api/centerMemberApi';
 import { fetchMemberById, updateMemberContact } from '../../../api/memberApi';
-import { fetchMemberMemberships, updateMemberMembership, createMemberMembership } from '../../../api/memberMembershipApi';
+import { fetchMemberMemberships, updateMemberMembership, createMemberMembership, fetchRefundPreview, refundMemberMembership, fetchMembershipRefunds } from '../../../api/memberMembershipApi';
 import { fetchHoldHistories, createHoldHistory, updateHoldHistory, deleteHoldHistory } from '../../../api/holdHistoryApi';
 import { fetchMemberships } from '../../../api/membershipApi';
 import { fetchMemberBookingAttendanceHistories } from '../../../api/attendanceApi';
@@ -76,6 +76,7 @@ const MemberDetail = () => {
     const [member, setMember] = useState(null);
     const [centerMembers, setCenterMembers] = useState([]);
     const [memberships, setMemberships] = useState([]);
+    const [refundHistories, setRefundHistories] = useState([]);
     const [holdHistories, setHoldHistories] = useState([]);
     const [attendanceHistories, setAttendanceHistories] = useState([]);
     const [membershipOptions, setMembershipOptions] = useState([]);
@@ -87,6 +88,10 @@ const MemberDetail = () => {
     const [editingMembership, setEditingMembership] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [form] = Form.useForm();
+    const [refundTarget, setRefundTarget] = useState(null);
+    const [refundPreview, setRefundPreview] = useState(null);
+    const [refundLoading, setRefundLoading] = useState(false);
+    const [refundSubmitting, setRefundSubmitting] = useState(false);
 
     const [registerModalOpen, setRegisterModalOpen] = useState(false);
     const [registerSubmitting, setRegisterSubmitting] = useState(false);
@@ -109,9 +114,10 @@ const MemberDetail = () => {
     const loadDetail = async () => {
         setLoading(true);
         try {
-            const [memberData, membershipData, holdHistoryData, centerMemberData, membershipOptionData, attendanceHistoryData] = await Promise.all([
+            const [memberData, membershipData, refundHistoryData, holdHistoryData, centerMemberData, membershipOptionData, attendanceHistoryData] = await Promise.all([
                 fetchMemberById(memberId),
                 fetchMemberMemberships(memberId),
+                fetchMembershipRefunds(memberId),
                 fetchHoldHistories(memberId),
                 fetchCenterMembers(),
                 fetchMemberships(),
@@ -119,6 +125,7 @@ const MemberDetail = () => {
             ]);
             setMember(memberData);
             setMemberships(Array.isArray(membershipData) ? membershipData : []);
+            setRefundHistories(Array.isArray(refundHistoryData) ? refundHistoryData : []);
             setHoldHistories(Array.isArray(holdHistoryData) ? holdHistoryData : []);
             setCenterMembers(Array.isArray(centerMemberData) ? centerMemberData : []);
             setMembershipOptions(Array.isArray(membershipOptionData) ? membershipOptionData : []);
@@ -229,6 +236,37 @@ const MemberDetail = () => {
         setEditModalOpen(true);
     };
 
+    const openRefundModal = async (record) => {
+        setRefundTarget(record);
+        setRefundPreview(null);
+        setRefundLoading(true);
+        try {
+            setRefundPreview(await fetchRefundPreview(record.id));
+        } catch {
+            message.error('환불 정보를 불러오지 못했습니다.');
+            setRefundTarget(null);
+        } finally {
+            setRefundLoading(false);
+        }
+    };
+
+    const handleRefund = async () => {
+        if (!refundTarget) return;
+        setRefundSubmitting(true);
+        try {
+            await refundMemberMembership(refundTarget.id);
+            message.success('이용권이 환불 처리되었습니다.');
+            setRefundTarget(null);
+            setRefundPreview(null);
+            await loadDetail();
+        } catch (error) {
+            message.error(error.response?.data?.message ?? '환불 처리 중 오류가 발생했습니다.');
+            setRefundPreview(await fetchRefundPreview(refundTarget.id).catch(() => null));
+        } finally {
+            setRefundSubmitting(false);
+        }
+    };
+
     const closeEditModal = () => {
         setEditModalOpen(false);
         setEditingMembership(null);
@@ -264,6 +302,7 @@ const MemberDetail = () => {
 
     const openRegisterModal = () => {
         registerForm.resetFields();
+        registerForm.setFieldsValue({ paymentDate: dayjs() });
         setRegisterModalOpen(true);
     };
 
@@ -291,6 +330,7 @@ const MemberDetail = () => {
                 centerId: currentCenterId,
                 membershipId: values.membershipId,
                 startDat: formatDateTime(values.startDat),
+                paymentDate: values.paymentDate.format('YYYY-MM-DD'),
             });
             message.success('이용권이 등록되었습니다.');
             closeRegisterModal();
@@ -411,6 +451,7 @@ const MemberDetail = () => {
     const membershipColumns = [
         { title: '이용권명', key: 'name', render: (_, r) => r.membership?.name ?? '-' },
         { title: '센터', key: 'center', render: (_, r) => r.center?.name ?? '-' },
+        { title: '결제일', key: 'paymentDate', align: 'center', render: (_, r) => r.paymentDate ?? '-' },
         {
             title: '시작일',
             key: 'startDat',
@@ -427,7 +468,7 @@ const MemberDetail = () => {
             title: '잔여횟수',
             key: 'uCnt',
             align: 'center',
-            render: (_, r) => (r.uCnt != null ? `${r.uCnt - (r.actualUsedCount ?? 0)}회` : '-'),
+            render: (_, r) => (r.uCnt != null ? `${r.uCnt - (r.actualUsedCount ?? 0)}회` : '무제한'),
         },
         {
             title: '잔여 보류일자',
@@ -449,12 +490,29 @@ const MemberDetail = () => {
             title: '관리',
             key: 'actions',
             align: 'center',
-            width: 70,
+            width: 130,
             render: (_, record) => (
-                <Button size="small" icon={<EditOutlined />} disabled={isWithdrawn} onClick={() => openEditModal(record)} />
+                <Space size={4}>
+                    <Button size="small" icon={<EditOutlined />} title="관리" disabled={isWithdrawn} onClick={() => openEditModal(record)} />
+                    <Button size="small" icon={<RollbackOutlined />} title="환불" onClick={() => openRefundModal(record)} />
+                </Space>
             ),
         },
     ].map((col) => ({ ...col, onHeaderCell: () => ({ style: { textAlign: 'center' } }) }));
+
+    const refundHistoryColumns = [
+        { title: '이용권명', dataIndex: 'membershipName', key: 'membershipName' },
+        { title: '센터', dataIndex: 'centerId', key: 'centerId', render: (id) => centerMembers.find((item) => item.center?.id === id)?.center?.name ?? id },
+        { title: '시작일', dataIndex: 'startDat', key: 'startDat', render: (value) => dayjs(value).format('YYYY-MM-DD') },
+        { title: '종료일', dataIndex: 'endDat', key: 'endDat', render: (value) => dayjs(value).format('YYYY-MM-DD') },
+        { title: '환불일', dataIndex: 'refundedAt', key: 'refundedAt', render: (value) => dayjs(value).format('YYYY-MM-DD HH:mm') },
+        { title: '전체 기간', dataIndex: 'totalDays', key: 'totalDays', render: (value) => `${value}일` },
+        { title: '잔여 기간', dataIndex: 'remainingDays', key: 'remainingDays', render: (value) => `${value}일` },
+        { title: '전체 횟수', dataIndex: 'totalCount', key: 'totalCount', render: (value) => value == null ? '무제한' : `${value}회` },
+        { title: '잔여 횟수', dataIndex: 'remainingCount', key: 'remainingCount', render: (value) => value == null ? '무제한' : `${value}회` },
+        { title: '전체 금액', dataIndex: 'totalAmount', key: 'totalAmount', render: (value) => `${value.toLocaleString()}원` },
+        { title: '환불 금액', dataIndex: 'refundAmount', key: 'refundAmount', render: (value) => `${value.toLocaleString()}원` },
+    ];
 
     const holdHistoryColumns = [
         { title: '이용권명', key: 'name', render: (_, r) => r.mm?.membership?.name ?? '-' },
@@ -645,6 +703,17 @@ const MemberDetail = () => {
                     />
                 </Card>
 
+                <Card title="환불 이용권 이력" bordered={false} style={{ marginTop: 16 }}>
+                    <Table
+                        rowKey="id"
+                        columns={refundHistoryColumns}
+                        dataSource={refundHistories}
+                        pagination={{ pageSize: 10 }}
+                        scroll={{ x: 1400 }}
+                        locale={{ emptyText: '환불 이력이 없습니다.' }}
+                    />
+                </Card>
+
                 <Card title="보류 처리 이력" bordered={false} style={{ marginTop: 16 }}>
                     <Table
                         rowKey="id"
@@ -665,6 +734,53 @@ const MemberDetail = () => {
                     />
                 </Card>
             </Spin>
+
+            <Modal
+                title="이용권 환불"
+                open={Boolean(refundTarget)}
+                onCancel={() => { setRefundTarget(null); setRefundPreview(null); }}
+                footer={[
+                    <Button key="cancel" onClick={() => { setRefundTarget(null); setRefundPreview(null); }}>닫기</Button>,
+                    <Popconfirm
+                        key="refund"
+                        title="환불 진행하시겠습니까?"
+                        okText="환불"
+                        cancelText="취소"
+                        onConfirm={handleRefund}
+                    >
+                        <Button danger type="primary" loading={refundSubmitting} disabled={!refundPreview?.refundable}>환불</Button>
+                    </Popconfirm>,
+                ]}
+            >
+                <Spin spinning={refundLoading}>
+                    {refundPreview && (
+                        <>
+                            <Descriptions column={1} bordered size="small">
+                                <Descriptions.Item label="이용권">{refundPreview.membershipName}</Descriptions.Item>
+                                <Descriptions.Item label="횟수">
+                                    {refundPreview.totalCount == null
+                                        ? '무제한'
+                                        : `${refundPreview.remainingCount} / ${refundPreview.totalCount}회 (${refundPreview.remainingCountPercent.toFixed(1)}%)`}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="기간">
+                                    {refundPreview.remainingDays} / {refundPreview.totalDays}일 ({refundPreview.remainingPeriodPercent.toFixed(1)}%)
+                                </Descriptions.Item>
+                                <Descriptions.Item label="환불 기준">
+                                    {refundPreview.totalCount == null ? '' : `잔여 횟수 ${refundPreview.countThresholdPercent}% 초과, `}
+                                    잔여 기간 {refundPreview.periodThresholdPercent}% 초과
+                                </Descriptions.Item>
+                                <Descriptions.Item label="전체 금액">{refundPreview.totalAmount.toLocaleString()}원</Descriptions.Item>
+                                <Descriptions.Item label="환불 금액">{refundPreview.refundAmount.toLocaleString()}원</Descriptions.Item>
+                            </Descriptions>
+                            <div style={{ marginTop: 12 }}>
+                                <Tag color={refundPreview.refundable ? 'green' : 'red'}>
+                                    {refundPreview.refundable ? '환불 가능' : '환불 기준 미충족'}
+                                </Tag>
+                            </div>
+                        </>
+                    )}
+                </Spin>
+            </Modal>
 
             <Modal
                 title="이용권 정보 수정"
@@ -697,9 +813,15 @@ const MemberDetail = () => {
                     >
                         <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
                     </Form.Item>
-                    <Form.Item name="uCnt" label="이용가능횟수">
-                        <InputNumber min={0} addonAfter="회" style={{ width: '100%' }} />
-                    </Form.Item>
+                    {editingMembership?.uCnt == null ? (
+                        <Form.Item label="이용가능횟수">
+                            <Input value="무제한" disabled />
+                        </Form.Item>
+                    ) : (
+                        <Form.Item name="uCnt" label="이용가능횟수">
+                            <InputNumber min={0} precision={0} addonAfter="회" style={{ width: '100%' }} />
+                        </Form.Item>
+                    )}
                     <Form.Item name="hDay" label="보류가능일자">
                         <InputNumber min={0} addonAfter="일" style={{ width: '100%' }} />
                     </Form.Item>
@@ -726,11 +848,14 @@ const MemberDetail = () => {
                                 <Select.Option key={m.id} value={m.id} label={m.name}>
                                     <div>{m.name}</div>
                                     <div style={{ fontSize: 11, color: '#999' }}>
-                                        {m.useCnt}회 / {m.durationDays}일{m.holdDays != null ? ` / 보류 ${m.holdDays}일` : ''}
+                                        {m.useCnt != null ? `${m.useCnt}회` : '무제한'} / {m.durationDays}일{m.holdDays != null ? ` / 보류 ${m.holdDays}일` : ''}
                                     </div>
                                 </Select.Option>
                             ))}
                         </Select>
+                    </Form.Item>
+                    <Form.Item name="paymentDate" label="결제일" rules={[{ required: true, message: '결제일을 선택해주세요.' }]}>
+                        <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
                     </Form.Item>
                     <Form.Item name="startDat" label="시작일" rules={[{ required: true, message: '시작일을 선택해주세요.' }]}>
                         <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />

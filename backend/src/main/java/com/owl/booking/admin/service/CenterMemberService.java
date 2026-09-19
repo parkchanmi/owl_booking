@@ -230,14 +230,16 @@ public class CenterMemberService {
         LocalDate today = LocalDate.now();
 
         boolean onHold = holdHistoryRepository.findByMm_Member_Id(member.getId()).stream()
-                .anyMatch(hold -> !today.isBefore(hold.getStartDat().toLocalDate())
+                .anyMatch(hold -> hold.getMm().getRefundedAt() == null
+                        && !today.isBefore(hold.getStartDat().toLocalDate())
                         && !today.isAfter(hold.getEndDat().toLocalDate()));
         if (onHold) {
             return "정지중";
         }
 
         boolean active = memberMembershipRepository.findByMember_Id(member.getId()).stream()
-                .anyMatch(memberMembership -> !today.isBefore(memberMembership.getStartDat().toLocalDate())
+                .anyMatch(memberMembership -> memberMembership.getRefundedAt() == null
+                        && !today.isBefore(memberMembership.getStartDat().toLocalDate())
                         && !today.isAfter(memberMembership.getEndDat().toLocalDate()));
 
         return active ? "이용중" : "미등록";

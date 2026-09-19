@@ -10,6 +10,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
@@ -30,6 +31,7 @@ public class MembershipService {
     }
 
     public MembershipDto createMembership(MembershipDto membershipDto) {
+        validateUsage(membershipDto);
         Membership membership = Membership.builder()
                 .name(membershipDto.getName())
                 .useCnt(membershipDto.getUseCnt())
@@ -44,6 +46,7 @@ public class MembershipService {
     }
 
     public MembershipDto updateMembership(String id, MembershipDto membershipDto) {
+        validateUsage(membershipDto);
         Membership membership = membershipRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Membership not found"));
 
@@ -64,6 +67,15 @@ public class MembershipService {
         }
 
         membershipRepository.deleteById(id);
+    }
+
+    private void validateUsage(MembershipDto membershipDto) {
+        if (membershipDto.getUseCnt() != null && membershipDto.getUseCnt() < 1) {
+            throw new ResponseStatusException(BAD_REQUEST, "Use count must be positive or null for unlimited");
+        }
+        if (membershipDto.getDurationDays() == null || membershipDto.getDurationDays() < 1) {
+            throw new ResponseStatusException(BAD_REQUEST, "Duration days must be positive");
+        }
     }
 
     private Center findCenter(CenterDto centerDto) {

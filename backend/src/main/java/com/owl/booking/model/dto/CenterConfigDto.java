@@ -20,6 +20,8 @@ public class CenterConfigDto {
     private Long bookingOpenDays;
 
     private Long generationStartDat;
+    private Integer refundCountThresholdPercent;
+    private Integer refundPeriodThresholdPercent;
 
     private Boolean autoGenerateEnabled;
 

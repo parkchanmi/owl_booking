@@ -89,6 +89,9 @@ public class HoldHistoryService {
     }
 
     private void validateNotWithdrawn(MemberMembership mm) {
+        if (mm != null && mm.getRefundedAt() != null) {
+            throw new ResponseStatusException(BAD_REQUEST, "Refunded membership cannot be changed");
+        }
         if (mm != null && mm.getMember() != null && mm.getMember().getStatus() == MemberStatus.WITHDRAWN) {
             throw new ResponseStatusException(BAD_REQUEST, "Withdrawn member cannot be changed");
         }

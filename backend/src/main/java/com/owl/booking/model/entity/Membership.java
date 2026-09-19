@@ -21,7 +21,7 @@ public class Membership {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(name = "use_cnt", nullable = false)
+    @Column(name = "use_cnt", nullable = true)
     private Long useCnt;
 
     @Column(name = "duration_days", nullable = false)

@@ -10,6 +10,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
@@ -18,7 +19,7 @@ public class CenterConfigService {
     private static final String DEFAULT_ROLE_LABELS_JSON =
             "{\"OWNER\":\"총관리자\",\"MANAGER\":\"매니저\",\"INSTRUCTOR\":\"강사\"}";
     private static final String DEFAULT_ROLE_MENU_PERMISSIONS_JSON =
-            "{\"OWNER\":[\"center-list\",\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"member-list\",\"permission-list\"],\"MANAGER\":[\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"member-list\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}";
+            "{\"OWNER\":[\"center-list\",\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"sales\",\"member-list\",\"permission-list\"],\"MANAGER\":[\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"sales\",\"member-list\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}";
     private static final String DEFAULT_ROLE_MEMBER_MAPPINGS_JSON =
             "{\"OWNER\":[],\"MANAGER\":[],\"INSTRUCTOR\":[]}";
 
@@ -51,6 +52,14 @@ public class CenterConfigService {
         if (dto.getCancleDeadlineMinutes() != null) config.setCancleDeadlineMinutes(dto.getCancleDeadlineMinutes());
         if (dto.getBookingOpenDays() != null) config.setBookingOpenDays(dto.getBookingOpenDays());
         if (dto.getGenerationStartDat() != null) config.setGenerationStartDat(dto.getGenerationStartDat());
+        if (dto.getRefundCountThresholdPercent() != null) {
+            validatePercent(dto.getRefundCountThresholdPercent());
+            config.setRefundCountThresholdPercent(dto.getRefundCountThresholdPercent());
+        }
+        if (dto.getRefundPeriodThresholdPercent() != null) {
+            validatePercent(dto.getRefundPeriodThresholdPercent());
+            config.setRefundPeriodThresholdPercent(dto.getRefundPeriodThresholdPercent());
+        }
         if (dto.getAutoGenerateEnabled() != null) config.setAutoGenerateEnabled(dto.getAutoGenerateEnabled());
         if (dto.getGenerationDaysOfWeek() != null) config.setGenerationDaysOfWeek(dto.getGenerationDaysOfWeek());
         if (dto.getRoleLabelsJson() != null) config.setRoleLabelsJson(dto.getRoleLabelsJson());
@@ -67,6 +76,8 @@ public class CenterConfigService {
                 .confirmMode(ConfirmMode.AUTO)
                 .bookingOpenDays(7L)
                 .generationStartDat(14L)
+                .refundCountThresholdPercent(0)
+                .refundPeriodThresholdPercent(0)
                 .autoGenerateEnabled(true)
                 .generationDaysOfWeek("월,화,수,목,금,토,일")
                 .roleLabelsJson(DEFAULT_ROLE_LABELS_JSON)
@@ -85,11 +96,19 @@ public class CenterConfigService {
         dto.setCancleDeadlineMinutes(config.getCancleDeadlineMinutes());
         dto.setBookingOpenDays(config.getBookingOpenDays());
         dto.setGenerationStartDat(config.getGenerationStartDat());
+        dto.setRefundCountThresholdPercent(config.getRefundCountThresholdPercent() != null ? config.getRefundCountThresholdPercent() : 0);
+        dto.setRefundPeriodThresholdPercent(config.getRefundPeriodThresholdPercent() != null ? config.getRefundPeriodThresholdPercent() : 0);
         dto.setAutoGenerateEnabled(config.getAutoGenerateEnabled());
         dto.setGenerationDaysOfWeek(config.getGenerationDaysOfWeek());
         dto.setRoleLabelsJson(config.getRoleLabelsJson() != null ? config.getRoleLabelsJson() : DEFAULT_ROLE_LABELS_JSON);
         dto.setRoleMenuPermissionsJson(config.getRoleMenuPermissionsJson() != null ? config.getRoleMenuPermissionsJson() : DEFAULT_ROLE_MENU_PERMISSIONS_JSON);
         dto.setRoleMemberMappingsJson(config.getRoleMemberMappingsJson() != null ? config.getRoleMemberMappingsJson() : DEFAULT_ROLE_MEMBER_MAPPINGS_JSON);
         return dto;
+    }
+
+    private void validatePercent(int percent) {
+        if (percent < 0 || percent > 100) {
+            throw new ResponseStatusException(BAD_REQUEST, "Refund threshold percent must be between 0 and 100");
+        }
     }
 }

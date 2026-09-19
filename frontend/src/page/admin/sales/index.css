@@ -1,0 +1,107 @@
+.sales-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid #edf0f2;
+    border-bottom: 1px solid #edf0f2;
+    margin-bottom: 20px;
+}
+
+.sales-summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 20px 24px;
+    min-width: 0;
+}
+
+.sales-summary-item + .sales-summary-item {
+    border-left: 1px solid #edf0f2;
+}
+
+.sales-summary-item span,
+.sales-summary-item small,
+.sales-result-count {
+    color: #69747c;
+    font-size: 12px;
+}
+
+.sales-summary-item small {
+    overflow-wrap: anywhere;
+}
+
+.sales-summary-item strong {
+    color: #1f2933;
+    font-size: 24px;
+    font-weight: 650;
+    line-height: 1.3;
+}
+
+.sales-summary-item strong.sales-refund-amount,
+.sales-refund-amount {
+    color: #c2453d;
+}
+
+.sales-summary-item strong.sales-net-amount {
+    color: #24755c;
+}
+
+.sales-payment-amount {
+    color: #24755c;
+}
+
+.sales-list-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.sales-search {
+    width: 250px;
+}
+
+.sales-date-range {
+    width: 260px;
+}
+
+.sales-member-link {
+    padding: 0;
+    height: auto;
+}
+
+.sales-table .ant-card-body {
+    padding: 0;
+}
+
+@media (max-width: 768px) {
+    .sales-summary-item {
+        padding: 16px 12px;
+    }
+
+    .sales-summary-item strong {
+        font-size: 17px;
+    }
+
+    .sales-list-controls {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .sales-list-controls .ant-space,
+    .sales-search,
+    .sales-date-range {
+        width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .sales-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-summary-item + .sales-summary-item {
+        border-left: 0;
+        border-top: 1px solid #edf0f2;
+    }
+}
