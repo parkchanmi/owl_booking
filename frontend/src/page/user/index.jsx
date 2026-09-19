@@ -27,6 +27,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
+import Header, { INITIAL_NOTIFICATIONS } from '../../components/common/Header';
 import './userBooking.css';
 
 const { Text } = Typography;
@@ -102,13 +103,6 @@ const CLASS_SCHEDULES = [
     },
 ];
 
-// 알림 목록 목업 데이터
-const INITIAL_NOTIFICATIONS = [
-    { id: 1, title: '[긴급] 금일 스튜디오A 시설 점검 안내', content: '오늘 14:00~15:00 스튜디오A 냉난방 장치 긴급 점검이 진행됩니다.', time: '15분 전', urgent: true },
-    { id: 2, title: '수업 예약 확정 안내', content: '오늘 09:00 [Power Vinyasa Yoga] 수업 예약이 정상적으로 확정되었습니다.', time: '1시간 전', urgent: false },
-    { id: 3, title: '[공지] 9월 정기 휴관일 일정 안내', content: '매월 마지막 주 일요일은 전 지점 정기 시설 소독의 날입니다.', time: '어제', urgent: false },
-];
-
 const KOREAN_DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
 const User = () => {
@@ -122,10 +116,13 @@ const User = () => {
         [selectedCenterId]
     );
 
-    // 날짜 상태
-    const [currentMonthDate, setCurrentMonthDate] = useState(dayjs());
-    const [selectedDay, setSelectedDay] = useState(dayjs().date()); // 기본 오늘 일자
-    const [viewMode, setViewMode] = useState('month'); // 'week' | 'month'
+    // 기준 오늘 날짜 (2026년 9월 11일 금요일)
+    const BASE_TODAY = useMemo(() => dayjs('2026-09-11'), []);
+
+    // 날짜 상태: 선택된 전체 일자 및 월간 탐색 기준
+    const [selectedDate, setSelectedDate] = useState(dayjs('2026-09-11'));
+    const [currentMonthDate, setCurrentMonthDate] = useState(dayjs('2026-09-01'));
+    const [viewMode, setViewMode] = useState('week'); // 'week' | 'month'
 
     // 선택된 수업 및 슬롯 상태 (realProgramId, programDate, startTime 등)
     const [selectedProgram, setSelectedProgram] = useState(null);
@@ -141,15 +138,13 @@ const User = () => {
     const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
     const [policyModalOpen, setPolicyModalOpen] = useState(false);
 
-    // 선택된 전체 일자 계산
-    const currentSelectedDate = useMemo(() => {
-        return currentMonthDate.date(selectedDay);
-    }, [currentMonthDate, selectedDay]);
+    // 선택된 전체 일자 (기존 코드 호환)
+    const currentSelectedDate = selectedDate;
 
     const formattedDateString = useMemo(() => {
-        const dayKo = KOREAN_DAY_NAMES[currentSelectedDate.day()];
-        return `${currentSelectedDate.format('YYYY.MM.DD')} (${dayKo})`;
-    }, [currentSelectedDate]);
+        const dayKo = KOREAN_DAY_NAMES[selectedDate.day()];
+        return `${selectedDate.format('YYYY.MM.DD')} (${dayKo})`;
+    }, [selectedDate]);
 
     // 슬롯 선택 핸들러
     const handleSelectSlot = (program, slot) => {
@@ -250,22 +245,28 @@ const User = () => {
         }
     };
 
-    // 주간 날짜 리스트 생성 (월~일)
+    // 주어진 날짜가 속한 주의 월요일 구하기 (한 주의 시작: 월요일=0일차, 일요일=6일차)
+    const getMondayOfWeek = (date) => {
+        const diffToMonday = (date.day() + 6) % 7;
+        return date.subtract(diffToMonday, 'day').startOf('day');
+    };
+
+    // 주간 날짜 리스트 생성 (반드시 월요일 시작, 일요일은 한 주의 마지막 날로 고정)
     const weekDaysList = useMemo(() => {
-        const startOfWeek = currentSelectedDate.startOf('week').add(1, 'day'); // 월요일 시작
+        const startMonday = getMondayOfWeek(selectedDate);
         return Array.from({ length: 7 }).map((_, i) => {
-            const date = startOfWeek.add(i, 'day');
+            const date = startMonday.add(i, 'day');
             return {
                 dayName: KOREAN_DAY_NAMES[date.day()],
                 dayNum: date.date(),
                 dateObj: date,
-                isToday: date.isSame(dayjs(), 'day'),
-                isSelected: date.date() === selectedDay && date.month() === currentMonthDate.month(),
+                isToday: date.isSame(BASE_TODAY, 'day'),
+                isSelected: date.isSame(selectedDate, 'day'),
                 isSat: date.day() === 6,
                 isSun: date.day() === 0,
             };
         });
-    }, [currentSelectedDate, selectedDay, currentMonthDate]);
+    }, [selectedDate, BASE_TODAY]);
 
     // 월간 달력 날짜 그리드 생성
     const monthCalendarGrid = useMemo(() => {
@@ -278,10 +279,12 @@ const User = () => {
         const prevMonth = currentMonthDate.subtract(1, 'month');
         const prevDaysInMonth = prevMonth.daysInMonth();
         for (let i = startDayOfWeek - 1; i >= 0; i--) {
+            const d = prevDaysInMonth - i;
             cells.push({
-                num: prevDaysInMonth - i,
+                num: d,
                 isMuted: true,
                 key: `prev-${i}`,
+                dateObj: prevMonth.date(d),
             });
         }
 
@@ -291,146 +294,77 @@ const User = () => {
             cells.push({
                 num: d,
                 isMuted: false,
-                isSelected: d === selectedDay,
-                isToday: date.isSame(dayjs(), 'day'),
+                isSelected: date.isSame(selectedDate, 'day'),
+                isToday: date.isSame(BASE_TODAY, 'day'),
                 isSat: date.day() === 6,
                 isSun: date.day() === 0,
                 key: `cur-${d}`,
+                dateObj: date,
             });
         }
 
         // 다음 달 패딩 셀 (총 35 or 42 셀 채우기)
         const remainder = 7 - (cells.length % 7);
         if (remainder < 7) {
+            const nextMonth = currentMonthDate.add(1, 'month');
             for (let n = 1; n <= remainder; n++) {
                 cells.push({
                     num: n,
                     isMuted: true,
                     key: `next-${n}`,
+                    dateObj: nextMonth.date(n),
                 });
             }
         }
         return cells;
-    }, [currentMonthDate, selectedDay]);
+    }, [currentMonthDate, selectedDate, BASE_TODAY]);
 
-    // 지점 변경 드롭다운 메뉴
-    const branchMenuItems = {
-        items: [
-            {
-                key: 'header',
-                label: (
-                    <div style={{ padding: '4px 8px', borderBottom: '1px solid #F4F1FC', fontWeight: 700, color: '#5B3BA8', fontSize: 12 }}>
-                        대표 지점 선택
-                    </div>
-                ),
-                disabled: true,
-            },
-            ...CENTERS.map((c) => ({
-                key: `center-${c.id}`,
-                label: (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', fontSize: 13, fontWeight: c.id === selectedCenterId ? 700 : 500 }}>
-                        <span>{c.name}</span>
-                        {c.id === selectedCenterId && <CheckOutlined style={{ color: '#5B3BA8' }} />}
-                    </div>
-                ),
-                onClick: () => {
-                    setSelectedCenterId(c.id);
-                    resetBookingState();
-                    message.success(`${c.name}이 선택되었습니다.`);
-                },
-            })),
-            {
-                type: 'divider',
-            },
-            {
-                key: 'info',
-                label: (
-                    <div style={{ padding: '8px', background: '#FAF9FD', borderRadius: 12, border: '1px solid #EDE9FE', fontSize: 12, color: '#374151' }}>
-                        <div style={{ fontWeight: 700, color: '#5B3BA8', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <EnvironmentOutlined /> {selectedCenter.name}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#6B7280', lineHeight: 1.5 }}>
-                            📍 {selectedCenter.addr}<br />
-                            🕒 {selectedCenter.hours}<br />
-                            📞 {selectedCenter.phone}<br />
-                            ✨ {selectedCenter.facility}
-                        </div>
-                    </div>
-                ),
-            },
-        ],
+    // 전주/다음 주 또는 이전 달/다음 달 이동 핸들러
+    const handlePrev = () => {
+        if (viewMode === 'week') {
+            setSelectedDate((prev) => {
+                const next = prev.subtract(1, 'week');
+                setCurrentMonthDate(next.startOf('month'));
+                return next;
+            });
+        } else {
+            setCurrentMonthDate((prev) => prev.subtract(1, 'month'));
+        }
     };
 
-    // 알림 드롭다운 메뉴
-    const notiMenuItems = {
-        items: [
-            {
-                key: 'header',
-                label: (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', borderBottom: '1px solid #F4F1FC' }}>
-                        <span style={{ fontWeight: 700, fontSize: 13 }}>알림 및 공지사항</span>
-                        <Button type="link" size="small" onClick={() => setNotifications([])} style={{ fontSize: 11, padding: 0 }}>
-                            모두 지우기
-                        </Button>
-                    </div>
-                ),
-                disabled: true,
-            },
-            ...notifications.map((n) => ({
-                key: `noti-${n.id}`,
-                label: (
-                    <div style={{ padding: '8px', maxWidth: 280, whiteSpace: 'normal' }}>
-                        <div style={{ fontWeight: 700, fontSize: 12, color: n.urgent ? '#EA580C' : '#5B3BA8' }}>
-                            {n.title}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#4B5563', marginTop: 3 }}>
-                            {n.content}
-                        </div>
-                        <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 4 }}>
-                            {n.time}
-                        </div>
-                    </div>
-                ),
-            })),
-        ],
+    const handleNext = () => {
+        if (viewMode === 'week') {
+            setSelectedDate((prev) => {
+                const next = prev.add(1, 'week');
+                setCurrentMonthDate(next.startOf('month'));
+                return next;
+            });
+        } else {
+            setCurrentMonthDate((prev) => prev.add(1, 'month'));
+        }
     };
 
-    // 프로필 드롭다운 메뉴
-    const profileMenuItems = {
-        items: [
-            {
-                key: 'user-info',
-                label: (
-                    <div style={{ padding: '6px 8px', borderBottom: '1px solid #F4F1FC' }}>
-                        <div style={{ fontWeight: 800, fontSize: 13, color: '#18181B' }}>Kim Ji-woo</div>
-                        <Badge count="일반 회원" style={{ backgroundColor: '#EDE9FE', color: '#5B3BA8', fontSize: 11, marginTop: 4 }} />
-                    </div>
-                ),
-                disabled: true,
-            },
-            {
-                key: 'mypage',
-                icon: <UserOutlined />,
-                label: '내 예약 내역',
-                onClick: () => navigate('/user/mypage/history'),
-            },
-            {
-                key: 'settings',
-                icon: <SettingOutlined />,
-                label: '계정 설정',
-                onClick: () => message.info('계정 설정 페이지 준비 중입니다.'),
-            },
-            {
-                type: 'divider',
-            },
-            {
-                key: 'logout',
-                icon: <LogoutOutlined style={{ color: '#EF4444' }} />,
-                label: <span style={{ color: '#EF4444', fontWeight: 600 }}>로그아웃</span>,
-                onClick: handleLogout,
-            },
-        ],
+    // 오늘 버튼 클릭 시 기준일(2026.09.11)로 복귀
+    const handleGoToToday = () => {
+        setSelectedDate(BASE_TODAY);
+        setCurrentMonthDate(BASE_TODAY.startOf('month'));
     };
+
+    // 주간/월간 뷰 모드 전환
+    const handleSwitchViewMode = (mode) => {
+        setViewMode(mode);
+        if (mode === 'month') {
+            setCurrentMonthDate(selectedDate.startOf('month'));
+        }
+    };
+
+    // 상단 캘린더 타이틀
+    const calendarTitle = useMemo(() => {
+        if (viewMode === 'week') {
+            return selectedDate.format('YYYY년 M월');
+        }
+        return currentMonthDate.format('YYYY년 M월');
+    }, [viewMode, selectedDate, currentMonthDate]);
 
     return (
         <div className="booking-workspace-page">
@@ -438,69 +372,20 @@ const User = () => {
             <div className="ambient-blob-1" />
             <div className="ambient-blob-2" />
 
-            {/* Top Floating Glass Navigation Bar (1140px Max-Width) */}
-            <header className="booking-top-nav">
-                <div className="booking-top-nav__inner">
-                    {/* Left: Brand Emblem + Integrated Micro-Nav Pills */}
-                    <div className="booking-brand-group" onClick={() => navigate('/user/booking')}>
-                        <div className="booking-brand-logo">
-                            <svg fill="none" height="18" stroke="white" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" viewBox="0 0 24 24" width="18">
-                                <path d="M5 4v10a4 4 0 0 0 4 4h6a4 4 0 0 0 4-4V4" />
-                                <line x1="5" x2="19" y1="11" y2="11" />
-                                <circle cx="9" cy="7.5" fill="white" r="1.5" />
-                                <circle cx="15" cy="7.5" fill="white" r="1.5" />
-                                <path d="M12 9.5v2" />
-                            </svg>
-                        </div>
-                        <div className="booking-brand-title">
-                            OwlFit
-                            <span className="booking-brand-dot" />
-                        </div>
-                        <div style={{ width: 1, height: 16, backgroundColor: '#E2E8F0', margin: '0 8px' }} />
-                        <nav className="booking-nav-links">
-                            <button type="button" className="booking-nav-link is-active">
-                                수업 예약
-                            </button>
-                            <button
-                                type="button"
-                                className="booking-nav-link"
-                                onClick={() => navigate('/user/mypage/history')}
-                            >
-                                마이페이지
-                            </button>
-                        </nav>
-                    </div>
-
-                    {/* Right: Branch Selector, Notification, Profile */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        {/* 1. Branch Selector Pill */}
-                        <Dropdown menu={branchMenuItems} trigger={['click']} placement="bottomRight">
-                            <button type="button" className="nav-pill-btn">
-                                <EnvironmentOutlined style={{ color: '#8B5CF6', fontSize: 13 }} />
-                                <span>{selectedCenter.name}</span>
-                                <DownOutlined style={{ fontSize: 10, color: '#94A3B8' }} />
-                            </button>
-                        </Dropdown>
-
-                        {/* 2. Notification Bell */}
-                        <Dropdown menu={notiMenuItems} trigger={['click']} placement="bottomRight">
-                            <button type="button" className="nav-icon-circle-btn" aria-label="알림">
-                                <BellOutlined style={{ fontSize: 16 }} />
-                                {notifications.length > 0 && <span className="nav-noti-dot" />}
-                            </button>
-                        </Dropdown>
-
-                        {/* 3. Member Profile Pill */}
-                        <Dropdown menu={profileMenuItems} trigger={['click']} placement="bottomRight">
-                            <button type="button" className="nav-pill-btn" style={{ paddingLeft: 6 }}>
-                                <div className="profile-avatar-pill">JW</div>
-                                <span>Kim Ji-woo</span>
-                                <DownOutlined style={{ fontSize: 10, color: '#94A3B8' }} />
-                            </button>
-                        </Dropdown>
-                    </div>
-                </div>
-            </header>
+            {/* Floating Pill-Style Header */}
+            <Header
+                selectedCenterId={selectedCenterId}
+                onSelectCenterId={(id) => {
+                    setSelectedCenterId(id);
+                    resetBookingState();
+                    form.setFieldsValue({ centerId: id });
+                }}
+                notifications={notifications}
+                onClearNotifications={() => setNotifications([])}
+                onDeleteNotification={(id) => setNotifications((prev) => prev.filter((n) => n.id !== id))}
+                onLogout={handleLogout}
+                onNavigateSettings={() => navigate('/mypage?tab=settings')}
+            />
 
             {/* Main Content Workspace (65% : 35% Split Grid) */}
             <main className="booking-workspace-main">
@@ -522,17 +407,19 @@ const User = () => {
                                     <button
                                         type="button"
                                         className="calendar-nav-arrow"
-                                        onClick={() => setCurrentMonthDate((prev) => prev.subtract(1, 'month'))}
+                                        onClick={handlePrev}
+                                        aria-label="이전"
                                     >
                                         <LeftOutlined />
                                     </button>
                                     <h2 className="calendar-month-title">
-                                        {currentMonthDate.format('YYYY년 M월')}
+                                        {calendarTitle}
                                     </h2>
                                     <button
                                         type="button"
                                         className="calendar-nav-arrow"
-                                        onClick={() => setCurrentMonthDate((prev) => prev.add(1, 'month'))}
+                                        onClick={handleNext}
+                                        aria-label="다음"
                                     >
                                         <RightOutlined />
                                     </button>
@@ -542,10 +429,7 @@ const User = () => {
                                     <button
                                         type="button"
                                         className="btn-today-pill"
-                                        onClick={() => {
-                                            setCurrentMonthDate(dayjs());
-                                            setSelectedDay(dayjs().date());
-                                        }}
+                                        onClick={handleGoToToday}
                                     >
                                         <span className="today-dot" />
                                         오늘
@@ -555,14 +439,14 @@ const User = () => {
                                         <button
                                             type="button"
                                             className={`view-segment-btn ${viewMode === 'week' ? 'is-active' : ''}`}
-                                            onClick={() => setViewMode('week')}
+                                            onClick={() => handleSwitchViewMode('week')}
                                         >
                                             주간
                                         </button>
                                         <button
                                             type="button"
                                             className={`view-segment-btn ${viewMode === 'month' ? 'is-active' : ''}`}
-                                            onClick={() => setViewMode('month')}
+                                            onClick={() => handleSwitchViewMode('month')}
                                         >
                                             월간
                                         </button>
@@ -575,14 +459,20 @@ const User = () => {
                                 <div className="weekly-strip-grid">
                                     {weekDaysList.map((day) => (
                                         <button
-                                            key={`week-${day.dayNum}`}
+                                            key={`week-${day.dateObj.format('YYYY-MM-DD')}`}
                                             type="button"
                                             className={`week-day-pill ${day.isSelected ? 'is-selected' : ''} ${day.isToday ? 'is-today' : ''} ${day.isSat ? 'is-sat' : ''} ${day.isSun ? 'is-sun' : ''}`}
-                                            onClick={() => setSelectedDay(day.dayNum)}
+                                            onClick={() => setSelectedDate(day.dateObj)}
                                         >
                                             <span className="week-day-name">{day.dayName}</span>
                                             <div className="week-day-num">{day.dayNum}</div>
-                                            {day.isToday && <span className="today-indicator-dot" />}
+                                            <div className="today-indicator-slot">
+                                                {day.isToday ? (
+                                                    <span className="today-indicator-dot" />
+                                                ) : (
+                                                    <span className="today-indicator-dot" style={{ opacity: 0 }} />
+                                                )}
+                                            </div>
                                         </button>
                                     ))}
                                 </div>
@@ -605,7 +495,7 @@ const User = () => {
                                                 type="button"
                                                 disabled={cell.isMuted}
                                                 className={`month-day-cell ${cell.isMuted ? 'is-muted' : ''} ${cell.isSelected ? 'is-selected' : ''} ${cell.isSat ? 'is-sat' : ''} ${cell.isSun ? 'is-sun' : ''}`}
-                                                onClick={() => !cell.isMuted && setSelectedDay(cell.num)}
+                                                onClick={() => !cell.isMuted && setSelectedDate(cell.dateObj)}
                                             >
                                                 {cell.num}
                                             </button>
@@ -619,7 +509,7 @@ const User = () => {
                         <div className="class-schedule-section">
                             <div className="class-section-header">
                                 <span className="class-section-header__bar">|</span>
-                                <span>{currentMonthDate.format('M월')} {selectedDay}일 ({KOREAN_DAY_NAMES[currentSelectedDate.day()]}) 클래스</span>
+                                <span>{selectedDate.format('M월 D일')} ({KOREAN_DAY_NAMES[selectedDate.day()]}) 클래스</span>
                             </div>
 
                             <div className="class-cards-list">
@@ -670,7 +560,7 @@ const User = () => {
                                                         key={slot.id}
                                                         type="button"
                                                         disabled={isClosed}
-                                                        className={`fixed-slot-btn ${
+                                                        className={`fixed-slot-btn min-w-[84px] w-[84px] h-[44px] flex flex-col items-center justify-center ${
                                                             isClosed
                                                                 ? 'is-disabled'
                                                                 : isWait
@@ -682,7 +572,7 @@ const User = () => {
                                                         onClick={() => handleSelectSlot(prog, slot)}
                                                     >
                                                         <span className="slot-time">{slot.startTime}</span>
-                                                        <span className="slot-count">
+                                                        <span className="slot-count text-[10px] whitespace-nowrap tracking-tight leading-none mt-0.5">
                                                             {isClosed
                                                                 ? '마감'
                                                                 : isWait
@@ -731,7 +621,9 @@ const User = () => {
                                             </div>
                                         </div>
 
-                                        <h2 className="panel-details-header-title">예약 세부 정보</h2>
+                                        <h2 className="panel-details-header-title">
+                                            {isWaitlist ? '대기 예약 세부 정보' : '예약 세부 정보'}
+                                        </h2>
 
                                         {/* Selected Class Details Form & Info */}
                                         <Form form={form} layout="vertical" onFinish={handleReservationSubmit}>
@@ -805,14 +697,13 @@ const User = () => {
 
                                             {/* Waitlist Flow Notice Box */}
                                             {isWaitlist && (
-                                                <div className="waitlist-notice-box">
-                                                    <div className="waitlist-notice-title">
-                                                        <InfoCircleOutlined />
-                                                        <span>대기 예약 유의사항</span>
+                                                <div className="waitlist-notice-box bg-transparent border-none p-0 shadow-none">
+                                                    <div className="waitlist-notice-title font-bold text-[13px] text-[#D97706] flex items-center gap-1 mb-1.5">
+                                                        <span>ⓘ 대기 예약 유의사항</span>
                                                     </div>
-                                                    <div className="waitlist-notice-desc">
-                                                        <p>• 공석 발생 시 카카오 알림톡/메일이 발송됩니다.</p>
-                                                        <p>• 알림 수신 후 1시간 이내 확정 시 이용권 1회가 차감됩니다.</p>
+                                                    <div className="waitlist-notice-desc text-[11px] text-[#71717A] leading-[1.4] tracking-normal space-y-1">
+                                                        <p className="m-0">• 공석 발생 시 카카오 알림톡 발송</p>
+                                                        <p className="m-0">• 알림 수신 후 1시간 이내 확정 시 이용권 1회 차감</p>
                                                     </div>
                                                 </div>
                                             )}
@@ -923,8 +814,8 @@ const User = () => {
                                             </div>
                                             <div>
                                                 <span className="summary-item-label">예약 상태</span>
-                                                <span className={`success-status-badge ${confirmedData.isWaitlist ? 'is-waitlist' : ''}`}>
-                                                    {confirmedData.isWaitlist ? '대기 접수 1순위' : '예약 확정'}
+                                                <span className={`success-status-badge ${confirmedData.isWaitlist ? 'is-waitlist px-3 py-1 rounded-full bg-[#FFF7ED] border border-[#FFEDD5] text-xs font-bold text-[#EA580C]' : ''}`}>
+                                                    {confirmedData.isWaitlist ? '대기 예약' : '예약 확정'}
                                                 </span>
                                             </div>
                                         </div>

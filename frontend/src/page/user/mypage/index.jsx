@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     Avatar,
     Badge,
@@ -40,8 +40,9 @@ import {
     LockOutlined,
     WarningOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
+import Header, { INITIAL_NOTIFICATIONS } from '../../../components/common/Header';
 import '../userMypage.css';
 
 // 센터 목록
@@ -49,13 +50,6 @@ const CENTERS = [
     { id: 1, name: '강남 시그니처점', addr: '서울 강남구 테헤란로 123', phone: '02-1234-5678', hours: '평일 06:00 - 23:00 / 주말 09:00 - 18:00', facility: '샤워실 완비 · 무료 주차 2시간 · 개별 락커' },
     { id: 2, name: '서초역점', addr: '서울 서초구 서초대로 250', phone: '02-581-2244', hours: '평일 06:00 - 23:00 / 주말 09:00 - 18:00', facility: '샤워실 완비 · 무료 주차 1시간 30분 · 기구 필라테스 특화' },
     { id: 3, name: '역삼 테헤란점', addr: '서울 강남구 테헤란로 208', phone: '02-555-8890', hours: '평일 06:30 - 22:30 / 주말 10:00 - 18:00', facility: '샤워실 완비 · 발렛 주차 지원 · 1:1 PT 전용 프라이빗 룸' },
-];
-
-// 알림 목록 목업
-const INITIAL_NOTIFICATIONS = [
-    { id: 1, title: '[긴급] 금일 스튜디오A 시설 점검 안내', content: '오전 11시부터 환기 시스템 점검이 진행됩니다.', time: '10분 전', urgent: true },
-    { id: 2, title: '수업 예약 확정 안내', content: '11월 13일 (수) 19:30 고강도 서킷 트레이닝 확정되었습니다.', time: '1시간 전', urgent: false },
-    { id: 3, title: '[이벤트] 친구 초대 리워드 안내', content: '친구 추천 시 2회 무료 추가 증정 혜택이 적용됩니다.', time: '어제', urgent: false },
 ];
 
 // 다가오는 일정 캐러셀 데이터
@@ -95,8 +89,17 @@ const UPCOMING_CLASSES = [
 const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
     const navigate = useNavigate();
 
+    const [searchParams] = useSearchParams();
+    const tabParam = searchParams.get('tab');
+
     // 활성 서브 탭: 'reservations' | 'passes' | 'notices' | 'settings'
-    const [activeTab, setActiveTab] = useState(initialTab);
+    const [activeTab, setActiveTab] = useState(tabParam || initialTab);
+
+    useEffect(() => {
+        if (tabParam) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
 
     // 지점 선택 상태
     const [selectedCenterId, setSelectedCenterId] = useState(1);
@@ -114,6 +117,74 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
     // 출석 미니 캘린더 날짜 상태
     const [calendarMonth, setCalendarMonth] = useState(dayjs('2026-09-01'));
     const [selectedCalDay, setSelectedCalDay] = useState(11); // 오늘 11일
+
+    // 미니 캘린더 날짜 그리드 동적 계산 (월요일 시작)
+    const miniCalendarGrid = useMemo(() => {
+        const startOfMonth = calendarMonth.startOf('month');
+        const daysInCurrentMonth = calendarMonth.daysInMonth();
+        // 월요일을 시작 요일(index 0)로 고정: dayjs .day()는 일=0, 월=1, ... 토=6
+        const startDayOfWeek = (startOfMonth.day() + 6) % 7;
+
+        const prevMonth = calendarMonth.subtract(1, 'month');
+        const daysInPrevMonth = prevMonth.daysInMonth();
+
+        const cells = [];
+
+        // 1. 이전 달 Muted 일자
+        for (let i = startDayOfWeek - 1; i >= 0; i--) {
+            const d = daysInPrevMonth - i;
+            cells.push({
+                type: 'prev',
+                day: d,
+                isMuted: true,
+                key: `prev-${d}`,
+            });
+        }
+
+        // 2. 현재 달 일자
+        for (let d = 1; d <= daysInCurrentMonth; d++) {
+            const monthKey = calendarMonth.format('YYYY-MM');
+            let dots = [];
+            if (monthKey === '2026-09') {
+                if (d === 4 || d === 11 || d === 16) dots.push('#6D28D9');
+                if (d === 5 || d === 13) dots.push('#EA580C');
+                if (d === 28) dots.push('#D4D4D8');
+            } else {
+                // 다른 월도 상태 도트가 동적으로 제공되도록 현실적인 패턴 부여 (예약/출석, 대기, 취소)
+                if ([2, 9, 16, 23].includes(d)) dots.push('#6D28D9');
+                else if ([6, 20].includes(d)) dots.push('#EA580C');
+                else if (d === 27) dots.push('#D4D4D8');
+            }
+
+            const isToday = calendarMonth.isSame(dayjs('2026-09-01'), 'month') && d === 11;
+            const isSelected = selectedCalDay === d;
+
+            cells.push({
+                type: 'current',
+                day: d,
+                isMuted: false,
+                isToday,
+                isSelected,
+                dots,
+                key: `curr-${d}`,
+            });
+        }
+
+        // 3. 다음 달 Muted 일자 (7열 배수 채우기, 기본 35칸 또는 42칸)
+        const totalCellsSoFar = cells.length;
+        const targetTotal = totalCellsSoFar <= 35 ? 35 : 42;
+        const nextDaysNeeded = targetTotal - totalCellsSoFar;
+        for (let d = 1; d <= nextDaysNeeded; d++) {
+            cells.push({
+                type: 'next',
+                day: d,
+                isMuted: true,
+                key: `next-${d}`,
+            });
+        }
+
+        return cells;
+    }, [calendarMonth, selectedCalDay]);
 
     // 공지 아코디언 상태
     const [noticeNoticeOpen, setNoticeNoticeOpen] = useState(true);
@@ -230,349 +301,42 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
         setRefundModalOpen(false);
     };
 
-    // 대표 지점 드롭다운 메뉴
-    const branchMenuItems = {
-        items: [
-            {
-                key: 'header',
-                label: (
-                    <div style={{ fontWeight: 700, fontSize: 13, color: '#5B3BA8', padding: '4px 8px' }}>
-                        대표 지점 선택
-                    </div>
-                ),
-                disabled: true,
-            },
-            ...CENTERS.map((c) => ({
-                key: `branch-${c.id}`,
-                label: (
-                    <div
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '6px 8px',
-                            fontWeight: c.id === selectedCenterId ? 700 : 500,
-                            color: c.id === selectedCenterId ? '#5B3BA8' : '#374151',
-                        }}
-                    >
-                        <span>{c.name}</span>
-                        {c.id === selectedCenterId && <CheckOutlined style={{ color: '#5B3BA8' }} />}
-                    </div>
-                ),
-                onClick: () => {
-                    setSelectedCenterId(c.id);
-                    message.success(`대표 지점이 [${c.name}]으로 변경되었습니다.`);
-                },
-            })),
-            {
-                type: 'divider',
-            },
-            {
-                key: 'center-info',
-                label: (
-                    <div
-                        style={{
-                            background: '#FAF9FD',
-                            border: '1px solid #EDE9FE',
-                            borderRadius: 14,
-                            padding: '10px 12px',
-                            fontSize: 11,
-                            maxWidth: 270,
-                        }}
-                    >
-                        <div style={{ fontWeight: 700, color: '#5B3BA8', marginBottom: 4 }}>
-                            <EnvironmentOutlined /> {selectedCenter.name}
-                        </div>
-                        <div style={{ color: '#6B7280', lineHeight: 1.5 }}>
-                            📍 {selectedCenter.addr}<br />
-                            🕒 {selectedCenter.hours}<br />
-                            📞 {selectedCenter.phone}<br />
-                            ✨ {selectedCenter.facility}
-                        </div>
-                    </div>
-                ),
-                disabled: true,
-            },
-        ],
-    };
-
-    // 알림 드롭다운 메뉴
-    const notiMenuItems = {
-        items: [
-            {
-                key: 'header',
-                label: (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', borderBottom: '1px solid #F4F1FC' }}>
-                        <span style={{ fontWeight: 700, fontSize: 13 }}>알림 및 공지사항</span>
-                        <Button type="link" size="small" onClick={() => setNotifications([])} style={{ fontSize: 11, padding: 0 }}>
-                            모두 지우기
-                        </Button>
-                    </div>
-                ),
-                disabled: true,
-            },
-            ...(notifications.length === 0
-                ? [
-                      {
-                          key: 'empty',
-                          label: <div style={{ padding: '16px', textAlign: 'center', color: '#9CA3AF', fontSize: 12 }}>새로운 알림이 없습니다.</div>,
-                          disabled: true,
-                      },
-                  ]
-                : notifications.map((n) => ({
-                      key: `noti-${n.id}`,
-                      label: (
-                          <div style={{ padding: '8px', maxWidth: 280, whiteSpace: 'normal' }}>
-                              <div style={{ fontWeight: 700, fontSize: 12, color: n.urgent ? '#EA580C' : '#5B3BA8' }}>
-                                  {n.title}
-                              </div>
-                              <div style={{ fontSize: 11, color: '#4B5563', marginTop: 3 }}>
-                                  {n.content}
-                              </div>
-                              <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 4 }}>
-                                  {n.time}
-                              </div>
-                          </div>
-                      ),
-                  }))),
-        ],
-    };
-
-    // 프로필 드롭다운 메뉴
-    const profileMenuItems = {
-        items: [
-            {
-                key: 'user-info',
-                label: (
-                    <div style={{ padding: '6px 8px', borderBottom: '1px solid #F4F1FC' }}>
-                        <div style={{ fontWeight: 800, fontSize: 13, color: '#18181B' }}>Kim Ji-woo</div>
-                        <Badge count="일반 회원" style={{ backgroundColor: '#EDE9FE', color: '#5B3BA8', fontSize: 11, marginTop: 4 }} />
-                    </div>
-                ),
-                disabled: true,
-            },
-            {
-                key: 'reservation-page',
-                icon: <CalendarOutlined />,
-                label: '수업 예약하기',
-                onClick: () => navigate('/user'),
-            },
-            {
-                key: 'settings-tab',
-                icon: <SettingOutlined />,
-                label: '계정 설정',
-                onClick: () => setActiveTab('settings'),
-            },
-            {
-                type: 'divider',
-            },
-            {
-                key: 'logout',
-                icon: <LogoutOutlined style={{ color: '#EF4444' }} />,
-                label: <span style={{ color: '#EF4444', fontWeight: 600 }}>로그아웃</span>,
-                onClick: handleLogout,
-            },
-        ],
-    };
-
     return (
         <div className="mypage-workspace-page">
             {/* Ambient Background Glows */}
             <div className="ambient-glow-tl" />
             <div className="ambient-glow-br" />
 
-            <div style={{ maxWidth: 1140, margin: '0 auto', padding: '20px 24px 0', position: 'relative', zIndex: 10 }}>
-                {/* 1. Unified Global Floating Glass Header */}
-                <header style={{ width: '100%', paddingTop: 8, paddingBottom: 16, position: 'relative', zIndex: 50 }}>
-                    <nav
-                        style={{
-                            borderRadius: 9999,
-                            padding: '0 24px',
-                            height: 64,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            background: 'rgba(255, 255, 255, 0.85)',
-                            backdropFilter: 'blur(24px)',
-                            WebkitBackdropFilter: 'blur(24px)',
-                            border: '1px solid rgba(255, 255, 255, 0.95)',
-                            boxShadow: '0 16px 36px -10px rgba(112, 110, 180, 0.1), inset 0 1px 1px 0 rgba(255, 255, 255, 0.95)',
-                        }}
-                    >
-                        {/* Logo & Top Menu Tabs */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, userSelect: 'none' }}>
-                            <div
-                                style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
-                                onClick={() => navigate('/user')}
-                            >
-                                <div
-                                    style={{
-                                        width: 36,
-                                        height: 36,
-                                        borderRadius: '50%',
-                                        background: 'linear-gradient(135deg, #5B3BA8 0%, #8B5CF6 100%)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        boxShadow: '0 4px 12px rgba(91, 59, 168, 0.25)',
-                                    }}
-                                >
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M5 4v10a4 4 0 0 0 4 4h6a4 4 0 0 0 4-4V4" />
-                                        <line x1="5" y1="11" x2="19" y2="11" />
-                                        <circle cx="9" cy="7.5" r="1.5" fill="white" />
-                                        <circle cx="15" cy="7.5" r="1.5" fill="white" />
-                                        <path d="M12 9.5v2" />
-                                    </svg>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                                    <span style={{ fontWeight: 800, fontSize: 19, color: '#18181B', letterSpacing: '-0.02em' }}>OwlFit</span>
-                                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#8B5CF6' }} />
-                                </div>
-                            </div>
+            {/* Floating Pill-Style Header */}
+            <Header
+                selectedCenterId={selectedCenterId}
+                onSelectCenterId={(id) => setSelectedCenterId(id)}
+                notifications={notifications}
+                onClearNotifications={() => setNotifications([])}
+                onDeleteNotification={(id) => setNotifications((prev) => prev.filter((n) => n.id !== id))}
+                onLogout={handleLogout}
+                onNavigateSettings={() => setActiveTab('settings')}
+            />
 
-                            <div style={{ height: 16, width: 1, backgroundColor: 'rgba(203, 213, 225, 0.8)', margin: '0 4px' }} />
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                <button
-                                    style={{
-                                        padding: '8px 14px',
-                                        borderRadius: 10,
-                                        color: '#71717A',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        fontWeight: 500,
-                                        fontSize: 14,
-                                        cursor: 'pointer',
-                                    }}
-                                    onClick={() => navigate('/user')}
-                                >
-                                    수업 예약
-                                </button>
-                                <button
-                                    style={{
-                                        padding: '8px 14px',
-                                        borderRadius: 10,
-                                        color: '#5B3BA8',
-                                        background: 'rgba(237, 233, 254, 0.6)',
-                                        border: 'none',
-                                        fontWeight: 700,
-                                        fontSize: 14,
-                                        cursor: 'pointer',
-                                    }}
-                                    onClick={() => setActiveTab('reservations')}
-                                >
-                                    마이페이지
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Right Action Icons: Branch / Noti / Profile */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            {/* Branch Selector */}
-                            <Dropdown menu={branchMenuItems} trigger={['click']} placement="bottomRight">
-                                <button
-                                    type="button"
-                                    style={{
-                                        height: 36,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 8,
-                                        border: '1px solid #EDE9FE',
-                                        background: 'rgba(255, 255, 255, 0.85)',
-                                        padding: '0 14px',
-                                        borderRadius: 9999,
-                                        fontSize: 12,
-                                        fontWeight: 700,
-                                        color: '#18181B',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    <EnvironmentOutlined style={{ color: '#8B5CF6', fontSize: 13 }} />
-                                    <span>{selectedCenter.name}</span>
-                                    <DownOutlined style={{ fontSize: 9, color: '#9CA3AF' }} />
-                                </button>
-                            </Dropdown>
-
-                            {/* Notification Bell */}
-                            <Dropdown menu={notiMenuItems} trigger={['click']} placement="bottomRight">
-                                <button
-                                    type="button"
-                                    className="bell-hover"
-                                    style={{
-                                        width: 36,
-                                        height: 36,
-                                        borderRadius: '50%',
-                                        background: 'rgba(255, 255, 255, 0.85)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        position: 'relative',
-                                        border: '1px solid #EDE9FE',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    <BellOutlined className="bell-icon" style={{ fontSize: 16, color: '#5B3BA8' }} />
-                                    {notifications.length > 0 && (
-                                        <span
-                                            style={{
-                                                position: 'absolute',
-                                                top: 6,
-                                                right: 6,
-                                                width: 8,
-                                                height: 8,
-                                                borderRadius: '50%',
-                                                backgroundColor: '#EF4444',
-                                                border: '2px solid white',
-                                            }}
-                                        />
-                                    )}
-                                </button>
-                            </Dropdown>
-
-                            {/* Profile Pill */}
-                            <Dropdown menu={profileMenuItems} trigger={['click']} placement="bottomRight">
-                                <div
-                                    style={{
-                                        height: 36,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 8,
-                                        padding: '4px 10px 4px 6px',
-                                        borderRadius: 9999,
-                                        background: 'rgba(255, 255, 255, 0.85)',
-                                        border: '1px solid #EDE9FE',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            width: 26,
-                                            height: 26,
-                                            borderRadius: '50%',
-                                            backgroundColor: '#5B3BA8',
-                                            color: 'white',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontWeight: 700,
-                                            fontSize: 11,
-                                        }}
-                                    >
-                                        JW
-                                    </div>
-                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#18181B' }}>Kim Ji-woo</span>
-                                    <DownOutlined style={{ fontSize: 9, color: '#9CA3AF' }} />
-                                </div>
-                            </Dropdown>
-                        </div>
-                    </nav>
-                </header>
-
-                {/* 2. Main 3 : 7 Workspace Layout */}
-                <main style={{ display: 'flex', alignItems: 'flex-start', gap: 32, marginTop: 12 }}>
-                    {/* Left Column (320px Anchor Sidebar) */}
-                    <aside style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Main Content Workspace (Matches reservation page container) */}
+            <main
+                className="mypage-workspace-main"
+                style={{
+                    width: '100%',
+                    maxWidth: 1440,
+                    margin: '0 auto',
+                    padding: '0 24px 48px',
+                    boxSizing: 'border-box',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 32,
+                    marginTop: 24,
+                    position: 'relative',
+                    zIndex: 10,
+                }}
+            >
+                {/* Left Column (320px Anchor Sidebar) */}
+                <aside style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
                         {/* Widget 1: Attendance Mini Calendar */}
                         <div
                             style={{
@@ -635,77 +399,67 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                 ))}
                             </div>
 
-                            {/* Calendar Dates Grid (Sample September 2026) */}
+                            {/* Dynamic Calendar Dates Grid */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, rowGap: 6, textAlign: 'center' }}>
-                                {/* Aug 31 */}
-                                <div className="calendar-date-cell" style={{ color: '#D4D4D8', fontSize: 12 }}>31</div>
-                                {/* Sep 1..3 */}
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(1)}>1</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(2)}>2</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(3)}>3</div>
-                                {/* Sep 4: Reserved Dot */}
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(4)}>
-                                    <span>4</span>
-                                    <span style={{ width: 4, height: 4, backgroundColor: '#6D28D9', borderRadius: 9999, position: 'absolute', bottom: 4 }} />
-                                </div>
-                                {/* Sep 5: Waitlist Dot */}
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(5)}>
-                                    <span>5</span>
-                                    <span style={{ width: 4, height: 4, backgroundColor: '#EA580C', borderRadius: 9999, position: 'absolute', bottom: 4 }} />
-                                </div>
-                                {/* Sep 6 */}
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(6)}>6</div>
-                                {/* Sep 7..10 */}
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(7)}>7</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(8)}>8</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(9)}>9</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(10)}>10</div>
-                                {/* Sep 11: TODAY */}
-                                <div
-                                    className={`calendar-date-cell ${selectedCalDay === 11 ? 'today' : ''}`}
-                                    style={{ color: '#6D28D9', fontSize: 13, fontWeight: 700 }}
-                                    onClick={() => setSelectedCalDay(11)}
-                                >
-                                    <span>11</span>
-                                    <span style={{ width: 4, height: 4, backgroundColor: '#6D28D9', borderRadius: 9999, position: 'absolute', bottom: 4 }} />
-                                </div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(12)}>12</div>
-                                {/* Sep 13: Waitlist Promoted */}
-                                <div
-                                    className={`calendar-date-cell ${selectedCalDay === 13 ? 'selected' : ''}`}
-                                    style={{ color: '#18181B', fontSize: 13 }}
-                                    onClick={() => setSelectedCalDay(13)}
-                                >
-                                    <span>13</span>
-                                    <span style={{ width: 4, height: 4, backgroundColor: '#EA580C', borderRadius: 9999, position: 'absolute', bottom: 4 }} />
-                                </div>
-                                {/* Sep 14..15 */}
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(14)}>14</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(15)}>15</div>
-                                {/* Sep 16: Reserved */}
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(16)}>
-                                    <span>16</span>
-                                    <span style={{ width: 4, height: 4, backgroundColor: '#6D28D9', borderRadius: 9999, position: 'absolute', bottom: 4 }} />
-                                </div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(17)}>17</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(18)}>18</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(19)}>19</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(20)}>20</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(21)}>21</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(22)}>22</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(23)}>23</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(24)}>24</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(25)}>25</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(26)}>26</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(27)}>27</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(28)}>28</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(29)}>29</div>
-                                <div className="calendar-date-cell" style={{ color: '#18181B', fontSize: 13 }} onClick={() => setSelectedCalDay(30)}>30</div>
-                                {/* Oct 1..4 */}
-                                <div className="calendar-date-cell" style={{ color: '#D4D4D8', fontSize: 12 }}>1</div>
-                                <div className="calendar-date-cell" style={{ color: '#D4D4D8', fontSize: 12 }}>2</div>
-                                <div className="calendar-date-cell" style={{ color: '#D4D4D8', fontSize: 12 }}>3</div>
-                                <div className="calendar-date-cell" style={{ color: '#D4D4D8', fontSize: 12 }}>4</div>
+                                {miniCalendarGrid.map((cell) => {
+                                    if (cell.isMuted) {
+                                        return (
+                                            <div
+                                                key={cell.key}
+                                                className="calendar-date-cell"
+                                                style={{ color: '#D4D4D8', fontSize: 12, cursor: 'pointer' }}
+                                                onClick={() => {
+                                                    if (cell.type === 'prev') {
+                                                        setCalendarMonth(calendarMonth.subtract(1, 'month'));
+                                                        setSelectedCalDay(cell.day);
+                                                    } else {
+                                                        setCalendarMonth(calendarMonth.add(1, 'month'));
+                                                        setSelectedCalDay(cell.day);
+                                                    }
+                                                }}
+                                            >
+                                                {cell.day}
+                                            </div>
+                                        );
+                                    }
+
+                                    let cellClass = 'calendar-date-cell';
+                                    if (cell.isToday) {
+                                        cellClass += ' today';
+                                    } else if (cell.isSelected) {
+                                        cellClass += ' selected';
+                                    }
+
+                                    return (
+                                        <div
+                                            key={cell.key}
+                                            className={cellClass}
+                                            style={{
+                                                color: cell.isToday ? '#6D28D9' : '#18181B',
+                                                fontSize: 13,
+                                                fontWeight: cell.isToday || cell.isSelected ? 700 : 500,
+                                            }}
+                                            onClick={() => setSelectedCalDay(cell.day)}
+                                        >
+                                            <span>{cell.day}</span>
+                                            {cell.dots && cell.dots.length > 0 && (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 2, position: 'absolute', bottom: 4 }}>
+                                                    {cell.dots.map((dotColor, dotIdx) => (
+                                                        <span
+                                                            key={dotIdx}
+                                                            style={{
+                                                                width: 4,
+                                                                height: 4,
+                                                                backgroundColor: dotColor,
+                                                                borderRadius: 9999,
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
 
                             {/* Bottom Legend */}
@@ -920,24 +674,40 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                     </div>
                                     <button
                                         type="button"
+                                        className="w-6 h-6 rounded-full bg-white border border-[#E4E4E7] shadow-xs flex items-center justify-center text-[#71717A] hover:text-[#7C3AED] hover:border-[#DDD6FE] transition-colors cursor-pointer flex-shrink-0"
                                         style={{
                                             position: 'absolute',
                                             right: -2,
                                             bottom: -2,
-                                            width: 22,
-                                            height: 22,
+                                            width: 24,
+                                            height: 24,
                                             borderRadius: '50%',
-                                            background: '#F4F4F5',
-                                            border: '2px solid #FFFFFF',
+                                            backgroundColor: '#FFFFFF',
+                                            border: '1px solid #E4E4E7',
+                                            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
+                                            flexShrink: 0,
+                                            padding: 0,
                                             cursor: 'pointer',
                                         }}
                                         title="설정 바로가기"
                                         onClick={() => setActiveTab('settings')}
                                     >
-                                        <SettingOutlined style={{ fontSize: 11, color: '#52525B' }} />
+                                        <svg
+                                            className="w-3.5 h-3.5 shrink-0"
+                                            style={{ width: 14, height: 14 }}
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle cx="12" cy="12" r="3" />
+                                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82-.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                        </svg>
                                     </button>
                                 </div>
                                 <div style={{ minWidth: 0 }}>
@@ -955,45 +725,39 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
 
                             {/* Bottom Tier: 3 Metrics Distributed Evenly */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, paddingTop: 4 }}>
-                                {/* Metric 1 */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                    <div style={{ width: 42, height: 42, borderRadius: 12, background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <CalendarOutlined style={{ fontSize: 20, color: '#6D28D9' }} />
+                                {/* Metric 1: 이번 달 예약 현황 */}
+                                <div className="bg-transparent border-none p-0" style={{ background: 'transparent', border: 'none', padding: 0 }}>
+                                    <div className="flex items-center gap-2 mb-1.5" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                        <CalendarOutlined style={{ fontSize: 16, color: '#6D28D9' }} />
+                                        <span style={{ fontSize: 12, color: '#71717A', fontWeight: 500 }}>이번 달 예약 현황</span>
                                     </div>
-                                    <div>
-                                        <div style={{ fontSize: 12, color: '#71717A', fontWeight: 500, marginBottom: 2 }}>이번 달 예약 현황</div>
-                                        <div>
-                                            <span style={{ fontSize: 20, fontWeight: 800, color: '#18181B' }} className="font-num">18</span>
-                                            <span style={{ fontSize: 12, color: '#71717A', marginLeft: 3 }}>회 완료</span>
-                                        </div>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                                        <span style={{ fontSize: 22, fontWeight: 800, color: '#18181B', lineHeight: 1 }} className="font-num">18</span>
+                                        <span style={{ fontSize: 12, color: '#71717A', fontWeight: 500 }}>회 완료</span>
                                     </div>
                                 </div>
 
-                                {/* Metric 2 */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                    <div style={{ width: 42, height: 42, borderRadius: 12, background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <CheckCircleOutlined style={{ fontSize: 20, color: '#6D28D9' }} />
+                                {/* Metric 2: 전체 출석률 */}
+                                <div className="bg-transparent border-none p-0" style={{ background: 'transparent', border: 'none', padding: 0 }}>
+                                    <div className="flex items-center gap-2 mb-1.5" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                        <CheckCircleOutlined style={{ fontSize: 16, color: '#6D28D9' }} />
+                                        <span style={{ fontSize: 12, color: '#71717A', fontWeight: 500 }}>전체 출석률</span>
                                     </div>
-                                    <div>
-                                        <div style={{ fontSize: 12, color: '#71717A', fontWeight: 500, marginBottom: 2 }}>전체 출석률</div>
-                                        <div>
-                                            <span style={{ fontSize: 20, fontWeight: 800, color: '#18181B' }} className="font-num">94%</span>
-                                            <span style={{ fontSize: 12, color: '#71717A', marginLeft: 3 }}>달성</span>
-                                        </div>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                                        <span style={{ fontSize: 22, fontWeight: 800, color: '#18181B', lineHeight: 1 }} className="font-num">94%</span>
+                                        <span style={{ fontSize: 12, color: '#71717A', fontWeight: 500 }}>달성</span>
                                     </div>
                                 </div>
 
-                                {/* Metric 3 */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                    <div style={{ width: 42, height: 42, borderRadius: 12, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <ClockCircleOutlined style={{ fontSize: 20, color: '#EA580C' }} />
+                                {/* Metric 3: 대기 접수 현황 */}
+                                <div className="bg-transparent border-none p-0" style={{ background: 'transparent', border: 'none', padding: 0 }}>
+                                    <div className="flex items-center gap-2 mb-1.5" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                        <ClockCircleOutlined style={{ fontSize: 16, color: '#EA580C' }} />
+                                        <span style={{ fontSize: 12, color: '#71717A', fontWeight: 500 }}>대기 접수 현황</span>
                                     </div>
-                                    <div>
-                                        <div style={{ fontSize: 12, color: '#71717A', fontWeight: 500, marginBottom: 2 }}>대기 접수 현황</div>
-                                        <div>
-                                            <span style={{ fontSize: 20, fontWeight: 800, color: '#EA580C' }} className="font-num">1건</span>
-                                            <span style={{ fontSize: 12, color: '#71717A', marginLeft: 3 }}>대기중</span>
-                                        </div>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                                        <span style={{ fontSize: 22, fontWeight: 800, color: '#EA580C', lineHeight: 1 }} className="font-num">1건</span>
+                                        <span style={{ fontSize: 12, color: '#71717A', fontWeight: 500 }}>대기중</span>
                                     </div>
                                 </div>
                             </div>
@@ -1161,180 +925,219 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                     {/* Chronological Timeline Schedule List */}
                                     <div style={{ position: 'relative', paddingBottom: 8 }}>
                                         {/* Item 1: TODAY - 고강도 서킷 트레이닝 */}
-                                        <div className="timeline-subcard" style={{ position: 'relative', paddingLeft: 36, marginBottom: 38 }}>
-                                            <div style={{ position: 'absolute', left: 7, top: 19, bottom: -38, borderLeft: '1px solid #DDD6FE', pointerEvents: 'none' }} />
-                                            <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #6D28D9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <div style={{ position: 'relative', paddingLeft: 36, marginBottom: 40 }}>
+                                            <div style={{ position: 'absolute', left: 7.5, top: 19, bottom: -40, borderLeft: '1px solid #DDD6FE', pointerEvents: 'none' }} />
+                                            <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #6D28D9', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 10 }}>
                                                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#6D28D9' }} />
                                             </div>
 
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                                <span style={{ background: '#EDE9FE', color: '#6D28D9', fontWeight: 700, fontSize: 11, padding: '2px 8px', borderRadius: 6 }} className="font-num">
-                                                    TODAY
-                                                </span>
-                                                <span style={{ fontWeight: 700, fontSize: 15, color: '#18181B' }} className="font-num">
-                                                    2026.09.11 (금) &nbsp;19:30 — 20:20
-                                                </span>
-                                            </div>
-
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
-                                                <h4 style={{ fontSize: 17, fontWeight: 700, color: '#18181B', margin: 0, letterSpacing: '-0.01em' }}>
-                                                    고강도 서킷 트레이닝
-                                                </h4>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                                                    <button
-                                                        type="button"
-                                                        className="action-cancel-link"
-                                                        style={{ fontSize: 12 }}
-                                                        onClick={() =>
-                                                            handleOpenActionModal('cancel', {
-                                                                id: 'bk-1',
-                                                                title: '고강도 서킷 트레이닝',
-                                                                dateStr: '2026.09.11 (금) 19:30 — 20:20',
-                                                                instructor: '강민호 트레이너 · Studio A',
-                                                            })
-                                                        }
-                                                    >
-                                                        예약 취소
-                                                    </button>
-                                                    <span style={{ background: '#F5F3FF', color: '#6D28D9', fontWeight: 600, fontSize: 12, padding: '4px 12px', borderRadius: 9999 }}>
-                                                        예약 완료
+                                            <div
+                                                className="timeline-item-content transition-transform duration-200 ease-out cursor-pointer hover:-translate-y-[2px]"
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    padding: 0,
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                                                    <span style={{ background: '#EDE9FE', color: '#6D28D9', fontWeight: 700, fontSize: 11, padding: '2px 8px', borderRadius: 6 }} className="font-num">
+                                                        TODAY
+                                                    </span>
+                                                    <span style={{ fontWeight: 700, fontSize: 15, color: '#18181B' }} className="font-num">
+                                                        2026.09.11 (금) &nbsp;19:30 — 20:20
                                                     </span>
                                                 </div>
-                                            </div>
 
-                                            <div style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                <span>강남 시그니처점</span>
-                                                <span>·</span>
-                                                <span>강민호 트레이너</span>
-                                                <span>·</span>
-                                                <span>Studio A</span>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
+                                                    <h4 style={{ fontSize: 17, fontWeight: 700, color: '#18181B', margin: 0, letterSpacing: '-0.01em' }}>
+                                                        고강도 서킷 트레이닝
+                                                    </h4>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                                                        <button
+                                                            type="button"
+                                                            className="action-cancel-link"
+                                                            style={{ fontSize: 12 }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleOpenActionModal('cancel', {
+                                                                    id: 'bk-1',
+                                                                    title: '고강도 서킷 트레이닝',
+                                                                    dateStr: '2026.09.11 (금) 19:30 — 20:20',
+                                                                    instructor: '강민호 트레이너 · Studio A',
+                                                                });
+                                                            }}
+                                                        >
+                                                            예약 취소
+                                                        </button>
+                                                        <span style={{ background: '#F5F3FF', color: '#6D28D9', fontWeight: 600, fontSize: 12, padding: '4px 12px', borderRadius: 9999 }}>
+                                                            예약 완료
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <span>강남 시그니처점</span>
+                                                    <span>·</span>
+                                                    <span>강민호 트레이너</span>
+                                                    <span>·</span>
+                                                    <span>Studio A</span>
+                                                </div>
                                             </div>
                                         </div>
 
                                         {/* Item 2: D-2 - 하타 딥 스트레칭 */}
-                                        <div className="timeline-subcard" style={{ position: 'relative', paddingLeft: 36, marginBottom: 38 }}>
-                                            <div style={{ position: 'absolute', left: 7, top: 19, bottom: -38, borderLeft: '1.5px dashed #FB923C', pointerEvents: 'none' }} />
-                                            <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #EA580C' }} />
+                                        <div style={{ position: 'relative', paddingLeft: 36, marginBottom: 40 }}>
+                                            <div style={{ position: 'absolute', left: 7, top: 19, bottom: -40, borderLeft: '1.5px dashed #FB923C', pointerEvents: 'none' }} />
+                                            <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #EA580C', pointerEvents: 'none', zIndex: 10 }} />
 
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                                <span style={{ background: '#FFF7ED', color: '#EA580C', border: '1px solid #FFEDD5', fontWeight: 600, fontSize: 11, padding: '2px 8px', borderRadius: 9999 }} className="font-num">
-                                                    D-2
-                                                </span>
-                                                <span style={{ fontWeight: 700, fontSize: 15, color: '#18181B' }} className="font-num">
-                                                    2026.09.13 (일) &nbsp;10:00 — 11:00
-                                                </span>
-                                            </div>
-
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
-                                                <h4 style={{ fontSize: 17, fontWeight: 700, color: '#18181B', margin: 0, letterSpacing: '-0.01em' }}>
-                                                    하타 딥 스트레칭
-                                                </h4>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                                                    <button
-                                                        type="button"
-                                                        className="action-cancel-link"
-                                                        style={{ fontSize: 12 }}
-                                                        onClick={() =>
-                                                            handleOpenActionModal('cancel', {
-                                                                id: 'wait-2',
-                                                                title: '하타 딥 스트레칭',
-                                                                dateStr: '2026.09.13 (일) 10:00 — 11:00',
-                                                                instructor: '이지은 강사 · Studio C',
-                                                                isWaitlist: true,
-                                                            })
-                                                        }
-                                                    >
-                                                        대기 취소
-                                                    </button>
-                                                    <span style={{ background: '#FFF7ED', color: '#EA580C', border: '1px solid #FFEDD5', fontWeight: 600, fontSize: 12, padding: '4px 12px', borderRadius: 9999 }}>
-                                                        대기 예약
+                                            <div
+                                                className="timeline-item-content transition-transform duration-200 ease-out cursor-pointer hover:-translate-y-[2px]"
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    padding: 0,
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                                                    <span style={{ background: '#FFF7ED', color: '#EA580C', border: '1px solid #FFEDD5', fontWeight: 600, fontSize: 11, padding: '2px 8px', borderRadius: 9999 }} className="font-num">
+                                                        D-2
+                                                    </span>
+                                                    <span style={{ fontWeight: 700, fontSize: 15, color: '#18181B' }} className="font-num">
+                                                        2026.09.13 (일) &nbsp;10:00 — 11:00
                                                     </span>
                                                 </div>
-                                            </div>
 
-                                            <div style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                <span>강남 시그니처점</span>
-                                                <span>·</span>
-                                                <span>이지은 강사</span>
-                                                <span>·</span>
-                                                <span>Studio C</span>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
+                                                    <h4 style={{ fontSize: 17, fontWeight: 700, color: '#18181B', margin: 0, letterSpacing: '-0.01em' }}>
+                                                        하타 딥 스트레칭
+                                                    </h4>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                                                        <button
+                                                            type="button"
+                                                            className="action-cancel-link"
+                                                            style={{ fontSize: 12 }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleOpenActionModal('cancel', {
+                                                                    id: 'wait-2',
+                                                                    title: '하타 딥 스트레칭',
+                                                                    dateStr: '2026.09.13 (일) 10:00 — 11:00',
+                                                                    instructor: '이지은 강사 · Studio C',
+                                                                    isWaitlist: true,
+                                                                });
+                                                            }}
+                                                        >
+                                                            대기 취소
+                                                        </button>
+                                                        <span style={{ background: '#FFF7ED', color: '#EA580C', border: '1px solid #FFEDD5', fontWeight: 600, fontSize: 12, padding: '4px 12px', borderRadius: 9999 }}>
+                                                            대기 예약
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <span>강남 시그니처점</span>
+                                                    <span>·</span>
+                                                    <span>이지은 강사</span>
+                                                    <span>·</span>
+                                                    <span>Studio C</span>
+                                                </div>
                                             </div>
                                         </div>
 
                                         {/* Item 3: D-5 - 코어 리포머 필라테스 */}
-                                        <div className="timeline-subcard" style={{ position: 'relative', paddingLeft: 36, marginBottom: 38 }}>
-                                            <div style={{ position: 'absolute', left: 7, top: 19, bottom: -38, borderLeft: '1px solid #DDD6FE', pointerEvents: 'none' }} />
-                                            <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #8B5CF6' }} />
+                                        <div style={{ position: 'relative', paddingLeft: 36, marginBottom: 40 }}>
+                                            <div style={{ position: 'absolute', left: 7.5, top: 19, bottom: -40, borderLeft: '1px solid #DDD6FE', pointerEvents: 'none' }} />
+                                            <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #8B5CF6', pointerEvents: 'none', zIndex: 10 }} />
 
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                                <span style={{ background: '#F4F4F5', color: '#71717A', fontWeight: 700, fontSize: 11, padding: '2px 8px', borderRadius: 6 }} className="font-num">
-                                                    D-5
-                                                </span>
-                                                <span style={{ fontWeight: 700, fontSize: 15, color: '#18181B' }} className="font-num">
-                                                    2026.09.16 (수) &nbsp;11:00 — 12:00
-                                                </span>
-                                            </div>
-
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
-                                                <h4 style={{ fontSize: 17, fontWeight: 700, color: '#18181B', margin: 0, letterSpacing: '-0.01em' }}>
-                                                    코어 리포머 필라테스
-                                                </h4>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                                                    <button
-                                                        type="button"
-                                                        className="action-cancel-link"
-                                                        style={{ fontSize: 12 }}
-                                                        onClick={() =>
-                                                            handleOpenActionModal('cancel', {
-                                                                id: 'bk-3',
-                                                                title: '코어 리포머 필라테스',
-                                                                dateStr: '2026.09.16 (수) 11:00 — 12:00',
-                                                                instructor: '박소연 강사 · Studio B',
-                                                            })
-                                                        }
-                                                    >
-                                                        예약 취소
-                                                    </button>
-                                                    <span style={{ background: '#F5F3FF', color: '#6D28D9', fontWeight: 600, fontSize: 12, padding: '4px 12px', borderRadius: 9999 }}>
-                                                        예약 완료
+                                            <div
+                                                className="timeline-item-content transition-transform duration-200 ease-out cursor-pointer hover:-translate-y-[2px]"
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    padding: 0,
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                                                    <span style={{ background: '#F4F4F5', color: '#71717A', fontWeight: 700, fontSize: 11, padding: '2px 8px', borderRadius: 6 }} className="font-num">
+                                                        D-5
+                                                    </span>
+                                                    <span style={{ fontWeight: 700, fontSize: 15, color: '#18181B' }} className="font-num">
+                                                        2026.09.16 (수) &nbsp;11:00 — 12:00
                                                     </span>
                                                 </div>
-                                            </div>
 
-                                            <div style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                <span>강남 시그니처점</span>
-                                                <span>·</span>
-                                                <span>박소연 강사</span>
-                                                <span>·</span>
-                                                <span>Studio B</span>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
+                                                    <h4 style={{ fontSize: 17, fontWeight: 700, color: '#18181B', margin: 0, letterSpacing: '-0.01em' }}>
+                                                        코어 리포머 필라테스
+                                                    </h4>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                                                        <button
+                                                            type="button"
+                                                            className="action-cancel-link"
+                                                            style={{ fontSize: 12 }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleOpenActionModal('cancel', {
+                                                                    id: 'bk-3',
+                                                                    title: '코어 리포머 필라테스',
+                                                                    dateStr: '2026.09.16 (수) 11:00 — 12:00',
+                                                                    instructor: '박소연 강사 · Studio B',
+                                                                });
+                                                            }}
+                                                        >
+                                                            예약 취소
+                                                        </button>
+                                                        <span style={{ background: '#F5F3FF', color: '#6D28D9', fontWeight: 600, fontSize: 12, padding: '4px 12px', borderRadius: 9999 }}>
+                                                            예약 완료
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <span>강남 시그니처점</span>
+                                                    <span>·</span>
+                                                    <span>박소연 강사</span>
+                                                    <span>·</span>
+                                                    <span>Studio B</span>
+                                                </div>
                                             </div>
                                         </div>
 
                                         {/* Item 4: Past / Cancelled - Morning Flow */}
-                                        <div className="timeline-subcard" style={{ position: 'relative', paddingLeft: 36 }}>
-                                            <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #D4D4D8' }} />
+                                        <div style={{ position: 'relative', paddingLeft: 36 }}>
+                                            <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #D4D4D8', pointerEvents: 'none', zIndex: 10 }} />
 
-                                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-                                                <span style={{ fontSize: 12, color: '#71717A' }} className="font-num">
-                                                    2026.09.05 (토) 14:00 — 15:00
-                                                </span>
-                                            </div>
+                                            <div
+                                                className="timeline-item-content transition-transform duration-200 ease-out cursor-pointer hover:-translate-y-[2px]"
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    padding: 0,
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                                                    <span style={{ fontSize: 12, color: '#71717A' }} className="font-num">
+                                                        2026.09.05 (토) 14:00 — 15:00
+                                                    </span>
+                                                </div>
 
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
-                                                <h4 style={{ fontSize: 17, fontWeight: 700, color: '#71717A', margin: 0, letterSpacing: '-0.01em' }}>
-                                                    Morning Flow
-                                                </h4>
-                                                <span style={{ fontSize: 12, color: '#A1A1AA' }} className="font-num">
-                                                    취소 완료 (26.09.05 14:20)
-                                                </span>
-                                            </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
+                                                    <h4 style={{ fontSize: 17, fontWeight: 700, color: '#71717A', margin: 0, letterSpacing: '-0.01em' }}>
+                                                        Morning Flow
+                                                    </h4>
+                                                    <span style={{ fontSize: 12, color: '#A1A1AA' }} className="font-num">
+                                                        취소 완료 (26.09.05 14:20)
+                                                    </span>
+                                                </div>
 
-                                            <div style={{ fontSize: 12, color: '#A1A1AA', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                <span>강남 시그니처점</span>
-                                                <span>·</span>
-                                                <span>Emily Park 강사</span>
-                                                <span>·</span>
-                                                <span>Studio C</span>
+                                                <div style={{ fontSize: 12, color: '#A1A1AA', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <span>강남 시그니처점</span>
+                                                    <span>·</span>
+                                                    <span>Emily Park 강사</span>
+                                                    <span>·</span>
+                                                    <span>Studio C</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -2067,18 +1870,32 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                     </section>
                 </main>
 
-                {/* Footer */}
-                <footer style={{ width: '100%', marginTop: 48, paddingBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, borderTop: '1px solid rgba(228, 228, 231, 0.6)', paddingTop: 20 }}>
-                    <div style={{ color: '#71717A' }}>© 2026 booung Lab. All rights reserved.</div>
-                    <div style={{ display: 'flex', gap: 16, color: '#8B5CF6', fontWeight: 500 }}>
-                        <span style={{ cursor: 'pointer' }}>이용약관</span>
-                        <span style={{ color: '#D4D4D8' }}>·</span>
-                        <span style={{ cursor: 'pointer', fontWeight: 700 }}>개인정보처리방침</span>
-                        <span style={{ color: '#D4D4D8' }}>·</span>
-                        <span style={{ cursor: 'pointer' }}>고객센터</span>
-                    </div>
-                </footer>
-            </div>
+            {/* Footer */}
+            <footer
+                style={{
+                    width: '100%',
+                    maxWidth: 1440,
+                    margin: '0 auto',
+                    padding: '48px 24px 24px',
+                    boxSizing: 'border-box',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontSize: 12,
+                    borderTop: '1px solid rgba(228, 228, 231, 0.6)',
+                    position: 'relative',
+                    zIndex: 10,
+                }}
+            >
+                <div style={{ color: '#71717A' }}>© 2026 booung Lab. All rights reserved.</div>
+                <div style={{ display: 'flex', gap: 16, color: '#8B5CF6', fontWeight: 500 }}>
+                    <span style={{ cursor: 'pointer' }}>이용약관</span>
+                    <span style={{ color: '#D4D4D8' }}>·</span>
+                    <span style={{ cursor: 'pointer', fontWeight: 700 }}>개인정보처리방침</span>
+                    <span style={{ color: '#D4D4D8' }}>·</span>
+                    <span style={{ cursor: 'pointer' }}>고객센터</span>
+                </div>
+            </footer>
 
             {/* 3. Interactive Modals */}
 
