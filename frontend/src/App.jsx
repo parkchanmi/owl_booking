@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './page/home';
 import DashboardLayout from './components/DashboardLayout';
+import ReservationPage from './page/user/index';
+import MyPage from './page/user/mypage/index';
 
 const pages = import.meta.glob('./page/**/*.jsx', { eager: true });
 
@@ -28,6 +30,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/reservation" element={<ReservationPage />} />
+        <Route path="/mypage" element={<MyPage />} />
         {nonAdminRoutes.map(({ path, Element }) => (
           <Route key={path} path={path} element={<Element />} />
         ))}

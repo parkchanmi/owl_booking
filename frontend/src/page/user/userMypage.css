@@ -23,12 +23,16 @@
 /* Page Background & Ambient Glows */
 .mypage-workspace-page {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-  background-color: #FAF9FD;
+  background-color: #F8F7FD;
   color: #18181B;
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
   padding-bottom: 40px;
+  background-image: 
+    radial-gradient(circle at 10% 4%, rgba(196, 181, 253, 0.28) 0%, rgba(243, 232, 255, 0.15) 35%, transparent 70%),
+    radial-gradient(circle at 92% 92%, rgba(221, 214, 254, 0.3) 0%, rgba(237, 233, 254, 0.12) 40%, transparent 70%),
+    #F8F7FD;
 }
 
 .font-num {
@@ -84,15 +88,23 @@
   animation: ctaPulse 2.4s ease-in-out infinite;
 }
 
-/* Living Interaction 2: Timeline Sub-Cards Hover Lift-Up & Floating State */
+/* Living Interaction 2: Reservation List Items Clean Micro-Floating State (No Border, Transparent Background) */
+.timeline-item-content,
+.reservation-timeline-card,
 .timeline-subcard {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transition: transform 0.2s ease-out !important;
 }
 
+.timeline-item-content:hover,
+.reservation-timeline-card:hover,
 .timeline-subcard:hover {
-  transform: translateY(-2.5px);
-  box-shadow: 0 12px 30px -4px rgba(112, 110, 180, 0.1), 0 1px 2px rgba(91, 59, 168, 0.06);
-  border-color: rgba(139, 92, 246, 0.35);
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: translateY(-2px) !important;
 }
 
 .action-cancel-link {

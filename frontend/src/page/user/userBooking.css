@@ -4,14 +4,14 @@
 .booking-workspace-page {
   position: relative;
   min-height: 100vh;
-  background-color: #FAF9FD;
+  background-color: #F8F7FD;
   color: #18181B;
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
   background-image: 
-    radial-gradient(circle at 18% 25%, rgba(139, 92, 246, 0.08) 0%, transparent 45%),
-    radial-gradient(circle at 82% 75%, rgba(167, 139, 250, 0.07) 0%, transparent 45%),
-    #FAF9FD;
+    radial-gradient(circle at 10% 4%, rgba(196, 181, 253, 0.28) 0%, rgba(243, 232, 255, 0.15) 35%, transparent 70%),
+    radial-gradient(circle at 92% 92%, rgba(221, 214, 254, 0.3) 0%, rgba(237, 233, 254, 0.12) 40%, transparent 70%),
+    #F8F7FD;
 }
 
 /* Ambient Pulse Glows */
@@ -209,15 +209,17 @@
 /* Workspace Main Container (65% : 35%) */
 .booking-workspace-main {
   width: 100%;
-  flex: 1;
-  padding: 0 16px;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+  box-sizing: border-box;
   position: relative;
   z-index: 10;
 }
 
 .booking-workspace-grid {
-  max-width: 1140px;
-  margin: 28px auto 0;
+  width: 100%;
+  margin-top: 24px;
   display: flex;
   align-items: flex-start;
   gap: 32px;
@@ -382,6 +384,9 @@
   background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 80px;
+  height: 80px;
+  box-sizing: border-box;
 }
 
 .week-day-pill:hover {
@@ -414,12 +419,19 @@
   box-shadow: 0 4px 10px rgba(124, 58, 237, 0.25);
 }
 
-.week-day-pill.is-today .today-indicator-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 9999px;
-  background: #8B5CF6;
+.today-indicator-slot {
+  height: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-top: 4px;
+}
+
+.today-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #7C3AED;
 }
 
 .week-day-pill.is-sat .week-day-name,
@@ -580,19 +592,21 @@
 
 /* Fixed Slot Button (84px x 44px) */
 .fixed-slot-btn {
+  min-width: 84px !important;
   width: 84px !important;
   height: 44px !important;
   border-radius: 12px !important;
   box-sizing: border-box !important;
   flex-shrink: 0 !important;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
   cursor: pointer;
   transition: all 0.2s ease;
   background: #FFFFFF;
   border: 1px solid #E4E4E7;
+  padding: 0 2px !important;
 }
 
 .fixed-slot-btn:hover:not(.is-disabled) {
@@ -640,12 +654,16 @@
   font-weight: 800;
   color: #18181B;
   line-height: 1.1;
+  white-space: nowrap;
 }
 
 .slot-count {
-  font-size: 10px;
+  font-size: 10px !important;
   color: #71717A;
-  margin-top: 2px;
+  margin-top: 2px !important;
+  white-space: nowrap !important;
+  letter-spacing: -0.025em !important;
+  line-height: 1 !important;
 }
 
 /* Right Column (35% Sticky) */
@@ -912,28 +930,38 @@
 
 /* Waitlist Notice Box */
 .waitlist-notice-box {
-  border-radius: 14px;
-  background: #FFFBEB;
-  border: 1px solid #FDE68A;
-  padding: 12px 14px;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
   margin-bottom: 16px;
 }
 
 .waitlist-notice-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: #D97706;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #D97706 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin-bottom: 6px !important;
 }
 
 .waitlist-notice-desc {
-  font-size: 11px;
-  color: #78350F;
-  line-height: 1.5;
-  margin: 0;
+  font-size: 11px !important;
+  color: #71717A !important;
+  line-height: 1.4 !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important;
+}
+
+.waitlist-notice-desc p {
+  margin: 0 !important;
+  margin-bottom: 4px !important;
+}
+
+.waitlist-notice-desc p:last-child {
+  margin-bottom: 0 !important;
 }
 
 /* Policy Box */
@@ -1113,9 +1141,9 @@
 }
 
 .success-status-badge.is-waitlist {
-  background: #FEF3C7;
-  border-color: #FDE68A;
-  color: #D97706;
+  background: #FFF7ED;
+  border-color: #FFEDD5;
+  color: #EA580C;
 }
 
 .btn-history-link {
