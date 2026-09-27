@@ -38,6 +38,16 @@ const User = () => {
     const navigate = useNavigate();
     const [form] = Form.useForm();
 
+    // 로그인한 실제 회원 정보
+    const [memberInfo, setMemberInfo] = useState(null);
+
+    useEffect(() => {
+        fetch('/api/member/info', { credentials: 'include' })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => setMemberInfo(data))
+            .catch((err) => console.error('회원 정보 조회 실패:', err));
+    }, []);
+
     // 지점 목록 (실제 백엔드 조회)
     const [centers, setCenters] = useState([]);
     const [selectedCenterId, setSelectedCenterId] = useState(null);
@@ -358,6 +368,9 @@ const User = () => {
                     resetBookingState();
                     form.setFieldsValue({ centerId: id });
                 }}
+                userName={memberInfo?.name}
+                userGrade={memberInfo?.hasAdminCenter ? '센터 관리자' : '일반 회원'}
+                userInitials={memberInfo?.name ? memberInfo.name.slice(0, 1) : undefined}
                 notifications={notifications}
                 onClearNotifications={() => setNotifications([])}
                 onDeleteNotification={(id) => setNotifications((prev) => prev.filter((n) => n.id !== id))}

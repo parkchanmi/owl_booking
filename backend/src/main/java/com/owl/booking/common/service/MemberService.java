@@ -135,6 +135,12 @@ public class MemberService {
     public Member findOrCreateByKakao(KakaoOAuthService.KakaoUserInfo kakaoUserInfo) {
         Member existing = memberRepository.findByProviderAndProviderId(MemberProvider.KAKAO, kakaoUserInfo.providerId());
         if (existing != null) {
+            // 로그인할 때마다 카카오 프로필의 최신 닉네임으로 동기화
+            if (kakaoUserInfo.nickname() != null && !kakaoUserInfo.nickname().isBlank()
+                    && !kakaoUserInfo.nickname().equals(existing.getName())) {
+                existing.setName(kakaoUserInfo.nickname());
+                memberRepository.save(existing);
+            }
             return existing;
         }
 

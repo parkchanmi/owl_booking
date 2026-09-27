@@ -95,6 +95,7 @@ public class KakaoOAuthService {
                 "https://kapi.kakao.com/v2/user/me", HttpMethod.GET, request, Map.class);
 
         Map<String, Object> responseBody = response.getBody();
+        log.info("카카오 사용자 정보 응답: {}", responseBody);
         String providerId = String.valueOf(responseBody.get("id"));
 
         Map<String, Object> kakaoAccount = (Map<String, Object>) responseBody.get("kakao_account");
