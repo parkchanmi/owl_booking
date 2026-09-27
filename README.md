@@ -16,7 +16,7 @@
 
 > 서비스 UI/UX 디자인은 아래 링크에서 확인할 수 있습니다.
 
-- [디자인 보기](https://stitch.withgoogle.com/projects/15256837525108684069)
+- [디자인 보기](https://stitch.withgoogle.com/projects/14651535884322445668)
 
 ---
 

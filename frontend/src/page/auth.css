@@ -360,7 +360,7 @@
 /* Social Buttons */
 .social-login-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
   padding-bottom: 4px;
 }
@@ -383,26 +383,6 @@
 .kakao-btn:hover {
   background-color: #FADA0A !important;
   border-color: #FADA0A !important;
-}
-
-.naver-btn {
-  height: 44px !important;
-  background-color: #03C75A !important;
-  border-color: #03C75A !important;
-  color: #FFFFFF !important;
-  font-weight: 700 !important;
-  font-size: 13px !important;
-  border-radius: 12px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
-  box-shadow: 0 2px 6px rgba(3, 199, 90, 0.15) !important;
-}
-
-.naver-btn:hover {
-  background-color: #02B351 !important;
-  border-color: #02B351 !important;
 }
 
 /* Primary Action Buttons */

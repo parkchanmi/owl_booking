@@ -25,7 +25,6 @@ import {
     UpOutlined,
     LeftOutlined,
     RightOutlined,
-    CheckOutlined,
     CloseOutlined,
     SettingOutlined,
     LogoutOutlined,
@@ -213,6 +212,29 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
     const [metricModalOpen, setMetricModalOpen] = useState(false);
     const [pauseModalOpen, setPauseModalOpen] = useState(false);
 
+    // 내 예약 내역 (실제 백엔드 조회)
+    const [myBookings, setMyBookings] = useState([]);
+    const [bookingsLoading, setBookingsLoading] = useState(true);
+
+    const fetchMyBookings = async () => {
+        setBookingsLoading(true);
+        try {
+            const response = await fetch('/api/bookings/mine', { credentials: 'include' });
+            if (response.ok) {
+                const data = await response.json();
+                setMyBookings(data);
+            }
+        } catch (e) {
+            console.error('예약 내역 조회 실패:', e);
+        } finally {
+            setBookingsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchMyBookings();
+    }, []);
+
     // 로그아웃 핸들러 (기존 세션 해제 보존)
     const handleLogout = async () => {
         try {
@@ -257,20 +279,21 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                 message.success(`${item?.title || '수업'} 예약이 정상적으로 확정되었습니다!`);
             } else {
                 // 예약 취소 / 대기 취소 API 호출
-                const endpoint = item?.isWaitlist ? `/api/waitlists/${item?.id || 1}` : `/api/bookings/${item?.id || 1}`;
-                await fetch(endpoint, {
+                const endpoint = item?.isWaitlist ? `/api/waitlists/${item?.id}` : `/api/bookings/${item?.id}`;
+                const response = await fetch(endpoint, {
                     method: 'DELETE',
                     credentials: 'include',
                 });
-                message.info(`${item?.title || '수업'} 신청이 안전하게 취소되었습니다. 이용권이 복원되었습니다.`);
+                if (response.ok) {
+                    message.info(`${item?.title || '수업'} 신청이 안전하게 취소되었습니다.`);
+                    fetchMyBookings();
+                } else {
+                    message.error('취소 처리 중 오류가 발생했습니다.');
+                }
             }
         } catch (err) {
-            // 목업 환경에서도 부드러운 피드백 제공
-            if (type === 'confirm') {
-                message.success(`${item?.title || '수업'} 예약이 정상적으로 확정되었습니다!`);
-            } else {
-                message.info(`${item?.title || '수업'} 취소가 완료되었습니다.`);
-            }
+            console.error('예약 처리 실패:', err);
+            message.error('취소 처리 중 오류가 발생했습니다.');
         } finally {
             setActionModal({ open: false, type: 'confirm', item: null });
         }
@@ -781,7 +804,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                     className={`sub-tab-btn ${activeTab === 'reservations' ? 'active' : ''}`}
                                     onClick={() => setActiveTab('reservations')}
                                 >
-                                    예약 내역 (4)
+                                    예약 내역 ({myBookings.length})
                                 </button>
                                 <button
                                     type="button"
@@ -809,106 +832,6 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                             {/* TAB PANE 1: 예약 내역 (Reservations) */}
                             {activeTab === 'reservations' && (
                                 <div>
-                                    {/* Waitlist Promoted Alert Card */}
-                                    <div
-                                        className="waitlist-promoted-card"
-                                        style={{
-                                            border: '1.5px solid #FED7AA',
-                                            background: '#FFFBF7',
-                                            borderRadius: 18,
-                                            padding: '18px 22px',
-                                            marginBottom: 24,
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <span
-                                                    style={{
-                                                        background: '#FFF7ED',
-                                                        color: '#EA580C',
-                                                        border: '1px solid #FFEDD5',
-                                                        fontWeight: 700,
-                                                        fontSize: 11,
-                                                        padding: '3px 10px',
-                                                        borderRadius: 9999,
-                                                    }}
-                                                >
-                                                    대기 승격
-                                                </span>
-                                                <span style={{ fontWeight: 700, fontSize: 14, color: '#18181B' }} className="font-num">
-                                                    2026.09.13(일) 07:30 — 08:30
-                                                </span>
-                                            </div>
-                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: '#EA580C' }} className="font-num">
-                                                <ClockCircleOutlined />
-                                                <span>02:38:57 남음</span>
-                                            </div>
-                                        </div>
-
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-                                            <div>
-                                                <h4 style={{ fontWeight: 700, fontSize: 17, color: '#18181B', margin: '0 0 4px', letterSpacing: '-0.01em' }}>
-                                                    Power Vinyasa Yoga
-                                                </h4>
-                                                <div style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <span>강남 시그니처점</span>
-                                                    <span>·</span>
-                                                    <span>Sarah Jenkins 강사</span>
-                                                    <span>·</span>
-                                                    <span>Studio A</span>
-                                                </div>
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                                                <button
-                                                    type="button"
-                                                    className="action-cancel-link"
-                                                    style={{ fontSize: 12, color: '#71717A' }}
-                                                    onClick={() =>
-                                                        handleOpenActionModal('cancel', {
-                                                            id: 'wait-promo-1',
-                                                            title: 'Power Vinyasa Yoga',
-                                                            dateStr: '2026.09.13(일) 07:30 — 08:30',
-                                                            instructor: 'Sarah Jenkins 강사 · Studio A',
-                                                            isWaitlist: true,
-                                                        })
-                                                    }
-                                                >
-                                                    대기 취소
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="cta-pulse-btn"
-                                                    style={{
-                                                        background: '#F97316',
-                                                        color: '#FFFFFF',
-                                                        fontWeight: 700,
-                                                        fontSize: 12,
-                                                        padding: '10px 20px',
-                                                        borderRadius: 12,
-                                                        border: 'none',
-                                                        cursor: 'pointer',
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: 6,
-                                                        boxShadow: '0 4px 12px rgba(249, 115, 22, 0.25)',
-                                                    }}
-                                                    onClick={() =>
-                                                        handleOpenActionModal('confirm', {
-                                                            id: 'wait-promo-1',
-                                                            programId: 'prog-1',
-                                                            title: 'Power Vinyasa Yoga',
-                                                            dateStr: '2026.09.13(일) 07:30 — 08:30',
-                                                            instructor: 'Sarah Jenkins 강사 · Studio A',
-                                                        })
-                                                    }
-                                                >
-                                                    <CheckOutlined />
-                                                    <span>예약 확정</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                     {/* Section Header Row */}
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -916,231 +839,99 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                 전체 예약 내역
                                             </h3>
                                             <span style={{ fontSize: 12, fontWeight: 700, color: '#6D28D9', backgroundColor: '#F5F3FF', border: '1px solid #DDD6FE', padding: '2px 9px', borderRadius: 9999 }} className="font-num">
-                                                총 4건
+                                                총 {myBookings.length}건
                                             </span>
                                         </div>
                                         <span style={{ fontSize: 12, color: '#A1A1AA', fontWeight: 500 }}>최신 일정 순으로 정렬됨</span>
                                     </div>
 
-                                    {/* Chronological Timeline Schedule List */}
-                                    <div style={{ position: 'relative', paddingBottom: 8 }}>
-                                        {/* Item 1: TODAY - 고강도 서킷 트레이닝 */}
-                                        <div style={{ position: 'relative', paddingLeft: 36, marginBottom: 40 }}>
-                                            <div style={{ position: 'absolute', left: 7.5, top: 19, bottom: -40, borderLeft: '1px solid #DDD6FE', pointerEvents: 'none' }} />
-                                            <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #6D28D9', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 10 }}>
-                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#6D28D9' }} />
-                                            </div>
+                                    {/* Chronological Timeline Schedule List (실제 예약 데이터) */}
+                                    {bookingsLoading ? (
+                                        <div style={{ padding: '40px 0', textAlign: 'center', color: '#A1A1AA', fontSize: 13 }}>
+                                            예약 내역을 불러오는 중입니다...
+                                        </div>
+                                    ) : myBookings.length === 0 ? (
+                                        <div style={{ padding: '40px 0', textAlign: 'center', color: '#A1A1AA', fontSize: 13 }}>
+                                            예약된 수업이 없습니다.
+                                        </div>
+                                    ) : (
+                                        <div style={{ position: 'relative', paddingBottom: 8 }}>
+                                            {myBookings.map((booking, idx) => {
+                                                const programMoment = booking.programDat ? dayjs(booking.programDat) : null;
+                                                const dayName = programMoment ? ['일', '월', '화', '수', '목', '금', '토'][programMoment.day()] : '';
+                                                const diffDays = programMoment ? programMoment.startOf('day').diff(dayjs().startOf('day'), 'day') : null;
+                                                const isLast = idx === myBookings.length - 1;
 
-                                            <div
-                                                className="timeline-item-content transition-transform duration-200 ease-out cursor-pointer hover:-translate-y-[2px]"
-                                                style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    padding: 0,
-                                                }}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                                    <span style={{ background: '#EDE9FE', color: '#6D28D9', fontWeight: 700, fontSize: 11, padding: '2px 8px', borderRadius: 6 }} className="font-num">
-                                                        TODAY
-                                                    </span>
-                                                    <span style={{ fontWeight: 700, fontSize: 15, color: '#18181B' }} className="font-num">
-                                                        2026.09.11 (금) &nbsp;19:30 — 20:20
-                                                    </span>
-                                                </div>
+                                                let badge = null;
+                                                if (diffDays === 0) badge = { label: 'TODAY', bg: '#EDE9FE', color: '#6D28D9' };
+                                                else if (diffDays > 0) badge = { label: `D-${diffDays}`, bg: '#F4F4F5', color: '#71717A' };
 
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
-                                                    <h4 style={{ fontSize: 17, fontWeight: 700, color: '#18181B', margin: 0, letterSpacing: '-0.01em' }}>
-                                                        고강도 서킷 트레이닝
-                                                    </h4>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                                                        <button
-                                                            type="button"
-                                                            className="action-cancel-link"
-                                                            style={{ fontSize: 12 }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleOpenActionModal('cancel', {
-                                                                    id: 'bk-1',
-                                                                    title: '고강도 서킷 트레이닝',
-                                                                    dateStr: '2026.09.11 (금) 19:30 — 20:20',
-                                                                    instructor: '강민호 트레이너 · Studio A',
-                                                                });
-                                                            }}
+                                                return (
+                                                    <div key={booking.id} style={{ position: 'relative', paddingLeft: 36, marginBottom: isLast ? 0 : 40 }}>
+                                                        {!isLast && (
+                                                            <div style={{ position: 'absolute', left: 7.5, top: 19, bottom: -40, borderLeft: '1px solid #DDD6FE', pointerEvents: 'none' }} />
+                                                        )}
+                                                        <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #6D28D9', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 10 }}>
+                                                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#6D28D9' }} />
+                                                        </div>
+
+                                                        <div
+                                                            className="timeline-item-content transition-transform duration-200 ease-out cursor-pointer hover:-translate-y-[2px]"
+                                                            style={{ background: 'transparent', border: 'none', padding: 0 }}
                                                         >
-                                                            예약 취소
-                                                        </button>
-                                                        <span style={{ background: '#F5F3FF', color: '#6D28D9', fontWeight: 600, fontSize: 12, padding: '4px 12px', borderRadius: 9999 }}>
-                                                            예약 완료
-                                                        </span>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                                                                {badge && (
+                                                                    <span style={{ background: badge.bg, color: badge.color, fontWeight: 700, fontSize: 11, padding: '2px 8px', borderRadius: 6 }} className="font-num">
+                                                                        {badge.label}
+                                                                    </span>
+                                                                )}
+                                                                <span style={{ fontWeight: 700, fontSize: 15, color: '#18181B' }} className="font-num">
+                                                                    {programMoment ? `${programMoment.format('YYYY.MM.DD')} (${dayName})` : '-'} &nbsp;{booking.startTime} — {booking.endTime}
+                                                                </span>
+                                                            </div>
+
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
+                                                                <h4 style={{ fontSize: 17, fontWeight: 700, color: '#18181B', margin: 0, letterSpacing: '-0.01em' }}>
+                                                                    {booking.programName}
+                                                                </h4>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="action-cancel-link"
+                                                                        style={{ fontSize: 12 }}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleOpenActionModal('cancel', {
+                                                                                id: booking.id,
+                                                                                title: booking.programName,
+                                                                                dateStr: `${programMoment ? programMoment.format('YYYY.MM.DD') : ''} ${booking.startTime} — ${booking.endTime}`,
+                                                                                instructor: booking.instructorName,
+                                                                            });
+                                                                        }}
+                                                                    >
+                                                                        예약 취소
+                                                                    </button>
+                                                                    <span style={{ background: '#F5F3FF', color: '#6D28D9', fontWeight: 600, fontSize: 12, padding: '4px 12px', borderRadius: 9999 }}>
+                                                                        예약 완료
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                                <span>{booking.centerName}</span>
+                                                                {booking.instructorName && (
+                                                                    <>
+                                                                        <span>·</span>
+                                                                        <span>{booking.instructorName}</span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-
-                                                <div style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <span>강남 시그니처점</span>
-                                                    <span>·</span>
-                                                    <span>강민호 트레이너</span>
-                                                    <span>·</span>
-                                                    <span>Studio A</span>
-                                                </div>
-                                            </div>
+                                                );
+                                            })}
                                         </div>
-
-                                        {/* Item 2: D-2 - 하타 딥 스트레칭 */}
-                                        <div style={{ position: 'relative', paddingLeft: 36, marginBottom: 40 }}>
-                                            <div style={{ position: 'absolute', left: 7, top: 19, bottom: -40, borderLeft: '1.5px dashed #FB923C', pointerEvents: 'none' }} />
-                                            <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #EA580C', pointerEvents: 'none', zIndex: 10 }} />
-
-                                            <div
-                                                className="timeline-item-content transition-transform duration-200 ease-out cursor-pointer hover:-translate-y-[2px]"
-                                                style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    padding: 0,
-                                                }}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                                    <span style={{ background: '#FFF7ED', color: '#EA580C', border: '1px solid #FFEDD5', fontWeight: 600, fontSize: 11, padding: '2px 8px', borderRadius: 9999 }} className="font-num">
-                                                        D-2
-                                                    </span>
-                                                    <span style={{ fontWeight: 700, fontSize: 15, color: '#18181B' }} className="font-num">
-                                                        2026.09.13 (일) &nbsp;10:00 — 11:00
-                                                    </span>
-                                                </div>
-
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
-                                                    <h4 style={{ fontSize: 17, fontWeight: 700, color: '#18181B', margin: 0, letterSpacing: '-0.01em' }}>
-                                                        하타 딥 스트레칭
-                                                    </h4>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                                                        <button
-                                                            type="button"
-                                                            className="action-cancel-link"
-                                                            style={{ fontSize: 12 }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleOpenActionModal('cancel', {
-                                                                    id: 'wait-2',
-                                                                    title: '하타 딥 스트레칭',
-                                                                    dateStr: '2026.09.13 (일) 10:00 — 11:00',
-                                                                    instructor: '이지은 강사 · Studio C',
-                                                                    isWaitlist: true,
-                                                                });
-                                                            }}
-                                                        >
-                                                            대기 취소
-                                                        </button>
-                                                        <span style={{ background: '#FFF7ED', color: '#EA580C', border: '1px solid #FFEDD5', fontWeight: 600, fontSize: 12, padding: '4px 12px', borderRadius: 9999 }}>
-                                                            대기 예약
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <span>강남 시그니처점</span>
-                                                    <span>·</span>
-                                                    <span>이지은 강사</span>
-                                                    <span>·</span>
-                                                    <span>Studio C</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Item 3: D-5 - 코어 리포머 필라테스 */}
-                                        <div style={{ position: 'relative', paddingLeft: 36, marginBottom: 40 }}>
-                                            <div style={{ position: 'absolute', left: 7.5, top: 19, bottom: -40, borderLeft: '1px solid #DDD6FE', pointerEvents: 'none' }} />
-                                            <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #8B5CF6', pointerEvents: 'none', zIndex: 10 }} />
-
-                                            <div
-                                                className="timeline-item-content transition-transform duration-200 ease-out cursor-pointer hover:-translate-y-[2px]"
-                                                style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    padding: 0,
-                                                }}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                                    <span style={{ background: '#F4F4F5', color: '#71717A', fontWeight: 700, fontSize: 11, padding: '2px 8px', borderRadius: 6 }} className="font-num">
-                                                        D-5
-                                                    </span>
-                                                    <span style={{ fontWeight: 700, fontSize: 15, color: '#18181B' }} className="font-num">
-                                                        2026.09.16 (수) &nbsp;11:00 — 12:00
-                                                    </span>
-                                                </div>
-
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
-                                                    <h4 style={{ fontSize: 17, fontWeight: 700, color: '#18181B', margin: 0, letterSpacing: '-0.01em' }}>
-                                                        코어 리포머 필라테스
-                                                    </h4>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                                                        <button
-                                                            type="button"
-                                                            className="action-cancel-link"
-                                                            style={{ fontSize: 12 }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleOpenActionModal('cancel', {
-                                                                    id: 'bk-3',
-                                                                    title: '코어 리포머 필라테스',
-                                                                    dateStr: '2026.09.16 (수) 11:00 — 12:00',
-                                                                    instructor: '박소연 강사 · Studio B',
-                                                                });
-                                                            }}
-                                                        >
-                                                            예약 취소
-                                                        </button>
-                                                        <span style={{ background: '#F5F3FF', color: '#6D28D9', fontWeight: 600, fontSize: 12, padding: '4px 12px', borderRadius: 9999 }}>
-                                                            예약 완료
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <span>강남 시그니처점</span>
-                                                    <span>·</span>
-                                                    <span>박소연 강사</span>
-                                                    <span>·</span>
-                                                    <span>Studio B</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Item 4: Past / Cancelled - Morning Flow */}
-                                        <div style={{ position: 'relative', paddingLeft: 36 }}>
-                                            <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #D4D4D8', pointerEvents: 'none', zIndex: 10 }} />
-
-                                            <div
-                                                className="timeline-item-content transition-transform duration-200 ease-out cursor-pointer hover:-translate-y-[2px]"
-                                                style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    padding: 0,
-                                                }}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-                                                    <span style={{ fontSize: 12, color: '#71717A' }} className="font-num">
-                                                        2026.09.05 (토) 14:00 — 15:00
-                                                    </span>
-                                                </div>
-
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
-                                                    <h4 style={{ fontSize: 17, fontWeight: 700, color: '#71717A', margin: 0, letterSpacing: '-0.01em' }}>
-                                                        Morning Flow
-                                                    </h4>
-                                                    <span style={{ fontSize: 12, color: '#A1A1AA' }} className="font-num">
-                                                        취소 완료 (26.09.05 14:20)
-                                                    </span>
-                                                </div>
-
-                                                <div style={{ fontSize: 12, color: '#A1A1AA', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <span>강남 시그니처점</span>
-                                                    <span>·</span>
-                                                    <span>Emily Park 강사</span>
-                                                    <span>·</span>
-                                                    <span>Studio C</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
                             )}
 
