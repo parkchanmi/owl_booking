@@ -66,9 +66,20 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     },
 ];
 
+export interface CenterInfo {
+    id: number | string;
+    name: string;
+    addr?: string;
+    hours?: string;
+    phone?: string;
+    tel?: string;
+    facility?: string;
+}
+
 export interface HeaderProps {
-    selectedCenterId?: number;
-    onSelectCenterId?: (id: number) => void;
+    centers?: CenterInfo[];
+    selectedCenterId?: number | string;
+    onSelectCenterId?: (id: number | string) => void;
     notifications?: NotificationItem[];
     onClearNotifications?: () => void;
     onDeleteNotification?: (id: string | number) => void;
@@ -80,7 +91,8 @@ export interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({
-    selectedCenterId = 1,
+    centers,
+    selectedCenterId,
     onSelectCenterId,
     notifications,
     onClearNotifications,
@@ -152,10 +164,13 @@ const Header: React.FC<HeaderProps> = ({
     const isMypage = location.pathname === '/mypage' || location.pathname.startsWith('/user/mypage');
     const isReservation = !isMypage;
 
+    // 지점 목록 (실제 데이터가 없으면 기본 목업 사용)
+    const centerList = centers && centers.length > 0 ? centers : DEFAULT_CENTERS;
+
     // 선택된 센터 객체
     const selectedCenter = useMemo(
-        () => DEFAULT_CENTERS.find((c) => c.id === selectedCenterId) ?? DEFAULT_CENTERS[0],
-        [selectedCenterId]
+        () => centerList.find((c) => c.id === selectedCenterId) ?? centerList[0],
+        [centerList, selectedCenterId]
     );
 
     // 로그아웃 핸들러
@@ -269,7 +284,7 @@ const Header: React.FC<HeaderProps> = ({
                             >
                                 <div className="branch-dropdown-title">대표 지점 선택</div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                    {DEFAULT_CENTERS.map((c) => {
+                                    {centerList.map((c) => {
                                         const isSelected = c.id === selectedCenterId;
                                         return (
                                             <div
@@ -304,32 +319,40 @@ const Header: React.FC<HeaderProps> = ({
                                         </svg>
                                         <span>선택된 센터 정보</span>
                                     </div>
-                                    <div className="branch-info-row">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="branch-info-icon">
-                                            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                                            <circle cx="12" cy="10" r="3" />
-                                        </svg>
-                                        <span>{selectedCenter.addr}</span>
-                                    </div>
-                                    <div className="branch-info-row">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="branch-info-icon">
-                                            <circle cx="12" cy="12" r="10" />
-                                            <polyline points="12 6 12 12 16 14" />
-                                        </svg>
-                                        <span>{selectedCenter.hours}</span>
-                                    </div>
-                                    <div className="branch-info-row">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="branch-info-icon">
-                                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                                        </svg>
-                                        <span>{selectedCenter.phone}</span>
-                                    </div>
-                                    <div className="branch-info-row">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="branch-info-icon">
-                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                        </svg>
-                                        <span>{selectedCenter.facility}</span>
-                                    </div>
+                                    {selectedCenter.addr && (
+                                        <div className="branch-info-row">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="branch-info-icon">
+                                                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                                                <circle cx="12" cy="10" r="3" />
+                                            </svg>
+                                            <span>{selectedCenter.addr}</span>
+                                        </div>
+                                    )}
+                                    {selectedCenter.hours && (
+                                        <div className="branch-info-row">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="branch-info-icon">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <polyline points="12 6 12 12 16 14" />
+                                            </svg>
+                                            <span>{selectedCenter.hours}</span>
+                                        </div>
+                                    )}
+                                    {(selectedCenter.tel || selectedCenter.phone) && (
+                                        <div className="branch-info-row">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="branch-info-icon">
+                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                                            </svg>
+                                            <span>{selectedCenter.tel || selectedCenter.phone}</span>
+                                        </div>
+                                    )}
+                                    {selectedCenter.facility && (
+                                        <div className="branch-info-row">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="branch-info-icon">
+                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                            </svg>
+                                            <span>{selectedCenter.facility}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}

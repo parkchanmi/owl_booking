@@ -20,10 +20,6 @@ const Home = () => {
         window.location.href = kakaoAuthUrl;
     };
 
-    const handleNaverLogin = () => {
-        message.info('네이버 간편 로그인은 서비스 준비 중입니다.');
-    };
-
     const onFinish = async (values) => {
         setLoading(true);
 
@@ -404,38 +400,25 @@ const Home = () => {
                                 </Form>
                             </div>
 
-                            {/* Social Logins (Member Only) */}
-                            {role === 'member' && (
-                                <div style={{ marginTop: 20 }}>
-                                    <Divider plain style={{ margin: '12px 0 16px', color: '#94A3B8', fontSize: 12 }}>
-                                        또는 간편 로그인
-                                    </Divider>
+                            {/* Social Logins */}
+                            <div style={{ marginTop: 20 }}>
+                                <Divider plain style={{ margin: '12px 0 16px', color: '#94A3B8', fontSize: 12 }}>
+                                    또는 간편 로그인
+                                </Divider>
 
-                                    <div className="social-login-grid">
-                                        <Button
-                                            block
-                                            className="kakao-btn"
-                                            onClick={handleKakaoLogin}
-                                        >
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#191919">
-                                                <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.706 4.8 4.27 6.054l-.865 3.195c-.078.29.239.52.484.364l3.87-2.564c.404.043.816.066 1.241.066 4.97 0 9-3.185 9-7.115S16.97 3 12 3z" />
-                                            </svg>
-                                            카카오 로그인
-                                        </Button>
-
-                                        <Button
-                                            block
-                                            className="naver-btn"
-                                            onClick={handleNaverLogin}
-                                        >
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#FFFFFF">
-                                                <path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z" />
-                                            </svg>
-                                            네이버 로그인
-                                        </Button>
-                                    </div>
+                                <div className="social-login-grid">
+                                    <Button
+                                        block
+                                        className="kakao-btn"
+                                        onClick={handleKakaoLogin}
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#191919">
+                                            <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.706 4.8 4.27 6.054l-.865 3.195c-.078.29.239.52.484.364l3.87-2.564c.404.043.816.066 1.241.066 4.97 0 9-3.185 9-7.115S16.97 3 12 3z" />
+                                        </svg>
+                                        카카오 로그인
+                                    </Button>
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                 </div>

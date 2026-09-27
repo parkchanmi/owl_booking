@@ -32,96 +32,51 @@ import './userBooking.css';
 
 const { Text } = Typography;
 
-// 센터 목록 및 상세 정보 (백엔드 CenterDto 대응)
-const CENTERS = [
-    {
-        id: 1,
-        name: '강남 시그니처점',
-        addr: '서울 강남구 테헤란로 123',
-        hours: '평일 06:00 - 23:00 / 주말 09:00 - 18:00',
-        phone: '02-1234-5678',
-        facility: '샤워실 완비 · 무료 주차 2시간 · 개별 락커',
-    },
-    {
-        id: 2,
-        name: '서초역점',
-        addr: '서울 서초구 반포대로 45',
-        hours: '평일 06:30 - 22:30 / 주말 09:00 - 18:00',
-        phone: '02-2345-6789',
-        facility: '개인 샤워부스 · 필라테스 기구 완비 · 타월 무료',
-    },
-    {
-        id: 3,
-        name: '역삼 테헤란점',
-        addr: '서울 강남구 역삼로 88',
-        hours: '평일 06:00 - 23:00 / 주말 09:00 - 18:00',
-        phone: '02-3456-7890',
-        facility: '발렛 파킹 · 프리미엄 스튜디오 · 인바디 측정',
-    },
-];
-
-// 수업 데이터 (RealProgramDto 대응)
-const CLASS_SCHEDULES = [
-    {
-        id: 'prog-1',
-        title: 'Power Vinyasa Yoga',
-        instructor: 'Sarah Jenkins 강사',
-        studio: 'Studio A',
-        studioDesc: 'Mindful Movement & Light · High-end Luxury Boutique',
-        type: 'yoga',
-        slots: [
-            { id: 'slot-1-1', time: '07:30 - 08:30', startTime: '07:30', endTime: '08:30', remain: 12, total: 15, status: 'open' },
-            { id: 'slot-1-2', time: '09:00 - 10:00', startTime: '09:00', endTime: '10:00', remain: 7, total: 15, status: 'open' },
-            { id: 'slot-1-3', time: '11:30 - 12:30', startTime: '11:30', endTime: '12:30', remain: 0, total: 15, waitlistCount: 2, status: 'waitlist' },
-            { id: 'slot-1-4', time: '14:00 - 15:00', startTime: '14:00', endTime: '15:00', remain: 0, total: 15, status: 'closed' },
-        ],
-    },
-    {
-        id: 'prog-2',
-        title: 'Advanced Pilates',
-        instructor: 'Michael Lee 강사',
-        studio: 'Studio B',
-        studioDesc: 'Core Balance & Precision · Ergonomic Reformer System',
-        type: 'pilates',
-        slots: [
-            { id: 'slot-2-1', time: '10:00 - 11:00', startTime: '10:00', endTime: '11:00', remain: 0, total: 15, status: 'closed' },
-            { id: 'slot-2-2', time: '13:00 - 14:00', startTime: '13:00', endTime: '14:00', remain: 14, total: 15, status: 'open' },
-            { id: 'slot-2-3', time: '16:30 - 17:30', startTime: '16:30', endTime: '17:30', remain: 5, total: 15, status: 'open' },
-        ],
-    },
-    {
-        id: 'prog-3',
-        title: 'Core Spinning',
-        instructor: '박서연 강사',
-        studio: 'Studio C',
-        studioDesc: 'High Intensity Cardio Rhythm · Dynamic Lighting',
-        type: 'spinning',
-        slots: [
-            { id: 'slot-3-1', time: '18:00 - 19:00', startTime: '18:00', endTime: '19:00', remain: 8, total: 20, status: 'open' },
-            { id: 'slot-3-2', time: '20:00 - 21:00', startTime: '20:00', endTime: '21:00', remain: 0, total: 20, waitlistCount: 1, status: 'waitlist' },
-        ],
-    },
-];
-
 const KOREAN_DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
 const User = () => {
     const navigate = useNavigate();
     const [form] = Form.useForm();
 
-    // 지점 상태 (centerId)
-    const [selectedCenterId, setSelectedCenterId] = useState(1);
+    // 지점 목록 (실제 백엔드 조회)
+    const [centers, setCenters] = useState([]);
+    const [selectedCenterId, setSelectedCenterId] = useState(null);
     const selectedCenter = useMemo(
-        () => CENTERS.find((c) => c.id === selectedCenterId) ?? CENTERS[0],
-        [selectedCenterId]
+        () => centers.find((c) => c.id === selectedCenterId) ?? centers[0] ?? null,
+        [centers, selectedCenterId]
     );
 
-    // 기준 오늘 날짜 (2026년 9월 11일 금요일)
-    const BASE_TODAY = useMemo(() => dayjs('2026-09-11'), []);
+    // 실제 스케줄(RealProgram) 목록
+    const [realPrograms, setRealPrograms] = useState([]);
+    const [programsLoading, setProgramsLoading] = useState(true);
+
+    useEffect(() => {
+        fetch('/api/centers', { credentials: 'include' })
+            .then((res) => res.json())
+            .then((data) => {
+                setCenters(data);
+                if (data.length > 0) {
+                    setSelectedCenterId((prev) => prev ?? data[0].id);
+                }
+            })
+            .catch((err) => console.error('센터 목록 조회 실패:', err));
+    }, []);
+
+    useEffect(() => {
+        setProgramsLoading(true);
+        fetch('/api/realprograms', { credentials: 'include' })
+            .then((res) => res.json())
+            .then((data) => setRealPrograms(data))
+            .catch((err) => console.error('수업 스케줄 조회 실패:', err))
+            .finally(() => setProgramsLoading(false));
+    }, []);
+
+    // 기준 오늘 날짜
+    const BASE_TODAY = useMemo(() => dayjs(), []);
 
     // 날짜 상태: 선택된 전체 일자 및 월간 탐색 기준
-    const [selectedDate, setSelectedDate] = useState(dayjs('2026-09-11'));
-    const [currentMonthDate, setCurrentMonthDate] = useState(dayjs('2026-09-01'));
+    const [selectedDate, setSelectedDate] = useState(BASE_TODAY);
+    const [currentMonthDate, setCurrentMonthDate] = useState(BASE_TODAY.startOf('month'));
     const [viewMode, setViewMode] = useState('week'); // 'week' | 'month'
 
     // 선택된 수업 및 슬롯 상태 (realProgramId, programDate, startTime 등)
@@ -146,70 +101,92 @@ const User = () => {
         return `${selectedDate.format('YYYY.MM.DD')} (${dayKo})`;
     }, [selectedDate]);
 
+    // 선택된 날짜 + 지점 기준 실제 수업 목록 (RealProgram을 카드/슬롯 구조로 그룹핑)
+    const programsForSelectedDate = useMemo(() => {
+        if (!selectedCenterId) return [];
+
+        const filtered = realPrograms.filter((rp) => (
+            rp.programDat
+            && rp.center?.id === selectedCenterId
+            && dayjs(rp.programDat).isSame(selectedDate, 'day')
+        ));
+
+        const groups = new Map();
+        filtered.forEach((rp) => {
+            const groupKey = rp.program?.id || `${rp.program?.name}-${rp.program?.startTime}`;
+            if (!groups.has(groupKey)) {
+                groups.set(groupKey, {
+                    id: groupKey,
+                    title: rp.program?.name || '수업',
+                    instructor: rp.program?.instructor?.name ? `${rp.program.instructor.name} 강사` : '강사 미배정',
+                    slots: [],
+                });
+            }
+
+            const maxCapacity = rp.program?.maxCapacity;
+            const remain = maxCapacity != null ? Math.max(maxCapacity - (rp.bookingCount || 0), 0) : null;
+            groups.get(groupKey).slots.push({
+                id: rp.id,
+                realProgramId: rp.id,
+                startTime: rp.program?.startTime,
+                endTime: rp.program?.endTime,
+                time: `${rp.program?.startTime ?? ''} - ${rp.program?.endTime ?? ''}`,
+                remain,
+                total: maxCapacity,
+                status: remain !== null && remain <= 0 ? 'closed' : 'open',
+            });
+        });
+
+        return Array.from(groups.values());
+    }, [realPrograms, selectedCenterId, selectedDate]);
+
     // 슬롯 선택 핸들러
     const handleSelectSlot = (program, slot) => {
         if (slot.status === 'closed') return;
 
         setSelectedProgram(program);
         setSelectedSlot(slot);
-        const wait = slot.status === 'waitlist';
-        setIsWaitlist(wait);
+        setIsWaitlist(false);
         setPanelState('form');
 
         // Form.Item DTO 필드 동기화
         form.setFieldsValue({
-            centerId: selectedCenter.id,
-            realProgramId: program.id,
+            centerId: selectedCenter?.id,
+            realProgramId: slot.realProgramId,
             programDate: currentSelectedDate.format('YYYY-MM-DD'),
             startTime: slot.startTime,
             endTime: slot.endTime,
-            ticketId: 'ticket-gn-30',
             termsAgree: true,
         });
     };
 
-    // 예약 제출 핸들러 (백엔드 DTO 전송)
+    // 예약 제출 핸들러 (실제 백엔드 예약 생성 API 호출)
     const handleReservationSubmit = async () => {
         try {
             const values = await form.validateFields();
             setSubmitting(true);
 
-            // 백엔드 예약 생성 DTO 페이로드 구성
-            const bookingPayload = {
-                centerId: values.centerId || selectedCenter.id,
-                realProgramId: values.realProgramId || selectedProgram?.id,
-                programDate: values.programDate || currentSelectedDate.format('YYYY-MM-DD'),
-                startTime: values.startTime || selectedSlot?.startTime,
-                endTime: values.endTime || selectedSlot?.endTime,
-                ticketId: values.ticketId || 'ticket-gn-30',
-                isWaitlist: isWaitlist,
-            };
+            const response = await fetch('/api/bookings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ realProgramId: values.realProgramId || selectedSlot?.realProgramId }),
+                credentials: 'include',
+            });
 
-            // 백엔드 통신 시도
-            try {
-                const endpoint = isWaitlist ? '/api/waitlists' : '/api/bookings';
-                await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bookingPayload),
-                    credentials: 'include',
-                });
-            } catch (networkErr) {
-                console.warn('API endpoint handled:', networkErr);
+            if (!response.ok) {
+                const errorBody = await response.json().catch(() => null);
+                message.error(errorBody?.message || '수업 예약이 마감되었거나 처리 중 오류가 발생했습니다.');
+                return;
             }
 
-            // 성공 처리
-            const successMsg = isWaitlist
-                ? '대기 예약 신청이 정상 접수되었습니다.'
-                : '수업 예약이 정상적으로 완료되었습니다!';
-            message.success(successMsg);
+            message.success('수업 예약이 정상적으로 완료되었습니다!');
 
             setConfirmedData({
                 programTitle: selectedProgram.title,
                 instructor: selectedProgram.instructor,
                 dateTime: `${formattedDateString} · ${selectedSlot.time}`,
-                location: `${selectedCenter.name} (${selectedProgram.studio})`,
-                isWaitlist: isWaitlist,
+                location: selectedCenter?.name,
+                isWaitlist: false,
             });
 
             setPanelState('confirmed');
@@ -374,6 +351,7 @@ const User = () => {
 
             {/* Floating Pill-Style Header */}
             <Header
+                centers={centers}
                 selectedCenterId={selectedCenterId}
                 onSelectCenterId={(id) => {
                     setSelectedCenterId(id);
@@ -513,78 +491,63 @@ const User = () => {
                             </div>
 
                             <div className="class-cards-list">
-                                {CLASS_SCHEDULES.map((prog) => (
-                                    <article key={prog.id} className="class-schedule-card">
-                                        <div className="class-card-meta">
-                                            <div className="class-card-icon-badge">
-                                                {prog.type === 'yoga' && (
+                                {programsLoading ? (
+                                    <div style={{ padding: '32px 0', textAlign: 'center', color: '#A1A1AA', fontSize: 13 }}>
+                                        수업 목록을 불러오는 중입니다...
+                                    </div>
+                                ) : programsForSelectedDate.length === 0 ? (
+                                    <div style={{ padding: '32px 0', textAlign: 'center', color: '#A1A1AA', fontSize: 13 }}>
+                                        선택하신 날짜에 개설된 수업이 없습니다.
+                                    </div>
+                                ) : (
+                                    programsForSelectedDate.map((prog) => (
+                                        <article key={prog.id} className="class-schedule-card">
+                                            <div className="class-card-meta">
+                                                <div className="class-card-icon-badge">
                                                     <svg fill="none" height="22" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="22">
                                                         <circle cx="12" cy="4" r="2" />
                                                         <path d="m4 17 5-2 3-5 3 5 5 2" />
                                                         <path d="M12 9v5l-3 6" />
                                                         <path d="M15 20l-3-6" />
                                                     </svg>
-                                                )}
-                                                {prog.type === 'pilates' && (
-                                                    <svg fill="none" height="22" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="22">
-                                                        <path d="m6.5 6.5 11 11" />
-                                                        <path d="m21 21-1-1a2 2 0 0 0-2.83 0l-.88.88a2 2 0 0 1-2.83 0l-1.41-1.41a2 2 0 0 1 0-2.83l.88-.88a2 2 0 0 0 0-2.83l-1-1" />
-                                                        <path d="m3 3 1 1a2 2 0 0 0 2.83 0l.88-.88a2 2 0 0 1 2.83 0l1.41 1.41a2 2 0 0 1 0 2.83l-.88.88a2 2 0 0 0 0 2.83l1 1" />
-                                                    </svg>
-                                                )}
-                                                {prog.type === 'spinning' && (
-                                                    <svg fill="none" height="22" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="22">
-                                                        <circle cx="12" cy="12" r="8" />
-                                                        <path d="M12 2v4" />
-                                                        <path d="M12 18v4" />
-                                                        <path d="m4.93 4.93 2.83 2.83" />
-                                                        <path d="m16.24 16.24 2.83 2.83" />
-                                                    </svg>
-                                                )}
+                                                </div>
+                                                <div className="class-card-text">
+                                                    <h3>{prog.title}</h3>
+                                                    <p>{prog.instructor}</p>
+                                                </div>
                                             </div>
-                                            <div className="class-card-text">
-                                                <h3>{prog.title}</h3>
-                                                <p>{prog.instructor} · {prog.studio}</p>
+
+                                            {/* Slot Buttons */}
+                                            <div className="class-card-slots">
+                                                {prog.slots.map((slot) => {
+                                                    const isSlotActive = selectedSlot?.id === slot.id;
+                                                    const isClosed = slot.status === 'closed';
+
+                                                    return (
+                                                        <button
+                                                            key={slot.id}
+                                                            type="button"
+                                                            disabled={isClosed}
+                                                            className={`fixed-slot-btn min-w-[84px] w-[84px] h-[44px] flex flex-col items-center justify-center ${
+                                                                isClosed
+                                                                    ? 'is-disabled'
+                                                                    : isSlotActive
+                                                                    ? 'is-active-regular'
+                                                                    : ''
+                                                            }`}
+                                                            onClick={() => handleSelectSlot(prog, slot)}
+                                                        >
+                                                            <span className="slot-time">{slot.startTime}</span>
+                                                            <span className="slot-count text-[10px] whitespace-nowrap tracking-tight leading-none mt-0.5">
+                                                                {isClosed ? '마감' : `${slot.remain}/${slot.total}`}
+                                                            </span>
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
-                                        </div>
-
-                                        {/* Slot Buttons */}
-                                        <div className="class-card-slots">
-                                            {prog.slots.map((slot) => {
-                                                const isSlotActive = selectedSlot?.id === slot.id;
-                                                const isWait = slot.status === 'waitlist';
-                                                const isClosed = slot.status === 'closed';
-
-                                                return (
-                                                    <button
-                                                        key={slot.id}
-                                                        type="button"
-                                                        disabled={isClosed}
-                                                        className={`fixed-slot-btn min-w-[84px] w-[84px] h-[44px] flex flex-col items-center justify-center ${
-                                                            isClosed
-                                                                ? 'is-disabled'
-                                                                : isWait
-                                                                ? `is-waitlist ${isSlotActive ? 'is-active-waitlist' : ''}`
-                                                                : isSlotActive
-                                                                ? 'is-active-regular'
-                                                                : ''
-                                                        }`}
-                                                        onClick={() => handleSelectSlot(prog, slot)}
-                                                    >
-                                                        <span className="slot-time">{slot.startTime}</span>
-                                                        <span className="slot-count text-[10px] whitespace-nowrap tracking-tight leading-none mt-0.5">
-                                                            {isClosed
-                                                                ? '마감'
-                                                                : isWait
-                                                                ? `${slot.total}/${slot.total} (대기)`
-                                                                : `${slot.remain}/${slot.total}`}
-                                                        </span>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </article>
-                                ))}
+                                        </article>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </section>
@@ -609,20 +572,19 @@ const User = () => {
                             {panelState === 'form' && selectedProgram && selectedSlot && (
                                 <div className="panel-details-view">
                                     <div>
-                                        {/* Top Studio Preview Banner */}
+                                        {/* Top Center Preview Banner */}
                                         <div className="studio-banner-card">
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span className="studio-banner-tag">{selectedProgram.studio}</span>
-                                                <span className="studio-banner-preview-badge">PREVIEW</span>
+                                                <span className="studio-banner-tag">{selectedCenter?.name}</span>
                                             </div>
                                             <div className="studio-banner-bottom">
-                                                <p className="studio-title">{selectedProgram.studioDesc.split('·')[0]}</p>
-                                                <p className="studio-desc">{selectedProgram.studioDesc.split('·')[1] || 'High-end Luxury Boutique'}</p>
+                                                <p className="studio-title">{selectedProgram.title}</p>
+                                                <p className="studio-desc">{selectedProgram.instructor}</p>
                                             </div>
                                         </div>
 
                                         <h2 className="panel-details-header-title">
-                                            {isWaitlist ? '대기 예약 세부 정보' : '예약 세부 정보'}
+                                            예약 세부 정보
                                         </h2>
 
                                         {/* Selected Class Details Form & Info */}
@@ -633,7 +595,6 @@ const User = () => {
                                             <Form.Item name="programDate" hidden><input /></Form.Item>
                                             <Form.Item name="startTime" hidden><input /></Form.Item>
                                             <Form.Item name="endTime" hidden><input /></Form.Item>
-                                            <Form.Item name="ticketId" hidden><input /></Form.Item>
 
                                             <div className="info-rows-container">
                                                 <div>
@@ -647,11 +608,11 @@ const User = () => {
                                                 <div className="info-grid-2col">
                                                     <div className="info-grid-cell">
                                                         <span className="info-label">지점</span>
-                                                        <span className="info-value-text">{selectedCenter.name}</span>
+                                                        <span className="info-value-text">{selectedCenter?.name}</span>
                                                     </div>
                                                     <div className="info-grid-cell">
-                                                        <span className="info-label">스튜디오</span>
-                                                        <span className="info-value-text">{selectedProgram.studio}</span>
+                                                        <span className="info-label">정원</span>
+                                                        <span className="info-value-text">{selectedSlot.total != null ? `${selectedSlot.total}명` : '제한 없음'}</span>
                                                     </div>
                                                 </div>
 
@@ -679,34 +640,10 @@ const User = () => {
                                                         <div className="ticket-pass-icon">
                                                             <CalendarOutlined style={{ fontSize: 14 }} />
                                                         </div>
-                                                        <span className="ticket-pass-name">{selectedCenter.name} 전용 30회권</span>
+                                                        <span className="ticket-pass-name">보유하신 이용권으로 예약됩니다</span>
                                                     </div>
-                                                    <span className="ticket-remain-badge">8회 남음</span>
-                                                </div>
-                                                <div className="ticket-pass-card__bottom">
-                                                    <span className="ticket-expire-date">유효기간: 2026.12.31 만료</span>
-                                                    <button
-                                                        type="button"
-                                                        className="ticket-change-btn"
-                                                        onClick={() => message.info('보유 중인 다른 이용권 목록이 없습니다.')}
-                                                    >
-                                                        다른 이용권 사용 ›
-                                                    </button>
                                                 </div>
                                             </div>
-
-                                            {/* Waitlist Flow Notice Box */}
-                                            {isWaitlist && (
-                                                <div className="waitlist-notice-box bg-transparent border-none p-0 shadow-none">
-                                                    <div className="waitlist-notice-title font-bold text-[13px] text-[#D97706] flex items-center gap-1 mb-1.5">
-                                                        <span>ⓘ 대기 예약 유의사항</span>
-                                                    </div>
-                                                    <div className="waitlist-notice-desc text-[11px] text-[#71717A] leading-[1.4] tracking-normal space-y-1">
-                                                        <p className="m-0">• 공석 발생 시 카카오 알림톡 발송</p>
-                                                        <p className="m-0">• 알림 수신 후 1시간 이내 확정 시 이용권 1회 차감</p>
-                                                    </div>
-                                                </div>
-                                            )}
 
                                             {/* Policy & Terms Checkbox */}
                                             <div className="policy-box">
