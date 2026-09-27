@@ -16,7 +16,7 @@ const Home = () => {
     const [role, setRole] = useState('member'); // 'member' | 'admin'
 
     const handleKakaoLogin = () => {
-        const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}&response_type=code`;
+        const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}&response_type=code&scope=profile_nickname`;
         window.location.href = kakaoAuthUrl;
     };
 

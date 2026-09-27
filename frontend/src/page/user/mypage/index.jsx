@@ -100,6 +100,16 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
         }
     }, [tabParam]);
 
+    // 로그인한 실제 회원 정보
+    const [memberInfo, setMemberInfo] = useState(null);
+
+    useEffect(() => {
+        fetch('/api/member/info', { credentials: 'include' })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => setMemberInfo(data))
+            .catch((err) => console.error('회원 정보 조회 실패:', err));
+    }, []);
+
     // 지점 선택 상태
     const [selectedCenterId, setSelectedCenterId] = useState(1);
     const selectedCenter = useMemo(
@@ -339,6 +349,9 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                 onDeleteNotification={(id) => setNotifications((prev) => prev.filter((n) => n.id !== id))}
                 onLogout={handleLogout}
                 onNavigateSettings={() => setActiveTab('settings')}
+                userName={memberInfo?.name}
+                userGrade={memberInfo?.hasAdminCenter ? '센터 관리자' : '일반 회원'}
+                userInitials={memberInfo?.name ? memberInfo.name.slice(0, 1) : undefined}
             />
 
             {/* Main Content Workspace (Matches reservation page container) */}
@@ -738,7 +751,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                         WELCOME :)
                                     </div>
                                     <h1 style={{ fontSize: 20, fontWeight: 700, color: '#18181B', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-                                        좋은 오후입니다, Kim Ji-woo 님
+                                        좋은 오후입니다, {memberInfo?.name || '회원'}님
                                     </h1>
                                     <p style={{ fontSize: 12, color: '#71717A', margin: '4px 0 0' }}>
                                         이번 주 목표 달성까지 2개의 수업이 남았어요.
@@ -1592,26 +1605,6 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                     onClick={() => message.info('카카오 계정 연동 해제 기능입니다.')}
                                                 >
                                                     연동 해제
-                                                </button>
-                                            </div>
-
-                                            {/* Naver */}
-                                            <div style={{ padding: '14px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F4F4F5' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                    <div style={{ width: 22, height: 22, background: '#03C75A', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 11, color: '#FFFFFF' }}>
-                                                        N
-                                                    </div>
-                                                    <div>
-                                                        <div style={{ fontWeight: 600, fontSize: 14, color: '#18181B' }}>네이버 로그인</div>
-                                                        <span style={{ fontSize: 12, color: '#A1A1AA', marginTop: 2, display: 'block' }}>연동된 계정이 없습니다</span>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    style={{ width: 84, height: 34, borderRadius: 9999, background: '#F5F3FF', border: 'none', fontSize: 12, fontWeight: 600, color: '#6D28D9', cursor: 'pointer' }}
-                                                    onClick={() => message.info('네이버 간편 로그인 연동 화면으로 연결됩니다.')}
-                                                >
-                                                    연동하기
                                                 </button>
                                             </div>
 
