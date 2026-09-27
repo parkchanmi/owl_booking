@@ -699,33 +699,23 @@ const Home = () => {
                                 </Form>
                             </div>
 
-                            {/* Social Logins */}
-                            <div style={{ marginTop: 20 }}>
-                                <Divider plain style={{ margin: '12px 0 16px', color: '#94A3B8', fontSize: 12 }}>
-                                    또는 간편 로그인
-                                </Divider>
+                            {/* Social Logins (Member Only) */}
+                            {role === 'member' && (
+                                <div style={{ marginTop: 20 }}>
+                                    <Divider plain style={{ margin: '12px 0 16px', color: '#94A3B8', fontSize: 12 }}>
+                                        또는 간편 로그인
+                                    </Divider>
 
-                                    <div className="social-login-grid">
+                                    <div className="social-login-grid" style={{ display: 'block' }}>
                                         <Button
                                             block
-                                            className="kakao-btn"
+                                            className="kakao-btn w-full"
                                             onClick={handleKakaoLogin}
                                         >
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="#191919">
                                                 <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.706 4.8 4.27 6.054l-.865 3.195c-.078.29.239.52.484.364l3.87-2.564c.404.043.816.066 1.241.066 4.97 0 9-3.185 9-7.115S16.97 3 12 3z" />
                                             </svg>
-                                            카카오 로그인
-                                        </Button>
-
-                                        <Button
-                                            block
-                                            className="naver-btn"
-                                            onClick={handleNaverLogin}
-                                        >
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#FFFFFF">
-                                                <path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z" />
-                                            </svg>
-                                            네이버 로그인
+                                            카카오로 시작하기
                                         </Button>
                                     </div>
                                 </div>
@@ -733,6 +723,732 @@ const Home = () => {
                         </div>
                     </div>
                 </div>
+                )}
+
+                {viewMode === 'member_signup' && (
+                    <div className="signup-wrapper">
+                        <div
+                            className="signup-card"
+                            style={{
+                                borderRadius: '36px',
+                                background: 'rgba(255, 255, 255, 0.8)',
+                                backdropFilter: 'blur(24px) saturate(180%)',
+                                WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                                border: '1px solid rgba(255, 255, 255, 0.9)',
+                                boxShadow: 'rgba(124, 58, 237, 0.07) 0px 20px 40px -15px, rgba(237, 233, 254, 0.5) 0px 0px 0px 1px inset',
+                            }}
+                        >
+                            {/* Icon Badge */}
+                            <div className="signup-badge">
+                                <svg className="w-6 h-6 stroke-[1.8] text-[#7C3AED]" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            </div>
+
+                            {/* Title & Subtitle */}
+                            <div className="signup-header">
+                                <h1 className="signup-title">일반 회원가입</h1>
+                                <p className="signup-subtitle">OwlFit과 함께 건강한 피트니스 루틴을 만들어보세요.</p>
+                            </div>
+
+                            {/* Form */}
+                            <form className="signup-form" onSubmit={handleSignupSubmit}>
+                                {/* 1) 아이디 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        아이디 <span className="signup-required">*</span>
+                                    </label>
+                                    <div className="signup-input-row">
+                                        <input
+                                            type="text"
+                                            placeholder="영문 소문자, 숫자 조합 4~16자"
+                                            className="signup-input"
+                                            value={signupForm.loginId}
+                                            onChange={(e) => {
+                                                setSignupForm((prev) => ({ ...prev, loginId: e.target.value.trim() }));
+                                                if (isIdChecked || idCheckMsg.text) {
+                                                    setIsIdChecked(false);
+                                                    setIdCheckMsg({ text: '', isError: false });
+                                                }
+                                            }}
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            className={`signup-side-btn ${isIdChecked ? 'is-completed' : ''}`}
+                                            onClick={handleCheckUsername}
+                                        >
+                                            {isIdChecked ? '확인완료' : '중복확인'}
+                                        </button>
+                                    </div>
+                                    {idCheckMsg.text && (
+                                        <div className={`signup-msg ${idCheckMsg.isError ? 'signup-msg--error' : 'signup-msg--success'}`}>
+                                            {idCheckMsg.text}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 2) 비밀번호 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        비밀번호 <span className="signup-required">*</span>
+                                    </label>
+                                    <input
+                                        type="password"
+                                        placeholder="영문, 숫자, 특수문자 포함 8자 이상"
+                                        className="signup-input"
+                                        value={signupForm.password}
+                                        onChange={(e) => setSignupForm((prev) => ({ ...prev, password: e.target.value }))}
+                                        required
+                                    />
+                                    {signupForm.password && signupForm.password.length < 8 && (
+                                        <div className="signup-msg signup-msg--error">
+                                            비밀번호를 8자 이상 입력해주세요.
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 3) 비밀번호 확인 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        비밀번호 확인 <span className="signup-required">*</span>
+                                    </label>
+                                    <input
+                                        type="password"
+                                        placeholder="비밀번호를 다시 입력해주세요"
+                                        className="signup-input"
+                                        value={signupForm.passwordConfirm}
+                                        onChange={(e) => setSignupForm((prev) => ({ ...prev, passwordConfirm: e.target.value }))}
+                                        required
+                                    />
+                                    {isPasswordMismatch && (
+                                        <div className="signup-msg signup-msg--error">
+                                            비밀번호가 일치하지 않습니다.
+                                        </div>
+                                    )}
+                                    {!isPasswordMismatch && signupForm.passwordConfirm && isPasswordMatch && (
+                                        <div className="signup-msg signup-msg--success">
+                                            비밀번호가 일치합니다.
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 4) 이름 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        이름 <span className="signup-required">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="이름을 입력해주세요"
+                                        className="signup-input"
+                                        value={signupForm.name}
+                                        onChange={(e) => setSignupForm((prev) => ({ ...prev, name: e.target.value }))}
+                                        required
+                                    />
+                                </div>
+
+                                {/* 5) 이메일 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        이메일 <span className="signup-required">*</span>
+                                    </label>
+                                    <div className="signup-input-row">
+                                        <input
+                                            type="email"
+                                            placeholder="example@owlfit.com"
+                                            className="signup-input"
+                                            value={signupForm.email}
+                                            onChange={(e) => {
+                                                setSignupForm((prev) => ({ ...prev, email: e.target.value.trim() }));
+                                                if (isEmailVerified || emailVerifyMsg.text) {
+                                                    setIsEmailVerified(false);
+                                                    setEmailVerifyMsg({ text: '', isError: false });
+                                                }
+                                            }}
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            className={`signup-side-btn ${isEmailVerified ? 'is-completed' : ''}`}
+                                            onClick={handleSendEmailCode}
+                                        >
+                                            {isEmailVerified ? '인증완료' : '인증요청'}
+                                        </button>
+                                    </div>
+                                    {emailVerifyMsg.text && (
+                                        <div className={`signup-msg ${emailVerifyMsg.isError ? 'signup-msg--error' : 'signup-msg--success'}`}>
+                                            {emailVerifyMsg.text}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 6) 전화번호 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        전화번호 <span className="signup-required">*</span>
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        placeholder="010-0000-0000"
+                                        className="signup-input"
+                                        value={signupForm.phone}
+                                        onChange={handlePhoneChange}
+                                        required
+                                    />
+                                </div>
+
+                                {/* Submit Button */}
+                                <button
+                                    type="submit"
+                                    className="signup-submit-btn"
+                                    disabled={!isFormValid}
+                                >
+                                    가입 완료하기
+                                </button>
+                            </form>
+
+                            {/* Bottom Switch Link */}
+                            <div className="signup-bottom-switch">
+                                <p>
+                                    이미 계정이 있으신가요?
+                                    <span
+                                        className="signup-bottom-switch-link"
+                                        onClick={() => setViewMode('login')}
+                                    >
+                                        로그인
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {viewMode === 'member_signup_completed' && (
+                    <div className="signup-completed-wrapper">
+                        <div
+                            className="signup-completed-card"
+                            style={{
+                                borderRadius: '36px',
+                                background: 'rgba(255, 255, 255, 0.8)',
+                                backdropFilter: 'blur(28px) saturate(180%)',
+                                WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+                                border: '1.5px solid rgba(255, 255, 255, 0.95)',
+                                boxShadow: 'rgba(124, 58, 237, 0.1) 0px 24px 50px -12px, rgba(255, 255, 255, 0.9) 0px 0px 0px 1px inset, rgba(0, 0, 0, 0.04) 0px 8px 24px -4px',
+                            }}
+                        >
+                            {/* Top Hero Illustration */}
+                            <div className="signup-completed-hero">
+                                <img
+                                    alt="요가 스트레칭 캐릭터 일러스트"
+                                    className="signup-completed-img"
+                                    src="https://lh3.googleusercontent.com/aida/AEtjO1V-85Fri_3UWsAD04qoROCY9m_BMFhbCNyTGXb73C19Be6aPk_MSCvHfGJKDH7omqmQpJKnXsglLdoANApkjCCqg9XS24_nojPiMRL6FVRvm2UqrAsJCWizs8PnHi2EF2T-SZWu--NiGCaRXthu1FTml5eQK_VN64incGkvUIYoPkiC0LxtPRP0YTihGPh1myTtSOfe7y8n_3dedJnvpPNh9yVpFCgTrv0Yz3_eIoT_4AwVaFEpeGaH12Q"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        const fb = document.getElementById('yoga-hero-svg-fallback');
+                                        if (fb) fb.style.display = 'block';
+                                    }}
+                                />
+                                <svg
+                                    id="yoga-hero-svg-fallback"
+                                    style={{ display: 'none', width: '110px', height: '110px' }}
+                                    viewBox="0 0 120 120"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <circle cx="60" cy="60" r="50" fill="#EDE9FE" opacity="0.6" />
+                                    <circle cx="60" cy="38" r="14" fill="#7C3AED" />
+                                    <circle cx="60" cy="36" r="11" fill="#DDD6FE" />
+                                    <path d="M48 64C48 54 72 54 72 64V80H48V64Z" fill="#7C3AED" />
+                                    <path d="M48 58L32 44M72 58L88 44" stroke="#7C3AED" strokeWidth="6" strokeLinecap="round" />
+                                    <path d="M36 86C36 78 48 76 60 76C72 76 84 78 84 86C84 90 74 94 60 94C46 94 36 90 36 86Z" fill="#6D28D9" />
+                                    <path d="M26 28L28 34L34 36L28 38L26 44L24 38L18 36L24 34L26 28Z" fill="#F59E0B" />
+                                    <path d="M96 24L97.5 29L102 30.5L97.5 32L96 37L94.5 32L90 30.5L94.5 29L96 24Z" fill="#8B5CF6" />
+                                </svg>
+                            </div>
+
+                            {/* Greeting Headline */}
+                            <h1 className="signup-completed-title">
+                                {registeredUser.name || '회원'} 님, 반가워요!
+                            </h1>
+
+                            {/* Account Identity Capsule */}
+                            <div className="signup-completed-capsule">
+                                <span className="signup-completed-userid">@{registeredUser.userId || 'owlfit_user'}</span>
+                                <span className="signup-completed-dot" />
+                                <span className="signup-completed-role">일반 회원</span>
+                            </div>
+
+                            {/* Primary CTA Button */}
+                            <button
+                                type="button"
+                                className="signup-completed-btn"
+                                onClick={handleGoToLoginFromCompleted}
+                            >
+                                <span>지금 첫 수업 예약하러 가기</span>
+                                <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 16 16" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M3.33334 8H12.6667" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+                                    <path d="M8 3.33334L12.6667 8L8 12.6667" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* View 4: Center Admin Sign-Up Form (Phase 2) */}
+                {viewMode === 'admin_signup' && (
+                    <div className="admin-signup-wrapper">
+                        <div className="admin-signup-card">
+                            {/* Icon Badge & Top Header */}
+                            <div className="signup-header">
+                                <div className="signup-badge">
+                                    <svg className="w-6 h-6 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                </div>
+                                <h1 className="signup-title text-2xl font-extrabold text-[#18181B] tracking-tight text-center mb-1.5">
+                                    센터 관리자 회원가입
+                                </h1>
+                                <p className="signup-subtitle text-xs text-[#71717A] text-center mb-6">
+                                    OwlFit 파트너 센터로 등록하고 스마트한 스튜디오 운영을 시작하세요.
+                                </p>
+                            </div>
+
+                            {/* Top Q&A Banner (센터 등록 안내 박스) */}
+                            <div className="admin-guide-banner">
+                                <div className="admin-guide-banner-header">
+                                    <div className="admin-guide-icon">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                        </svg>
+                                    </div>
+                                    <div className="admin-guide-texts">
+                                        <h4>센터 등록이 처음이신가요?</h4>
+                                        <p>사업자 등록 · 승인 · 운영 방법 안내</p>
+                                    </div>
+                                </div>
+                                <div className="admin-guide-actions">
+                                    <button
+                                        type="button"
+                                        className="admin-guide-btn-guide"
+                                        onClick={() => message.info('센터 등록 가이드 문서 준비 중입니다.')}
+                                    >
+                                        가입 가이드
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="admin-guide-btn-chat"
+                                        onClick={() => message.info('실시간 1:1 상담 채널로 연결됩니다.')}
+                                    >
+                                        1:1 상담
+                                    </button>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handleAdminSignupSubmit} className="signup-form">
+                                {/* SECTION 1: 관리자 기본 정보 */}
+                                <div className="admin-section-divider">
+                                    <div className="admin-section-title-wrap">
+                                        <span className="admin-section-num">01</span>
+                                        <span className="admin-section-title">관리자 기본 정보</span>
+                                    </div>
+                                    <span className="admin-section-req-hint">* 필수 입력 항목</span>
+                                </div>
+
+                                {/* 1) 아이디 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        아이디 <span className="signup-required">*</span>
+                                    </label>
+                                    <div className="signup-input-row">
+                                        <input
+                                            type="text"
+                                            placeholder="영문 소문자, 숫자 조합 4~16자"
+                                            className="signup-input"
+                                            value={adminSignupForm.loginId}
+                                            onChange={(e) => {
+                                                setAdminSignupForm((prev) => ({ ...prev, loginId: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '') }));
+                                                setIsAdminIdChecked(false);
+                                                setAdminIdCheckMsg({ text: '', isError: false });
+                                            }}
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            className={`signup-side-btn ${isAdminIdChecked ? 'is-completed' : ''}`}
+                                            onClick={handleAdminCheckUsername}
+                                        >
+                                            {isAdminIdChecked ? '확인완료' : '중복확인'}
+                                        </button>
+                                    </div>
+                                    {adminIdCheckMsg.text && (
+                                        <div className={`signup-msg ${adminIdCheckMsg.isError ? 'signup-msg--error' : 'signup-msg--success'}`}>
+                                            {adminIdCheckMsg.text}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 2) 비밀번호 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        비밀번호 <span className="signup-required">*</span>
+                                    </label>
+                                    <input
+                                        type="password"
+                                        placeholder="영문, 숫자, 특수문자 포함 8자 이상"
+                                        className="signup-input"
+                                        value={adminSignupForm.password}
+                                        onChange={(e) => setAdminSignupForm((prev) => ({ ...prev, password: e.target.value }))}
+                                        required
+                                    />
+                                    {adminSignupForm.password && adminSignupForm.password.length < 8 && (
+                                        <div className="signup-msg signup-msg--error">
+                                            비밀번호는 최소 8자 이상이어야 합니다.
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 3) 비밀번호 확인 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        비밀번호 확인 <span className="signup-required">*</span>
+                                    </label>
+                                    <input
+                                        type="password"
+                                        placeholder="비밀번호를 다시 입력해주세요"
+                                        className="signup-input"
+                                        value={adminSignupForm.passwordConfirm}
+                                        onChange={(e) => setAdminSignupForm((prev) => ({ ...prev, passwordConfirm: e.target.value }))}
+                                        required
+                                    />
+                                    {isAdminPasswordMatch && (
+                                        <div className="signup-msg signup-msg--success">
+                                            비밀번호가 일치합니다.
+                                        </div>
+                                    )}
+                                    {isAdminPasswordMismatch && (
+                                        <div className="signup-msg signup-msg--error">
+                                            비밀번호가 일치하지 않습니다.
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 4) 관리자 이름 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        관리자 이름 <span className="signup-required">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="관리자 실명을 입력해주세요"
+                                        className="signup-input"
+                                        value={adminSignupForm.adminName}
+                                        onChange={(e) => setAdminSignupForm((prev) => ({ ...prev, adminName: e.target.value }))}
+                                        required
+                                    />
+                                </div>
+
+                                {/* 5) 이메일 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        이메일 <span className="signup-required">*</span>
+                                    </label>
+                                    <div className="signup-input-row">
+                                        <input
+                                            type="email"
+                                            placeholder="admin@studio.com"
+                                            className="signup-input"
+                                            value={adminSignupForm.email}
+                                            onChange={(e) => {
+                                                setAdminSignupForm((prev) => ({ ...prev, email: e.target.value }));
+                                                setIsAdminEmailVerified(false);
+                                                setAdminEmailVerifyMsg({ text: '', isError: false });
+                                            }}
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            className={`signup-side-btn ${isAdminEmailVerified ? 'is-completed' : ''}`}
+                                            onClick={handleAdminSendEmailCode}
+                                        >
+                                            {isAdminEmailVerified ? '인증완료' : '인증요청'}
+                                        </button>
+                                    </div>
+                                    {adminEmailVerifyMsg.text && (
+                                        <div className={`signup-msg ${adminEmailVerifyMsg.isError ? 'signup-msg--error' : 'signup-msg--success'}`}>
+                                            {adminEmailVerifyMsg.text}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 6) 전화번호 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        전화번호 <span className="signup-required">*</span>
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        placeholder="010-0000-0000"
+                                        className="signup-input"
+                                        value={adminSignupForm.phone}
+                                        onChange={handleAdminPhoneChange}
+                                        required
+                                    />
+                                </div>
+
+                                {/* SECTION 2: 센터(사업자) 정보 */}
+                                <div className="admin-section-divider" style={{ marginTop: 28 }}>
+                                    <div className="admin-section-title-wrap">
+                                        <span className="admin-section-num">02</span>
+                                        <span className="admin-section-title">센터(사업자) 정보</span>
+                                    </div>
+                                </div>
+
+                                {/* 7) 상호 (센터명) */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        상호 (센터명) <span className="signup-required">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="예: 아울핏 필라테스 강남점"
+                                        className="signup-input"
+                                        value={adminSignupForm.centerName}
+                                        onChange={(e) => setAdminSignupForm((prev) => ({ ...prev, centerName: e.target.value }))}
+                                        required
+                                    />
+                                </div>
+
+                                {/* 8) 대표자명 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        대표자명 <span className="signup-required">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="사업자등록증 상의 대표자명"
+                                        className="signup-input"
+                                        value={adminSignupForm.ceoName}
+                                        onChange={(e) => setAdminSignupForm((prev) => ({ ...prev, ceoName: e.target.value }))}
+                                        required
+                                    />
+                                </div>
+
+                                {/* 9) 사업자등록번호 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        사업자등록번호 <span className="signup-required">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="'-' 제외 10자리 숫자 입력"
+                                        className="signup-input"
+                                        value={adminSignupForm.bizNumber}
+                                        onChange={handleAdminBizNumberChange}
+                                        maxLength={12}
+                                        required
+                                    />
+                                </div>
+
+                                {/* 10) 센터 주소 */}
+                                <div className="signup-field">
+                                    <label className="signup-label">
+                                        센터 주소 <span className="signup-required">*</span>
+                                    </label>
+                                    {/* Row 1: 우편번호 & 버튼 */}
+                                    <div className="admin-zip-row">
+                                        <input
+                                            type="text"
+                                            placeholder="우편번호"
+                                            className="signup-input admin-zip-input"
+                                            value={adminSignupForm.zonecode}
+                                            onChange={(e) => setAdminSignupForm((prev) => ({ ...prev, zonecode: e.target.value }))}
+                                            readOnly
+                                            style={{ width: 120, flexShrink: 0 }}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="h-12 px-4 rounded-xl text-xs font-bold text-[#7C3AED] bg-[#F5F3FF] border border-[#DDD6FE] hover:bg-[#EDE9FE] transition-colors cursor-pointer whitespace-nowrap signup-side-btn admin-zip-btn"
+                                            onClick={handleOpenPostcode}
+                                        >
+                                            우편번호 찾기
+                                        </button>
+                                    </div>
+                                    {/* Row 2: 기본주소 */}
+                                    <input
+                                        type="text"
+                                        placeholder="기본주소"
+                                        className="signup-input"
+                                        style={{ marginBottom: 8 }}
+                                        value={adminSignupForm.address}
+                                        onChange={(e) => setAdminSignupForm((prev) => ({ ...prev, address: e.target.value }))}
+                                        required
+                                    />
+                                    {/* Row 3: 상세주소 */}
+                                    <input
+                                        type="text"
+                                        placeholder="상세주소 (동·호수 입력)"
+                                        className="signup-input"
+                                        value={adminSignupForm.detailAddress}
+                                        onChange={(e) => setAdminSignupForm((prev) => ({ ...prev, detailAddress: e.target.value }))}
+                                    />
+                                </div>
+
+                                {/* Bottom Info & Submit Button */}
+                                <div style={{ paddingTop: 8 }}>
+                                    <div className="admin-submit-notice">
+                                        <svg className="w-3.5 h-3.5 text-[#7C3AED]" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span>사업자 정보 확인 후 영업일 기준 1~2일 내 승인됩니다.</span>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        className="signup-submit-btn"
+                                        disabled={!isAdminFormValid}
+                                    >
+                                        <span>센터 관리자 가입 신청하기</span>
+                                        <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 16 16" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M3.33334 8H12.6667" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+                                            <path d="M8 3.33334L12.6667 8L8 12.6667" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {/* Bottom Switch Link */}
+                                <div className="text-center mt-5 signup-bottom-switch">
+                                    <p className="text-xs text-[#71717A] inline-flex items-center justify-center gap-1.5" style={{ fontSize: 12, color: '#71717A' }}>
+                                        이미 파트너 센터 계정이 있으신가요?
+                                        <button
+                                            type="button"
+                                            onClick={handleGoToAdminLogin}
+                                            className="text-[#7C3AED] font-bold underline underline-offset-2 hover:text-[#6D28D9] transition-colors cursor-pointer bg-transparent border-none p-0 inline ml-1.5"
+                                            style={{ fontSize: 12, color: '#7C3AED', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '2px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 6 }}
+                                        >
+                                            관리자 로그인
+                                        </button>
+                                    </p>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* View 5: Center Admin Sign-Up Completed Screen (Phase 2) */}
+                {viewMode === 'admin_signup_completed' && (
+                    <div className="admin-completed-wrapper">
+                        <div className="admin-completed-card">
+                            {/* Success Emblem */}
+                            <div className="admin-completed-badge-wrap">
+                                <div className="admin-completed-badge-icon">
+                                    <svg className="w-8 h-8 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="32" height="32">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5" />
+                                    </svg>
+                                </div>
+                                <div className="admin-completed-check-sub">
+                                    <svg className="w-3.5 h-3.5 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            {/* Headline & Subtitle */}
+                            <h1 className="admin-completed-title">
+                                센터 관리자 가입 신청이 완료되었습니다
+                            </h1>
+                            <p className="admin-completed-desc">
+                                파트너 센터 입점을 환영합니다.<br />
+                                원활한 서비스 제공을 위해 사업자 인증 심사가 진행됩니다.
+                            </p>
+
+                            {/* Application Summary Box */}
+                            <div className="admin-summary-box">
+                                <div className="admin-summary-header">
+                                    <div className="admin-summary-header-left">
+                                        <svg className="w-3.5 h-3.5 text-[#7C3AED]" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
+                                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                        </svg>
+                                        <span>신청 접수 정보</span>
+                                    </div>
+                                    <span className="admin-summary-pill">
+                                        <svg className="w-3 h-3 text-[#7C3AED] stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="12" height="12">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                        심사 대기중
+                                    </span>
+                                </div>
+                                <div className="admin-summary-body">
+                                    <div className="admin-summary-row">
+                                        <span className="admin-summary-label">센터(상호명)</span>
+                                        <span className="admin-summary-value admin-summary-value--bold">{registeredAdmin.centerName || '아울핏 스튜디오'}</span>
+                                    </div>
+                                    <div className="admin-summary-row">
+                                        <span className="admin-summary-label">신청 관리자</span>
+                                        <span className="admin-summary-value">{registeredAdmin.adminName || '관리자'} ({registeredAdmin.adminEmail || 'admin@studio.com'})</span>
+                                    </div>
+                                    <div className="admin-summary-row">
+                                        <span className="admin-summary-label">사업자등록번호</span>
+                                        <span className="admin-summary-value">{registeredAdmin.bizNumber || '000-00-00000'}</span>
+                                    </div>
+                                    <div className="admin-summary-row">
+                                        <span className="admin-summary-label">접수 일시</span>
+                                        <span className="admin-summary-value">{registeredAdmin.submittedAt || formatDateTime(new Date())}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Review Process & Next Steps Notice Box */}
+                            <div className="admin-notice-box">
+                                <div className="admin-notice-header">
+                                    <div className="admin-notice-header-left">
+                                        <svg className="w-3.5 h-3.5 text-[#7C3AED]" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                        </svg>
+                                        <span>이후 진행 절차 안내</span>
+                                    </div>
+                                    <span className="admin-notice-badge-time">영업일 1~2일 소요</span>
+                                </div>
+                                <div className="admin-notice-steps">
+                                    <div className="admin-notice-step-item">
+                                        <span className="admin-step-num">1</span>
+                                        <div className="admin-step-content">
+                                            <span className="admin-step-title">서류 검토 및 승인 심사</span>
+                                            <p className="admin-step-desc">담당자 확인 및 제출하신 사업자등록증 검토가 진행됩니다.</p>
+                                        </div>
+                                    </div>
+                                    <div className="admin-notice-step-item">
+                                        <span className="admin-step-num">2</span>
+                                        <div className="admin-step-content">
+                                            <span className="admin-step-title">결과 안내 및 로그인 활성화</span>
+                                            <p className="admin-step-desc">승인 완료 시 등록 관리자 이메일과 알림톡으로 접속 정보가 발송됩니다.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Primary Action Button */}
+                            <button
+                                type="button"
+                                className="admin-completed-btn"
+                                onClick={handleGoToLoginFromAdminCompleted}
+                            >
+                                <span>관리자 로그인 화면으로 이동</span>
+                                <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 16 16" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M3.33334 8H12.6667" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+                                    <path d="M8 3.33334L12.6667 8L8 12.6667" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+                                </svg>
+                            </button>
+
+                            {/* Secondary Support Link */}
+                            <p className="admin-completed-footer-text">
+                                급한 문의나 서류 보완이 필요하신가요? <span style={{ color: '#71717A', fontWeight: 600 }}>고객센터 1588-0000</span>
+                            </p>
+                        </div>
+                    </div>
+                )}
             </main>
 
             {/* Footer */}

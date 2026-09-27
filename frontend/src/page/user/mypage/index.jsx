@@ -1608,25 +1608,6 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                 </button>
                                             </div>
 
-                                            {/* Naver */}
-                                            <div style={{ padding: '14px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F4F4F5' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                    <div style={{ width: 22, height: 22, background: '#03C75A', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 11, color: '#FFFFFF' }}>
-                                                        N
-                                                    </div>
-                                                    <div>
-                                                        <div style={{ fontWeight: 600, fontSize: 14, color: '#18181B' }}>네이버 로그인</div>
-                                                        <span style={{ fontSize: 12, color: '#A1A1AA', marginTop: 2, display: 'block' }}>연동된 계정이 없습니다</span>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    style={{ width: 84, height: 34, borderRadius: 9999, background: '#F5F3FF', border: 'none', fontSize: 12, fontWeight: 600, color: '#6D28D9', cursor: 'pointer' }}
-                                                    onClick={() => message.info('네이버 간편 로그인 연동 화면으로 연결됩니다.')}
-                                                >
-                                                    연동하기
-                                                </button>
-                                            </div>
 
                                             {/* Password */}
                                             <div style={{ padding: '14px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F4F4F5' }}>
