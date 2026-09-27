@@ -61,6 +61,13 @@ public class CenterService {
                 .toList();
     }
 
+    // 회원용: 소속/권한과 무관하게 예약 가능한 전체 센터 목록
+    public List<CenterDto> getAllCentersPublic() {
+        return centerRepository.findAll().stream()
+                .map(this::toDto)
+                .toList();
+    }
+
     @Transactional
     public CenterDto createCenter(CenterDto centerDto) {
         Member currentMember = requireCurrentMember();
