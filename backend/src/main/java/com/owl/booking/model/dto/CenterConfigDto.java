@@ -23,6 +23,22 @@ public class CenterConfigDto {
     private Integer refundCountThresholdPercent;
     private Integer refundPeriodThresholdPercent;
 
+    private Integer membershipExpiryCountThreshold;
+
+    private Integer membershipExpiryDaysThreshold;
+
+    private String membershipExpiryEmailSubject;
+
+    private String membershipExpiryEmailTemplate;
+
+    private String waitlistAvailableEmailSubject;
+
+    private String waitlistAvailableEmailTemplate;
+
+    private String waitlistConfirmedEmailSubject;
+
+    private String waitlistConfirmedEmailTemplate;
+
     private Boolean autoGenerateEnabled;
 
     private String generationDaysOfWeek;

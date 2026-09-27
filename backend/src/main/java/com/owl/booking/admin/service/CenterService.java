@@ -33,7 +33,7 @@ public class CenterService {
     private static final String DEFAULT_ROLE_LABELS_JSON =
             "{\"OWNER\":\"총관리자\",\"MANAGER\":\"매니저\",\"INSTRUCTOR\":\"강사\"}";
     private static final String DEFAULT_ROLE_MENU_PERMISSIONS_JSON =
-            "{\"OWNER\":[\"center-list\",\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"sales\",\"member-list\",\"permission-list\"],\"MANAGER\":[\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"sales\",\"member-list\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}";
+            "{\"OWNER\":[\"center-list\",\"member-list\",\"instructor-list\",\"class-list\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"sales\",\"permission-list\",\"booking-index\"],\"MANAGER\":[\"member-list\",\"instructor-list\",\"class-list\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"sales\",\"booking-index\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}";
 
     public CenterService(
             CenterRepository centerRepository,
@@ -153,17 +153,15 @@ public class CenterService {
         }
 
         String ownerMappingJson = "{\"OWNER\":[\"" + owner.getId() + "\"],\"MANAGER\":[],\"INSTRUCTOR\":[]}";
-        CenterConfig config = CenterConfig.builder()
-                .confirmMode(ConfirmMode.AUTO)
-                .bookingOpenDays(7L)
-                .generationStartDat(14L)
-                .autoGenerateEnabled(true)
-                .generationDaysOfWeek("월,화,수,목,금,토,일")
-                .roleLabelsJson(DEFAULT_ROLE_LABELS_JSON)
-                .roleMenuPermissionsJson(DEFAULT_ROLE_MENU_PERMISSIONS_JSON)
-                .roleMemberMappingsJson(ownerMappingJson)
-                .center(center)
-                .build();
+        CenterConfig config = CenterConfig.builder().center(center).build();
+        config.setConfirmMode(ConfirmMode.AUTO);
+        config.setBookingOpenDays(7L);
+        config.setGenerationStartDat(14L);
+        config.setAutoGenerateEnabled(true);
+        config.setGenerationDaysOfWeek("월,화,수,목,금,토,일");
+        config.setRoleLabelsJson(DEFAULT_ROLE_LABELS_JSON);
+        config.setRoleMenuPermissionsJson(DEFAULT_ROLE_MENU_PERMISSIONS_JSON);
+        config.setRoleMemberMappingsJson(ownerMappingJson);
         centerConfigRepository.save(config);
     }
 }

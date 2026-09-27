@@ -18,27 +18,27 @@
 
 .booking-settings-toolbar-icon {
     display: flex;
+    flex-shrink: 0;
     align-items: center;
     justify-content: center;
     width: 38px;
     height: 38px;
-    border-radius: 10px;
-    background: #1677ff;
     color: #fff;
+    background: #1677ff;
+    border-radius: 10px;
     font-size: 17px;
-    flex-shrink: 0;
 }
 
 .booking-settings-toolbar-title {
+    color: #262626;
     font-size: 15px;
     font-weight: 600;
-    color: #262626;
     line-height: 1.4;
 }
 
 .booking-settings-toolbar-label {
-    font-size: 12px;
     color: #8c8c8c;
+    font-size: 12px;
 }
 
 .booking-center-select {
@@ -46,10 +46,10 @@
 }
 
 .booking-center-select .ant-select-selector {
-    border-radius: 8px !important;
     padding-inline: 12px !important;
-    background-color: #ffffff !important;
+    background-color: #fff !important;
     border-color: #d9e6f5 !important;
+    border-radius: 8px !important;
     transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
@@ -58,7 +58,6 @@
     border-color: #1677ff !important;
 }
 
-/* 세로형 설정 탭 */
 .booking-settings-tabs.ant-tabs-left > .ant-tabs-nav {
     width: 220px;
 }
@@ -97,14 +96,254 @@
 }
 
 .booking-settings-tabs.ant-tabs-left > .ant-tabs-content-holder {
-    border-left: 1px solid #f0f0f0;
     padding-left: 28px;
+    border-left: 1px solid #f0f0f0;
+}
+
+.notification-settings-card .ant-card-body {
+    padding: 24px;
+}
+
+.notification-threshold-row {
+    margin-top: 20px;
+}
+
+.notification-threshold-row .ant-input-number-group-wrapper {
+    width: 100%;
+    max-width: 220px;
+}
+
+.notification-template-tabs {
+    margin-top: 16px;
+}
+
+.notification-template-tabs > .ant-tabs-nav {
+    margin-bottom: 20px;
+}
+
+.notification-template-tabs .ant-tabs-tab {
+    padding: 10px 14px;
+}
+
+.notification-template-panel {
+    min-width: 0;
+}
+
+.notification-template-header {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    background: #fafafa;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+}
+
+.notification-template-header > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.notification-template-header .ant-typography-secondary {
+    font-size: 12px;
+}
+
+.notification-template-label {
+    margin-bottom: 8px;
+    color: #262626;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.notification-template-label-with-action {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.notification-template-label-with-action .ant-btn {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    color: #1677ff;
+}
+
+.notification-variable-guide {
+    display: flex;
+    gap: 16px;
+    flex-direction: column;
+    padding-top: 4px;
+}
+
+.notification-variable-guide-example {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+    padding: 14px 16px;
+    background: #f6f8fa;
+    border: 1px solid #e7ebef;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.notification-variable-guide code,
+.notification-variable-guide-item code {
+    color: #0958d9;
+    font-family: inherit;
+    font-weight: 600;
+}
+
+.notification-variable-guide-list {
+    border-top: 1px solid #f0f0f0;
+}
+
+.notification-variable-guide-item {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 14px;
+    padding: 11px 4px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #595959;
+    font-size: 13px;
+}
+
+.notification-template-panel > .ant-row {
+    align-items: stretch;
+}
+
+.notification-template-panel > .ant-row > .ant-col {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.notification-mail-editor {
+    display: flex;
+    height: 570px;
+    overflow: hidden;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.notification-mail-editor:focus-within {
+    border-color: #1677ff;
+    box-shadow: 0 0 0 2px rgba(5, 145, 255, 0.1);
+}
+
+.notification-mail-editor.is-disabled {
+    background: #f5f5f5;
+    opacity: 0.7;
+}
+
+.notification-mail-editor-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    padding: 7px 8px;
+    background: #fafafa;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.notification-mail-editor-toolbar .ant-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 6px;
+}
+
+.notification-mail-variables {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.notification-mail-variables .ant-tag {
+    margin: 0;
+    color: #0958d9;
+    background: #e6f4ff;
+    border-color: #91caff;
+    cursor: pointer;
+    user-select: none;
+}
+
+.notification-mail-editor-content {
+    min-height: 0;
+    padding: 18px;
+    overflow-y: auto;
+    flex: 1;
+    color: #262626;
+    font-size: 14px;
+    line-height: 1.7;
+    outline: none;
+}
+
+.notification-mail-editor-content h2 {
+    margin: 0 0 16px;
+    font-size: 20px;
+}
+
+.notification-mail-preview-shell {
+    display: flex;
+    height: 570px;
+    overflow: hidden;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+}
+
+.notification-mail-preview-meta {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    min-height: 48px;
+    padding: 8px 14px;
+    background: #fafafa;
+    border-bottom: 1px solid #f0f0f0;
+    color: #8c8c8c;
+    font-size: 12px;
+}
+
+.notification-mail-preview-meta strong {
+    overflow: hidden;
+    color: #262626;
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.notification-mail-preview {
+    display: block;
+    width: 100%;
+    min-height: 0;
+    flex: 1;
+    background: #f4f6f8;
+    border: 0;
+}
+
+.notification-settings-actions {
+    margin-top: 24px;
+    margin-bottom: 0;
+    text-align: right;
 }
 
 @media (max-width: 768px) {
     .booking-settings-toolbar {
-        flex-direction: column;
         align-items: stretch;
+        flex-direction: column;
     }
 
     .booking-center-select {
@@ -113,5 +352,23 @@
 
     .booking-settings-tabs.ant-tabs-left > .ant-tabs-nav {
         width: 160px;
+    }
+
+    .notification-template-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .notification-template-header .ant-btn {
+        width: 100%;
+    }
+
+    .notification-mail-editor-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .notification-mail-variables {
+        justify-content: flex-start;
     }
 }

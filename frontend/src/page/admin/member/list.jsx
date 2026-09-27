@@ -1,12 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button, Card, Input, Popconfirm, Select, Space, Table, Tabs, Tag, message } from 'antd';
-import { DeleteOutlined, PlusOutlined, SearchOutlined, UserOutlined } from '@ant-design/icons';
+import { DeleteOutlined, MailOutlined, PlusOutlined, SearchOutlined, UserOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../../components/DashboardLayout';
 import AdminPageToolbar from '../../../components/AdminPageToolbar';
 import '../adminList.css';
 import CenterMemberFormModal from './CenterMemberFormModal';
-import { createCenterMember, fetchCenterMembers, registerCenterMember, withdrawCenterMember } from '../../../api/centerMemberApi';
+import {
+    createCenterMember,
+    fetchCenterMembers,
+    registerCenterMember,
+    sendMembershipExpiryEmail,
+    withdrawCenterMember,
+} from '../../../api/centerMemberApi';
 import { fetchCenters } from '../../../api/centerApi';
 
 const TYPE_LABELS = {
@@ -31,6 +37,7 @@ const CenterMemberList = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState('register');
     const [submitting, setSubmitting] = useState(false);
+    const [sendingExpiryMail, setSendingExpiryMail] = useState(false);
 
     const loadCenterMembers = async () => {
         setLoading(true);
@@ -124,6 +131,29 @@ const CenterMemberList = () => {
             loadCenterMembers();
         } catch (error) {
             message.error(error.response?.data?.message ?? '탈퇴 처리 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleSendExpiryMail = async () => {
+        if (!selectedCenter) {
+            message.info('먼저 센터를 선택해주세요.');
+            return;
+        }
+
+        setSendingExpiryMail(true);
+        try {
+            const result = await sendMembershipExpiryEmail(selectedCenter);
+            if (result.targetCount === 0) {
+                message.info('이용권 만료 알림 발송 대상 회원이 없습니다.');
+            } else if (result.failedCount > 0) {
+                message.warning(`${result.sentCount}건 발송 완료, ${result.failedCount}건 발송 실패`);
+            } else {
+                message.success(`이용권 만료 알림 메일 ${result.sentCount}건을 발송했습니다.`);
+            }
+        } catch (error) {
+            message.error(error.response?.data?.message ?? '이용권 만료 알림 메일 발송 중 오류가 발생했습니다.');
+        } finally {
+            setSendingExpiryMail(false);
         }
     };
 
@@ -226,6 +256,25 @@ const CenterMemberList = () => {
                 <Tabs
                     activeKey={activeType}
                     onChange={handleTabChange}
+                    tabBarExtraContent={(
+                        <Popconfirm
+                            title="이용권 만료 알림 메일을 전송하시겠습니까?"
+                            description="설정된 잔여 횟수 또는 만료 기간 기준에 해당하는 회원에게 전송됩니다."
+                            okText="전송"
+                            cancelText="취소"
+                            disabled={!selectedCenter || sendingExpiryMail}
+                            onConfirm={handleSendExpiryMail}
+                        >
+                            <Button
+                                type="primary"
+                                icon={<MailOutlined />}
+                                loading={sendingExpiryMail}
+                                disabled={!selectedCenter}
+                            >
+                                이용권 만료 메일 전송
+                            </Button>
+                        </Popconfirm>
+                    )}
                     items={[
                         { key: 'USER', label: '회원' },
                         { key: 'ADMIN', label: '관리자' },
