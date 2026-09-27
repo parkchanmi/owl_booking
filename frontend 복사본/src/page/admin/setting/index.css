@@ -1,0 +1,117 @@
+.booking-settings-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #f0f7ff 0%, #f8fbff 100%);
+    border: 1px solid #e6f0fa;
+    border-radius: 12px;
+}
+
+.booking-settings-toolbar-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.booking-settings-toolbar-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #1677ff;
+    color: #fff;
+    font-size: 17px;
+    flex-shrink: 0;
+}
+
+.booking-settings-toolbar-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #262626;
+    line-height: 1.4;
+}
+
+.booking-settings-toolbar-label {
+    font-size: 12px;
+    color: #8c8c8c;
+}
+
+.booking-center-select {
+    min-width: 200px;
+}
+
+.booking-center-select .ant-select-selector {
+    border-radius: 8px !important;
+    padding-inline: 12px !important;
+    background-color: #ffffff !important;
+    border-color: #d9e6f5 !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.booking-center-select:hover .ant-select-selector,
+.booking-center-select.ant-select-focused .ant-select-selector {
+    border-color: #1677ff !important;
+}
+
+/* 세로형 설정 탭 */
+.booking-settings-tabs.ant-tabs-left > .ant-tabs-nav {
+    width: 220px;
+}
+
+.booking-settings-tabs .ant-tabs-nav-list {
+    gap: 4px;
+}
+
+.booking-settings-tabs .ant-tabs-tab {
+    padding: 10px 16px !important;
+    margin: 0 !important;
+    border-radius: 10px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.booking-settings-tabs .ant-tabs-tab:hover {
+    background-color: #f5f7fa;
+}
+
+.booking-settings-tabs .ant-tabs-tab-active {
+    background-color: #e6f4ff;
+}
+
+.booking-settings-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+    color: #1677ff !important;
+    font-weight: 600;
+}
+
+.booking-settings-tabs .ant-tabs-ink-bar {
+    display: none;
+}
+
+.booking-settings-tabs.ant-tabs-left > .ant-tabs-nav::before,
+.booking-settings-tabs .ant-tabs-nav-wrap::before {
+    border: none !important;
+}
+
+.booking-settings-tabs.ant-tabs-left > .ant-tabs-content-holder {
+    border-left: 1px solid #f0f0f0;
+    padding-left: 28px;
+}
+
+@media (max-width: 768px) {
+    .booking-settings-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .booking-center-select {
+        width: 100%;
+    }
+
+    .booking-settings-tabs.ant-tabs-left > .ant-tabs-nav {
+        width: 160px;
+    }
+}

@@ -359,9 +359,8 @@
 
 /* Social Buttons */
 .social-login-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  display: flex;
+  width: 100%;
   padding-bottom: 4px;
 }
 

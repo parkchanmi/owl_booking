@@ -14,6 +14,298 @@ const Home = () => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [role, setRole] = useState('member'); // 'member' | 'admin'
+    const [viewMode, setViewMode] = useState('login'); // 'login' | 'member_signup' | 'member_signup_completed' | 'admin_signup' | 'admin_signup_completed'
+
+    // Registered user for completed screen
+    const [registeredUser, setRegisteredUser] = useState({ name: '', userId: '' });
+    // Registered admin for completed screen
+    const [registeredAdmin, setRegisteredAdmin] = useState({
+        centerName: '',
+        adminName: '',
+        adminEmail: '',
+        bizNumber: '',
+        adminId: '',
+        submittedAt: '',
+    });
+
+    // Member Sign-Up Form State & Status Flags
+    const [signupForm, setSignupForm] = useState({
+        loginId: '',
+        password: '',
+        passwordConfirm: '',
+        name: '',
+        email: '',
+        phone: '',
+    });
+    const [isIdChecked, setIsIdChecked] = useState(false);
+    const [idCheckMsg, setIdCheckMsg] = useState({ text: '', isError: false });
+    const [isEmailVerified, setIsEmailVerified] = useState(false);
+    const [emailVerifyMsg, setEmailVerifyMsg] = useState({ text: '', isError: false });
+
+    // Center Admin Sign-Up Form State & Status Flags
+    const [adminSignupForm, setAdminSignupForm] = useState({
+        loginId: '',
+        password: '',
+        passwordConfirm: '',
+        adminName: '',
+        email: '',
+        phone: '',
+        centerName: '',
+        ceoName: '',
+        bizNumber: '',
+        zonecode: '',
+        address: '',
+        addressDetail: '',
+    });
+    const [isAdminIdChecked, setIsAdminIdChecked] = useState(false);
+    const [adminIdCheckMsg, setAdminIdCheckMsg] = useState({ text: '', isError: false });
+    const [isAdminEmailVerified, setIsAdminEmailVerified] = useState(false);
+    const [adminEmailVerifyMsg, setAdminEmailVerifyMsg] = useState({ text: '', isError: false });
+
+    // Business Number & Date Formatting Helpers
+    const formatBizNumber = (value) => {
+        if (!value) return '';
+        const clean = value.replace(/[^0-9]/g, '').slice(0, 10);
+        if (clean.length <= 3) return clean;
+        if (clean.length <= 5) return `${clean.slice(0, 3)}-${clean.slice(3)}`;
+        return `${clean.slice(0, 3)}-${clean.slice(3, 5)}-${clean.slice(5, 10)}`;
+    };
+
+    const formatDateTime = (date = new Date()) => {
+        const pad = (n) => String(n).padStart(2, '0');
+        const y = date.getFullYear();
+        const m = pad(date.getMonth() + 1);
+        const d = pad(date.getDate());
+        const h = pad(date.getHours());
+        const min = pad(date.getMinutes());
+        return `${y}.${m}.${d} ${h}:${min}`;
+    };
+
+    // TODO: [Backend] 아이디 중복확인 API 연동 (POST /api/auth/check-username)
+    const handleCheckUsername = () => {
+        const usernameRegex = /^[a-z0-9]{4,16}$/;
+        if (!signupForm.loginId.trim()) {
+            message.warning('아이디를 입력해주세요.');
+            return;
+        }
+        if (!usernameRegex.test(signupForm.loginId.trim())) {
+            setIsIdChecked(false);
+            setIdCheckMsg({ text: '영문 소문자, 숫자 조합 4~16자로 입력해주세요.', isError: true });
+            message.error('아이디는 영문 소문자와 숫자 조합 4~16자여야 합니다.');
+            return;
+        }
+        setIsIdChecked(true);
+        setIdCheckMsg({ text: '사용 가능한 아이디입니다.', isError: false });
+        message.success('사용 가능한 아이디입니다.');
+    };
+
+    // TODO: [Backend] 이메일 인증번호 발송 API 연동 (POST /api/auth/email/send-code)
+    const handleSendEmailCode = () => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!signupForm.email.trim()) {
+            message.warning('이메일을 입력해주세요.');
+            return;
+        }
+        if (!emailRegex.test(signupForm.email.trim())) {
+            setIsEmailVerified(false);
+            setEmailVerifyMsg({ text: '올바른 이메일 형식을 입력해주세요.', isError: true });
+            message.error('올바른 이메일 형식을 입력해주세요.');
+            return;
+        }
+        setIsEmailVerified(true);
+        setEmailVerifyMsg({ text: '인증 요청이 완료되었습니다 (모의 처리).', isError: false });
+        message.success('인증 요청이 완료되었습니다 (모의 처리).');
+    };
+
+    // 전화번호 010-0000-0000 자동 하이픈 포맷팅
+    const handlePhoneChange = (e) => {
+        const rawVal = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
+        let formatted = rawVal;
+        if (rawVal.length > 3 && rawVal.length <= 7) {
+            formatted = `${rawVal.slice(0, 3)}-${rawVal.slice(3)}`;
+        } else if (rawVal.length > 7) {
+            formatted = `${rawVal.slice(0, 3)}-${rawVal.slice(3, 7)}-${rawVal.slice(7)}`;
+        }
+        setSignupForm((prev) => ({ ...prev, phone: formatted }));
+    };
+
+    const isPasswordMatch = Boolean(
+        signupForm.password &&
+        signupForm.passwordConfirm &&
+        signupForm.password === signupForm.passwordConfirm
+    );
+    const isPasswordMismatch = Boolean(
+        signupForm.passwordConfirm &&
+        signupForm.password !== signupForm.passwordConfirm
+    );
+
+    const isFormValid = Boolean(
+        signupForm.loginId.trim() &&
+        isIdChecked &&
+        !idCheckMsg.isError &&
+        signupForm.password &&
+        signupForm.password.length >= 8 &&
+        isPasswordMatch &&
+        signupForm.name.trim() &&
+        signupForm.email.trim() &&
+        isEmailVerified &&
+        !emailVerifyMsg.isError &&
+        signupForm.phone.replace(/[^0-9]/g, '').length >= 10
+    );
+
+    // TODO: [Backend] 일반 회원가입 요청 API 연동 (POST /api/auth/register)
+    const handleSignupSubmit = (e) => {
+        e.preventDefault();
+        if (!isFormValid) {
+            message.warning('모든 필수 항목을 올바르게 입력하고 인증을 완료해주세요.');
+            return;
+        }
+        setRegisteredUser({
+            name: signupForm.name.trim(),
+            userId: signupForm.loginId.trim(),
+        });
+        message.success('회원가입이 완료되었습니다!');
+        setViewMode('member_signup_completed');
+    };
+
+    // 회원가입 완료 후 로그인 화면으로 이동 & 아이디 자동 입력
+    const handleGoToLoginFromCompleted = () => {
+        setRole('member');
+        if (registeredUser.userId) {
+            form.setFieldsValue({ loginId: registeredUser.userId });
+        }
+        setViewMode('login');
+    };
+
+    // Center Admin Sign-Up Handlers
+    // TODO: [Backend] 아이디 중복확인 API 연동 (POST /api/auth/check-username)
+    const handleAdminCheckUsername = () => {
+        const usernameRegex = /^[a-z0-9]{4,16}$/;
+        if (!adminSignupForm.loginId.trim()) {
+            message.warning('아이디를 입력해주세요.');
+            return;
+        }
+        if (!usernameRegex.test(adminSignupForm.loginId.trim())) {
+            setIsAdminIdChecked(false);
+            setAdminIdCheckMsg({ text: '영문 소문자, 숫자 조합 4~16자로 입력해주세요.', isError: true });
+            message.error('아이디는 영문 소문자와 숫자 조합 4~16자여야 합니다.');
+            return;
+        }
+        setIsAdminIdChecked(true);
+        setAdminIdCheckMsg({ text: '사용 가능한 아이디입니다.', isError: false });
+        message.success('사용 가능한 아이디입니다.');
+    };
+
+    // TODO: [Backend] 이메일 인증번호 발송 API 연동 (POST /api/auth/email/send-code)
+    const handleAdminSendEmailCode = () => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!adminSignupForm.email.trim()) {
+            message.warning('이메일을 입력해주세요.');
+            return;
+        }
+        if (!emailRegex.test(adminSignupForm.email.trim())) {
+            setIsAdminEmailVerified(false);
+            setAdminEmailVerifyMsg({ text: '올바른 이메일 형식을 입력해주세요.', isError: true });
+            message.error('올바른 이메일 형식을 입력해주세요.');
+            return;
+        }
+        setIsAdminEmailVerified(true);
+        setAdminEmailVerifyMsg({ text: '인증 요청이 완료되었습니다 (모의 처리).', isError: false });
+        message.success('인증 요청이 완료되었습니다 (모의 처리).');
+    };
+
+    const handleAdminPhoneChange = (e) => {
+        const rawVal = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
+        let formatted = rawVal;
+        if (rawVal.length > 3 && rawVal.length <= 7) {
+            formatted = `${rawVal.slice(0, 3)}-${rawVal.slice(3)}`;
+        } else if (rawVal.length > 7) {
+            formatted = `${rawVal.slice(0, 3)}-${rawVal.slice(3, 7)}-${rawVal.slice(7)}`;
+        }
+        setAdminSignupForm((prev) => ({ ...prev, phone: formatted }));
+    };
+
+    // TODO: [Backend] 사업자등록번호 유효성 검증 API (POST /api/auth/validate-biz-no)
+    const handleAdminBizNumberChange = (e) => {
+        const formatted = formatBizNumber(e.target.value);
+        setAdminSignupForm((prev) => ({ ...prev, bizNumber: formatted }));
+    };
+
+    const handleOpenPostcode = () => {
+        if (window.daum && window.daum.Postcode) {
+            new window.daum.Postcode({
+                oncomplete: function (data) {
+                    setAdminSignupForm((prev) => ({
+                        ...prev,
+                        zonecode: data.zonecode || '',
+                        address: data.address || '',
+                    }));
+                },
+            }).open();
+        } else {
+            message.info('우편번호 검색을 위해 주소창에 직접 입력하시거나 서비스 준비 중입니다.');
+        }
+    };
+
+    const isAdminPasswordMatch = Boolean(
+        adminSignupForm.password &&
+        adminSignupForm.passwordConfirm &&
+        adminSignupForm.password === adminSignupForm.passwordConfirm
+    );
+    const isAdminPasswordMismatch = Boolean(
+        adminSignupForm.passwordConfirm &&
+        adminSignupForm.password !== adminSignupForm.passwordConfirm
+    );
+
+    const isAdminFormValid = Boolean(
+        adminSignupForm.loginId.trim() &&
+        isAdminIdChecked &&
+        !adminIdCheckMsg.isError &&
+        adminSignupForm.password &&
+        adminSignupForm.password.length >= 8 &&
+        isAdminPasswordMatch &&
+        adminSignupForm.adminName.trim() &&
+        adminSignupForm.email.trim() &&
+        isAdminEmailVerified &&
+        !adminEmailVerifyMsg.isError &&
+        adminSignupForm.phone.replace(/[^0-9]/g, '').length >= 10 &&
+        adminSignupForm.centerName.trim() &&
+        adminSignupForm.ceoName.trim() &&
+        adminSignupForm.bizNumber.replace(/[^0-9]/g, '').length === 10 &&
+        adminSignupForm.address.trim()
+    );
+
+    // TODO: [Backend] 센터 관리자 가입 신청 API (POST /api/auth/admin/register)
+    const handleAdminSignupSubmit = (e) => {
+        e.preventDefault();
+        if (!isAdminFormValid) {
+            message.warning('모든 필수 항목을 올바르게 입력하고 인증을 완료해주세요.');
+            return;
+        }
+        setRegisteredAdmin({
+            centerName: adminSignupForm.centerName.trim(),
+            adminName: adminSignupForm.adminName.trim(),
+            adminEmail: adminSignupForm.email.trim(),
+            bizNumber: formatBizNumber(adminSignupForm.bizNumber.trim()),
+            adminId: adminSignupForm.loginId.trim(),
+            submittedAt: formatDateTime(new Date()),
+        });
+        message.success('센터 관리자 가입 신청이 완료되었습니다.');
+        setViewMode('admin_signup_completed');
+    };
+
+    const handleGoToLoginFromAdminCompleted = () => {
+        setRole('admin');
+        if (registeredAdmin.adminId) {
+            form.setFieldsValue({ loginId: registeredAdmin.adminId });
+        }
+        setViewMode('login');
+    };
+
+    const handleGoToAdminLogin = () => {
+        setRole('admin');
+        setViewMode('login');
+    };
 
     const handleKakaoLogin = () => {
         const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}&response_type=code&scope=profile_nickname`;
@@ -61,7 +353,7 @@ const Home = () => {
             {/* Header */}
             <header className="auth-header">
                 <div className="auth-header__inner">
-                    <div className="brand-badge" onClick={() => navigate('/')}>
+                    <div className="brand-badge" onClick={() => { setViewMode('login'); navigate('/'); }}>
                         <div className="brand-badge__icon">
                             <svg fill="none" height="22" viewBox="0 0 24 24" width="22" xmlns="http://www.w3.org/2000/svg">
                                 <circle cx="8" cy="8" fill="white" r="2.2" stroke="white" strokeWidth="1.8" />
@@ -88,9 +380,10 @@ const Home = () => {
                 </div>
             </header>
 
-            {/* Main 5:5 Layout */}
+            {/* Main Content Area */}
             <main className="auth-main">
-                <div className="auth-main__inner">
+                {viewMode === 'login' && (
+                    <div className="auth-main__inner">
                     {/* Left Column: Hero & Continuous Floating Orbit Canvas */}
                     <div className="auth-hero-col">
                         <div>
@@ -392,7 +685,13 @@ const Home = () => {
                                         <Button
                                             block
                                             className="auth-secondary-btn"
-                                            onClick={() => navigate('/join')}
+                                            onClick={() => {
+                                                if (role === 'member') {
+                                                    setViewMode('member_signup');
+                                                } else {
+                                                    setViewMode('admin_signup');
+                                                }
+                                            }}
                                         >
                                             {role === 'admin' ? '센터 신규 등록 및 가입 문의' : '회원가입'}
                                         </Button>
@@ -406,19 +705,31 @@ const Home = () => {
                                     또는 간편 로그인
                                 </Divider>
 
-                                <div className="social-login-grid">
-                                    <Button
-                                        block
-                                        className="kakao-btn"
-                                        onClick={handleKakaoLogin}
-                                    >
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#191919">
-                                            <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.706 4.8 4.27 6.054l-.865 3.195c-.078.29.239.52.484.364l3.87-2.564c.404.043.816.066 1.241.066 4.97 0 9-3.185 9-7.115S16.97 3 12 3z" />
-                                        </svg>
-                                        카카오 로그인
-                                    </Button>
+                                    <div className="social-login-grid">
+                                        <Button
+                                            block
+                                            className="kakao-btn"
+                                            onClick={handleKakaoLogin}
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#191919">
+                                                <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.706 4.8 4.27 6.054l-.865 3.195c-.078.29.239.52.484.364l3.87-2.564c.404.043.816.066 1.241.066 4.97 0 9-3.185 9-7.115S16.97 3 12 3z" />
+                                            </svg>
+                                            카카오 로그인
+                                        </Button>
+
+                                        <Button
+                                            block
+                                            className="naver-btn"
+                                            onClick={handleNaverLogin}
+                                        >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#FFFFFF">
+                                                <path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z" />
+                                            </svg>
+                                            네이버 로그인
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>

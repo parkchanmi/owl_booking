@@ -1,0 +1,213 @@
+/* Unified Global Navigation Bar (GNB) Styles */
+
+.unified-header-wrapper {
+  width: 100%;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 20px 24px 0;
+  position: relative;
+  z-index: 50;
+  box-sizing: border-box;
+}
+
+.unified-header-bar {
+  height: 64px;
+  background-color: #FFFFFF;
+  border-radius: 16px; /* rounded-2xl */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+  border: 1px solid #F1F0F7;
+  padding: 0 24px; /* px-6 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+/* Brand Emblem & Navigation Links Group */
+.unified-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+}
+
+.unified-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.unified-brand-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #5B3BA8 0%, #8B5CF6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(91, 59, 168, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.unified-brand-group:hover .unified-brand-logo {
+  transform: scale(1.05);
+}
+
+.unified-brand-title {
+  font-weight: 800;
+  font-size: 19px;
+  color: #18181B;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  letter-spacing: -0.02em;
+}
+
+.unified-brand-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #8B5CF6;
+}
+
+.unified-header-divider {
+  width: 1px;
+  height: 16px;
+  background-color: #E2E8F0;
+  margin: 0 4px;
+}
+
+/* Main Menu Navigation Links */
+.unified-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.unified-nav-link {
+  padding: 6px 12px !important; /* px-3 py-1.5 */
+  border-radius: 8px !important; /* rounded-lg */
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  border: none !important;
+  background: transparent !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background-color 150ms ease, color 150ms ease !important;
+}
+
+/* Inactive State */
+.unified-nav-link:not(.is-active) {
+  font-weight: 500 !important;
+  color: #71717A !important;
+  background-color: transparent !important;
+}
+
+/* Inactive Hover State */
+.unified-nav-link:not(.is-active):hover {
+  background-color: #F4F4F5 !important;
+  color: #18181B !important;
+}
+
+/* Active State: Strictly transparent background, bold text */
+.unified-nav-link.is-active {
+  font-weight: 700 !important;
+  color: #18181B !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Right Controls */
+.unified-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.unified-pill-btn {
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  border: 1px solid #EDE9FE;
+  background: rgba(255, 255, 255, 0.85);
+  color: #18181B;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.unified-pill-btn:hover {
+  background: #FFFFFF;
+  border-color: #DDD6FE;
+  box-shadow: 0 2px 8px rgba(91, 59, 168, 0.08);
+}
+
+.unified-circle-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  border: 1px solid #EDE9FE;
+  background: rgba(255, 255, 255, 0.85);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  color: #5B3BA8;
+  outline: none;
+}
+
+.unified-circle-btn:hover {
+  background: #FFFFFF;
+  border-color: #DDD6FE;
+  box-shadow: 0 2px 8px rgba(91, 59, 168, 0.08);
+}
+
+.unified-noti-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #EF4444;
+  outline: 2px solid #FFFFFF;
+}
+
+.unified-avatar-pill {
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  background: #5B3BA8;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Subtle red hover for logout menu item in dropdown */
+.unified-logout-menu-item {
+  color: #EF4444 !important;
+  font-weight: 600 !important;
+}
+
+.ant-dropdown-menu-item:hover .unified-logout-menu-item {
+  color: #DC2626 !important;
+}
+
