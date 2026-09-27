@@ -1,6 +1,7 @@
 package com.owl.booking.admin.controller;
 
 import com.owl.booking.admin.service.CenterMemberService;
+import com.owl.booking.admin.service.MembershipExpiryMailService;
 import com.owl.booking.model.dto.CenterMemberDto;
 import com.owl.booking.model.dto.CenterMemberRegisterRequestDto;
 import java.util.List;
@@ -20,9 +21,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class CenterMemberController {
 
     private final CenterMemberService centerMemberService;
+    private final MembershipExpiryMailService membershipExpiryMailService;
 
-    public CenterMemberController(CenterMemberService centerMemberService) {
+    public CenterMemberController(
+            CenterMemberService centerMemberService,
+            MembershipExpiryMailService membershipExpiryMailService
+    ) {
         this.centerMemberService = centerMemberService;
+        this.membershipExpiryMailService = membershipExpiryMailService;
     }
 
     @GetMapping
@@ -55,5 +61,10 @@ public class CenterMemberController {
     public Map<String, Object> withdrawCenterMember(@PathVariable String id) {
         boolean deleted = centerMemberService.withdrawCenterMember(id);
         return Map.of("deleted", deleted);
+    }
+
+    @PostMapping("/center/{centerId}/membership-expiry-email")
+    public Map<String, Integer> sendMembershipExpiryEmail(@PathVariable String centerId) {
+        return membershipExpiryMailService.sendForCenter(centerId);
     }
 }

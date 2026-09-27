@@ -14,6 +14,8 @@ import org.springframework.stereotype.Repository;
 public interface MemberMembershipRepository extends JpaRepository<MemberMembership, String> {
     List<MemberMembership> findByMember_Id(String memberId);
 
+    List<MemberMembership> findByCenter_Id(String centerId);
+
     boolean existsByMember_Id(String memberId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
