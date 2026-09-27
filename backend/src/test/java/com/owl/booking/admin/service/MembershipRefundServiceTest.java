@@ -45,10 +45,9 @@ class MembershipRefundServiceTest {
                 .center(Center.builder().id("center-1").build())
                 .membership(Membership.builder().name("10회권").price(120_000L).build())
                 .build();
-        config = CenterConfig.builder()
-                .refundCountThresholdPercent(25)
-                .refundPeriodThresholdPercent(25)
-                .build();
+        config = CenterConfig.builder().build();
+        config.setRefundCountThresholdPercent(25);
+        config.setRefundPeriodThresholdPercent(25);
         when(membershipRepository.findById("issued-1")).thenReturn(Optional.of(membership));
         when(configRepository.findByCenter_Id("center-1")).thenReturn(Optional.of(config));
     }

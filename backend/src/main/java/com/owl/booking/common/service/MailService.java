@@ -20,6 +20,21 @@ public class MailService {
 
     private final JavaMailSender javaMailSender;
 
+    public void sendHtmlMessage(String email, String subject, String content) {
+        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, false, "UTF-8");
+            helper.setTo(email);
+            helper.setSubject(subject);
+            helper.setText(content, true);
+            javaMailSender.send(mimeMessage);
+            log.info("HTML 메일 발송 성공: {}", email);
+        } catch (Exception e) {
+            log.error("HTML 메일 발송 실패: {}", email, e);
+            throw new RuntimeException(e);
+        }
+    }
+
     public String sendMimeMessage(String email) {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         String code = RandomUtils.randomAlphanumeric(6);

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Select, Tabs, Empty, message } from 'antd';
+import { Empty, Grid, Select, Tabs, message } from 'antd';
 import {
     ShopOutlined,
     DownOutlined,
     ClockCircleOutlined,
     CloseCircleOutlined,
+    MailOutlined,
     SettingOutlined,
     PercentageOutlined,
 } from '@ant-design/icons';
@@ -12,14 +13,17 @@ import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../../components/DashboardLayout';
 import './index.css';
 import { fetchCenters } from '../../../api/centerApi';
+import { fetchCenterMembers } from '../../../api/centerMemberApi';
 import WaitPanel from './WaitPanel';
 import CancelPanel from './CancelPanel';
 import SettingPanel from './SettingPanel';
 import RefundPolicyPanel from './RefundPolicyPanel';
+import NotificationPanel from './NotificationPanel';
 
-const TAB_KEYS = ['wait', 'cancel', 'setting', 'refund'];
+const TAB_KEYS = ['wait', 'cancel', 'setting', 'refund', 'notification'];
 
 const BookingIndex = () => {
+    const screens = Grid.useBreakpoint();
     const [centers, setCenters] = useState([]);
     const [centersLoading, setCentersLoading] = useState(true);
     const [selectedCenter, setSelectedCenter] = useState(null);
@@ -29,9 +33,16 @@ const BookingIndex = () => {
     const activeTab = TAB_KEYS.includes(tabParam) ? tabParam : 'wait';
 
     useEffect(() => {
-        fetchCenters()
-            .then((data) => {
-                const list = Array.isArray(data) ? data : [];
+        Promise.all([fetchCenters(), fetchCenterMembers()])
+            .then(([centerData, centerMemberData]) => {
+                const centerMap = new Map();
+                (Array.isArray(centerData) ? centerData : []).forEach((center) => {
+                    if (center?.id) centerMap.set(center.id, center);
+                });
+                (Array.isArray(centerMemberData) ? centerMemberData : []).forEach((item) => {
+                    if (item?.center?.id) centerMap.set(item.center.id, item.center);
+                });
+                const list = Array.from(centerMap.values());
                 setCenters(list);
                 if (list.length > 0) setSelectedCenter(list[0].id);
             })
@@ -68,6 +79,12 @@ const BookingIndex = () => {
             icon: <PercentageOutlined />,
             children: <RefundPolicyPanel centerId={selectedCenter} />,
         },
+        {
+            key: 'notification',
+            label: '알림 설정',
+            icon: <MailOutlined />,
+            children: <NotificationPanel centerId={selectedCenter} />,
+        },
     ];
 
     return (
@@ -100,7 +117,7 @@ const BookingIndex = () => {
                     <Empty description="등록된 센터가 없습니다." style={{ padding: '48px 0' }} />
                 ) : (
                     <Tabs
-                        tabPosition="left"
+                        tabPosition={screens.md ? 'left' : 'top'}
                         activeKey={activeTab}
                         onChange={handleTabChange}
                         items={items}

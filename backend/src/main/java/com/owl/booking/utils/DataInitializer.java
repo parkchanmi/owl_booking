@@ -108,19 +108,18 @@ public class DataInitializer implements CommandLineRunner {
         centerMemberRepository.save(CenterMember.builder().center(center).member(instructorMember1).type(MemberType.ADMIN).build());
         centerMemberRepository.save(CenterMember.builder().center(center).member(instructorMember2).type(MemberType.ADMIN).build());
 
-        centerConfigRepository.save(CenterConfig.builder()
-                .confirmMode(ConfirmMode.AUTO)
-                .waitlistCapacity(5L)
-                .cancleDeadlineMinutes(60L)
-                .bookingOpenDays(7L)
-                .generationStartDat(1L)
-                .autoGenerateEnabled(true)
-                .generationDaysOfWeek("월,화,수,목,금,토,일")
-                .roleLabelsJson("{\"OWNER\":\"총관리자\",\"MANAGER\":\"매니저\",\"INSTRUCTOR\":\"강사\"}")
-                .roleMenuPermissionsJson("{\"OWNER\":[\"center-list\",\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"sales\",\"member-list\",\"permission-list\"],\"MANAGER\":[\"instructor-list\",\"class-list\",\"booking-index\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"sales\",\"member-list\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}")
-                .roleMemberMappingsJson("{\"OWNER\":[\"" + admin.getId() + "\"],\"MANAGER\":[],\"INSTRUCTOR\":[\"" + instructorMember1.getId() + "\",\"" + instructorMember2.getId() + "\"]}")
-                .center(center)
-                .build());
+        CenterConfig centerConfig = CenterConfig.builder().center(center).build();
+        centerConfig.setConfirmMode(ConfirmMode.AUTO);
+        centerConfig.setWaitlistCapacity(5L);
+        centerConfig.setCancleDeadlineMinutes(60L);
+        centerConfig.setBookingOpenDays(7L);
+        centerConfig.setGenerationStartDat(1L);
+        centerConfig.setAutoGenerateEnabled(true);
+        centerConfig.setGenerationDaysOfWeek("월,화,수,목,금,토,일");
+        centerConfig.setRoleLabelsJson("{\"OWNER\":\"총관리자\",\"MANAGER\":\"매니저\",\"INSTRUCTOR\":\"강사\"}");
+        centerConfig.setRoleMenuPermissionsJson("{\"OWNER\":[\"center-list\",\"member-list\",\"instructor-list\",\"class-list\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"sales\",\"permission-list\",\"booking-index\"],\"MANAGER\":[\"member-list\",\"instructor-list\",\"class-list\",\"booking-schedule\",\"instructor-attendance\",\"ticket-list\",\"sales\",\"booking-index\"],\"INSTRUCTOR\":[\"instructor-attendance\"]}");
+        centerConfig.setRoleMemberMappingsJson("{\"OWNER\":[\"" + admin.getId() + "\"],\"MANAGER\":[],\"INSTRUCTOR\":[\"" + instructorMember1.getId() + "\",\"" + instructorMember2.getId() + "\"]}");
+        centerConfigRepository.save(centerConfig);
 
         Instructor instructor1 = instructorRepository.save(Instructor.builder()
                 .name(instructorMember1.getName())

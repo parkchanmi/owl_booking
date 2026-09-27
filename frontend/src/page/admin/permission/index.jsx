@@ -19,8 +19,8 @@ const DEFAULT_ROLE_LABELS = {
 };
 
 const DEFAULT_MENU_PERMISSIONS = {
-    OWNER: ['center-list', 'instructor-list', 'class-list', 'booking-index', 'booking-schedule', 'instructor-attendance', 'ticket-list', 'sales', 'member-list', 'permission-list'],
-    MANAGER: ['instructor-list', 'class-list', 'booking-index', 'booking-schedule', 'instructor-attendance', 'ticket-list', 'sales', 'member-list'],
+    OWNER: ['center-list', 'member-list', 'instructor-list', 'class-list', 'booking-schedule', 'instructor-attendance', 'ticket-list', 'sales', 'permission-list', 'booking-index'],
+    MANAGER: ['member-list', 'instructor-list', 'class-list', 'booking-schedule', 'instructor-attendance', 'ticket-list', 'sales', 'booking-index'],
     INSTRUCTOR: ['instructor-attendance'],
 };
 
@@ -32,15 +32,15 @@ const DEFAULT_MEMBER_MAPPINGS = {
 
 const MENU_OPTIONS = [
     { value: 'center-list', label: '센터 관리' },
+    { value: 'member-list', label: '센터 회원 관리' },
     { value: 'instructor-list', label: '강사 관리' },
-    { value: 'class-list', label: '수업 관리' },
-    { value: 'booking-index', label: '예약 관리 > 센터별 환경설정' },
+    { value: 'class-list', label: '예약 관리 > 수업 관리' },
     { value: 'booking-schedule', label: '예약 관리 > 수업 스케줄 관리' },
     { value: 'instructor-attendance', label: '예약 관리 > 강사용 출결' },
     { value: 'ticket-list', label: '이용권 관리' },
     { value: 'sales', label: '매출 관리' },
-    { value: 'member-list', label: '센터 회원 관리' },
     { value: 'permission-list', label: '권한 설정' },
+    { value: 'booking-index', label: '센터별 환경설정' },
 ];
 
 const parseJson = (value, fallback) => {

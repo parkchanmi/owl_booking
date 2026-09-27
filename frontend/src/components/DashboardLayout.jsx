@@ -6,7 +6,7 @@ import {
     IdcardOutlined,
     LogoutOutlined,
     SafetyCertificateOutlined,
-    ScheduleOutlined,
+    SettingOutlined,
     ShopOutlined,
     TeamOutlined,
     UserOutlined,
@@ -31,23 +31,23 @@ const menuItems = [
         path: '/admin/center/list',
     },
     {
+        key: 'member-list',
+        icon: <UserOutlined />,
+        label: '센터 회원 관리',
+        path: '/admin/member/list',
+    },
+    {
         key: 'instructor-list',
         icon: <TeamOutlined />,
         label: '강사 관리',
         path: '/admin/instructor/list',
     },
     {
-        key: 'class-list',
-        icon: <ScheduleOutlined />,
-        label: '수업 관리',
-        path: '/admin/class',
-    },
-    {
         key: 'booking',
         icon: <CalendarOutlined />,
         label: '예약 관리',
         children: [
-            { key: 'booking-index', label: '센터별 환경설정', path: '/admin/setting' },
+            { key: 'class-list', label: '수업 관리', path: '/admin/class' },
             { key: 'booking-schedule', label: '수업 스케줄 관리', path: '/admin/booking' },
             { key: 'instructor-attendance', label: '강사용 출결', path: '/admin/instructor/attendance' },
         ],
@@ -65,16 +65,16 @@ const menuItems = [
         path: '/admin/sales',
     },
     {
-        key: 'member-list',
-        icon: <UserOutlined />,
-        label: '센터 회원 관리',
-        path: '/admin/member/list',
-    },
-    {
         key: 'permission-list',
         icon: <SafetyCertificateOutlined />,
         label: '권한 설정',
         path: '/admin/permission',
+    },
+    {
+        key: 'booking-index',
+        icon: <SettingOutlined />,
+        label: '센터별 환경설정',
+        path: '/admin/setting',
     },
 ];
 
@@ -162,11 +162,11 @@ menuItems.forEach((item) => {
     }
 });
 
-const DashboardLayoutFrame = ({ title = 'Dashboard', userLabel = '-', children }) => {
+const DashboardLayoutFrame = ({ title, userLabel = '-', children }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(false);
-    const [layoutTitle, setLayoutTitle] = useState(title);
+    const [layoutTitle, setLayoutTitle] = useState(title ?? 'Dashboard');
     const [loginUser, setLoginUser] = useState(null);
     const [allowedMenuKeys, setAllowedMenuKeys] = useState(undefined);
 
@@ -186,7 +186,9 @@ const DashboardLayoutFrame = ({ title = 'Dashboard', userLabel = '-', children }
     });
 
     useEffect(() => {
-        setLayoutTitle(title);
+        if (title !== undefined) {
+            setLayoutTitle(title);
+        }
     }, [title]);
 
     useEffect(() => {
@@ -276,7 +278,7 @@ const DashboardLayoutFrame = ({ title = 'Dashboard', userLabel = '-', children }
                     style={{ boxShadow: '2px 0 8px 0 rgba(29,35,41,.05)', zIndex: 10 }}
                 >
                     <div
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/admin')}
                         style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 18, color: '#1890ff', cursor: 'pointer' }}
                     >
                         {collapsed ? 'OWL' : 'OWL BOOKING'}
@@ -315,7 +317,7 @@ const DashboardLayoutFrame = ({ title = 'Dashboard', userLabel = '-', children }
     );
 };
 
-const DashboardLayout = ({ title = 'Dashboard', userLabel = '-', children }) => {
+const DashboardLayout = ({ title, userLabel = '-', children }) => {
     const parentLayout = useContext(DashboardLayoutContext);
 
     useEffect(() => {
