@@ -641,25 +641,50 @@
   transform: scale(0.98);
 }
 
-.signup-side-btn.is-completed {
-  background-color: #EDE9FE;
-  color: #6D28D9;
-  border-color: #C4B5FD;
+.signup-side-btn.is-completed,
+.signup-side-btn:disabled.is-completed {
+  background-color: #EDE9FE !important;
+  color: #7C3AED !important;
+  border-color: #DDD6FE !important;
+  font-weight: 700 !important;
+  cursor: default !important;
+  pointer-events: none;
+  opacity: 1 !important;
+  box-shadow: none !important;
+}
+
+.signup-side-btn.is-completed:hover {
+  background-color: #EDE9FE !important;
+}
+
+.signup-side-btn.is-completed:active {
+  transform: none !important;
+}
+
+.signup-input.is-error,
+.signup-input.border-\[\#EF4444\] {
+  border-color: #EF4444 !important;
+}
+
+.signup-input.is-error:focus,
+.signup-input.border-\[\#EF4444\]:focus {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
 }
 
 .signup-msg {
-  font-size: 11px;
-  margin-top: 5px;
+  font-size: 12px;
+  margin-top: 6px;
   line-height: 1.4;
   font-weight: 500;
 }
 
 .signup-msg--error {
-  color: #EF4444;
+  color: #EF4444 !important;
 }
 
 .signup-msg--success {
-  color: #7C3AED;
+  color: #7C3AED !important;
 }
 
 .signup-submit-btn {

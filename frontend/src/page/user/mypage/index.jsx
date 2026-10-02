@@ -38,6 +38,9 @@ import {
     PauseCircleOutlined,
     LockOutlined,
     WarningOutlined,
+    GiftOutlined,
+    InfoCircleOutlined,
+    ShoppingOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -82,6 +85,148 @@ const UPCOMING_CLASSES = [
         centerName: '강남 시그니처점',
         instructor: '박소연 강사',
         studio: 'Studio B',
+    },
+];
+
+// 보유 이용권 데이터
+const ACTIVE_PASSES = [
+    {
+        id: 'pass-1',
+        category: 'PT 회원권',
+        branch: '강남 시그니처점',
+        title: '1:1 개인 PT 30회권',
+        remainingCount: 12,
+        totalCount: 30,
+        rate: 40,
+        startDate: '2026.07.01',
+        endDate: '2026.12.31',
+        dDay: 'D-111',
+        paymentDate: '2026.06.25 14:22',
+        paymentMethod: '신한카드 (일시불)',
+        paymentAmount: '1,980,000원',
+    },
+    {
+        id: 'pass-2',
+        category: '필라테스 회원권',
+        branch: '강남 시그니처점',
+        title: '필라테스 & 리포머 20회권',
+        remainingCount: 8,
+        totalCount: 20,
+        rate: 40,
+        startDate: '2026.05.01',
+        endDate: '2026.11.30',
+        dDay: 'D-80',
+        paymentDate: '2026.04.28 11:15',
+        paymentMethod: '국민카드 (일시불)',
+        paymentAmount: '1,450,000원',
+    },
+];
+
+// 공지 및 이벤트 데이터
+const NOTICES_AND_EVENTS = [
+    {
+        id: 'notice-1',
+        type: 'notice',
+        badge: '중요 공지',
+        title: '스튜디오A 환기 공조 시스템 정기 점검 안내',
+        date: '2026.09.10',
+        periodText: '2026.09.10 (목) 10:00 ~ 13:00 (총 3시간)',
+        status: '진행중',
+        intro: '회원 여러분의 쾌적하고 안전한 운동 환경을 위해 스튜디오A의 환기 및 공조 시스템 정기 살균 세척 작업이 진행됩니다. 점검 시간 동안 해당 스튜디오의 모든 수업 및 자유 이용이 일시 제한되오니 예약 시 참고 부탁드립니다.',
+        keyPoints: [
+            { label: '점검 장소', value: '스튜디오A 전 구역' },
+            { label: '점검 일시', value: '2026년 9월 12일(토) 10:00 ~ 13:00 (총 3시간)' },
+            { label: '영향 범위', value: '스튜디오A 내 기구 필라테스 및 소도구 수업 전체 일시 중단' },
+            { label: '대체 공간', value: '스튜디오B 및 개인 스트레칭 존 정상 이용 가능' },
+        ],
+        guidelines: [
+            '점검 시간 전후 30분 동안 환기팬 작동으로 인한 소음이 발생할 수 있습니다.',
+            '기존 예약 회원분들께는 개별 안내 문자 및 대체 클래스 예약 우선권이 부여되었습니다.',
+            '안전사고 예방을 위해 점검 요원의 지시에 적극 협조해 주시기 바랍니다.',
+        ],
+        contact: {
+            title: '고객센터',
+            phone: '02-1234-5678',
+            hours: '평일 09:00 - 21:00 / 주말 09:00 - 18:00',
+        },
+    },
+    {
+        id: 'event-1',
+        type: 'event',
+        badge: '이벤트',
+        title: '가을맞이 리프레시 빈야사 & 사운드 배스 오픈',
+        dateRange: '2026.09.08 ~ 2026.09.30',
+        conditionTag: '선착순 15명 한정',
+        showDDay: true,
+        dDay: 'D-9',
+        status: '진행중',
+        benefits: [
+            {
+                badge: '혜택 1',
+                title: '사운드 배스 힐링 싱잉볼 1회 무료 체험',
+                desc: '정규 클래스 예약 시 50분 특별 사운드 테라피 세션 전액 지원',
+            },
+            {
+                badge: '혜택 2',
+                title: '프리미엄 요가 매트 & 타월 증정',
+                desc: '프로그램 완주 시 친환경 TPE 고급 요가 매트 현장 수령',
+            },
+            {
+                badge: '혜택 3',
+                title: '동반 1인 50% 할인 쿠폰',
+                desc: '지인과 함께 참여 가능한 스페셜 원데이 클래스 반값 쿠폰 발급',
+            },
+        ],
+        steps: [
+            '마이페이지 상단 [새 예약하기]에서 "가을맞이 리프레시 빈야사" 클래스를 선택합니다.',
+            '원하는 날짜와 시간을 선택 후 참여 신청 버튼을 클릭하여 예약을 확정합니다.',
+            '수업 당일 인포데스크에서 모바일 예약 바코드 확인 후 혜택 웰컴 패키지를 수령합니다.',
+        ],
+        stepNote: '* 한 ID당 각 프로그램 1회 참여 가능',
+        notices: [
+            '선착순 정원 마감 시 조기 종료될 수 있으며, 취소는 수업 시작 24시간 전까지만 가능합니다.',
+            '제공되는 사은품은 현금이나 다른 이용권으로 교환 및 환불이 불가합니다.',
+            '상세 문의는 센터 데스크 또는 고객센터 1:1 채팅 문의를 이용해 주세요.',
+        ],
+    },
+    {
+        id: 'event-2',
+        type: 'event',
+        badge: '이벤트',
+        title: '친구 초대 리워드 — 2회 추가 횟수 즉시 적립',
+        dateRange: '상시 혜택',
+        conditionTag: '신규 등록 시 적용',
+        showDDay: false,
+        status: '진행중',
+        isPromotion: true,
+        imageUrl: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
+        benefits: [
+            {
+                badge: '혜택 1',
+                title: '추천인 2회 무료 세션 즉시 적립',
+                desc: '초대받은 친구가 첫 정기 이용권을 등록하면 추천인 계정으로 즉시 충전',
+            },
+            {
+                badge: '혜택 2',
+                title: '신규 가입 친구 10% 웰컴 할인 쿠폰',
+                desc: '초대 코드로 신규 가입 시 첫 달 정기 결제 10% 즉시 할인 적용',
+            },
+            {
+                badge: '혜택 3',
+                title: '스튜디오 카페 음료 교환권 2매',
+                desc: '친구와 함께 즐길 수 있는 센터 내 프로틴 바 무료 교환권 제공',
+            },
+        ],
+        steps: [
+            '친구에게 마이페이지 내 내 추천 코드 또는 링크를 복사하여 공유합니다.',
+            '친구가 해당 링크를 통해 가입 후 첫 이용권을 구매합니다.',
+            '구매 완료 즉시 두 분 모두에게 리워드 혜택이 자동으로 지급됩니다.',
+        ],
+        stepNote: '* 한 ID당 각 프로그램 1회 참여 가능 (최대 5명까지 초대 리워드 중복 적용)',
+        notices: [
+            '부정한 방법으로 초대한 경우 적립된 세션 및 쿠폰이 회수될 수 있습니다.',
+            '지급된 무료 세션의 유효기간은 적립일로부터 60일입니다.',
+        ],
     },
 ];
 
@@ -195,12 +340,38 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
         return cells;
     }, [calendarMonth, selectedCalDay]);
 
-    // 공지 아코디언 상태
-    const [noticeNoticeOpen, setNoticeNoticeOpen] = useState(true);
+    // 공지 및 이벤트 필터 및 아코디언 상태
     const [noticeFilter, setNoticeFilter] = useState('all'); // 'all' | 'notice' | 'event'
+    const [expandedNoticeIds, setExpandedNoticeIds] = useState({});
 
-    // 이용권 상세 카드 접기/펼치기
-    const [expandedPass1, setExpandedPass1] = useState(true);
+    const toggleNotice = (id) => {
+        setExpandedNoticeIds(prev => ({
+            ...prev,
+            [id]: !prev[id],
+        }));
+    };
+
+    // 이용권 카드 아코디언 상태 (초기 렌더링 시 모두 닫힌 상태)
+    const [expandedPassIds, setExpandedPassIds] = useState({});
+
+    const togglePass = (id) => {
+        setExpandedPassIds(prev => ({
+            ...prev,
+            [id]: !prev[id],
+        }));
+    };
+
+    // 좌측 프로모션 카드 클릭 시: 공지 및 이벤트 탭 이동 -> 이벤트 필터 선택 -> 해당 이벤트 아코디언 자동 오픈
+    const handlePromotionClick = (promoEvent) => {
+        setActiveTab('notices');
+        setNoticeFilter('event');
+        if (promoEvent?.id) {
+            setExpandedNoticeIds(prev => ({
+                ...prev,
+                [promoEvent.id]: true,
+            }));
+        }
+    };
 
     // 설정 알림 토글 상태
     const [settingNotifications, setSettingNotifications] = useState({
@@ -327,7 +498,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                 }),
                 credentials: 'include',
             });
-        } catch (e) {
+        } catch {
             // 통신 실패해도 사용자에게 접수 완료 안내
         }
         message.success('이용권 중도 해지 및 환불 신청이 완료되었습니다. 영업일 기준 2~3일 내 승인 취소됩니다.');
@@ -630,52 +801,68 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                         </div>
 
                         {/* Widget 3: Promotion Banner */}
-                        <div
-                            style={{
-                                position: 'relative',
-                                overflow: 'hidden',
-                                height: 160,
-                                borderRadius: 20,
-                                boxShadow: '0 12px 32px -8px rgba(76, 29, 149, 0.28)',
-                                cursor: 'pointer',
-                            }}
-                            onClick={() => message.info('친구 추천 링크가 클립보드에 복사되었습니다!')}
-                        >
-                            <img
-                                src="https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80"
-                                alt="OwlFit Boutique Studio"
-                                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                            <div
-                                style={{
-                                    position: 'absolute',
-                                    inset: 0,
-                                    background: 'linear-gradient(135deg, rgba(76, 29, 149, 0.88) 0%, rgba(30, 10, 60, 0.92) 100%)',
-                                    mixBlendMode: 'multiply',
-                                }}
-                            />
-                            <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '20px 22px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(4px)', color: '#FFFFFF', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, letterSpacing: '0.05em' }}>
-                                        PROMOTION
-                                    </span>
-                                    <div style={{ display: 'flex', gap: 4 }}>
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#FFFFFF' }} />
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.3)' }} />
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.3)' }} />
+                        {(() => {
+                            // TODO: [Backend / Admin Integration]
+                            // 실제 API 연동 시, 관리자 페이지에서 "메인 프로모션 배너 노출(isPromotion)" 체크된
+                            // 최신 활성 이벤트 목록을 가져와 바인딩하도록 연결합니다.
+                            const promotionEvent = NOTICES_AND_EVENTS.find((item) => item.isPromotion) || NOTICES_AND_EVENTS.find((item) => item.type === 'event');
+
+                            return (
+                                <div
+                                    style={{
+                                        position: 'relative',
+                                        overflow: 'hidden',
+                                        height: 160,
+                                        borderRadius: 20,
+                                        boxShadow: '0 12px 32px -8px rgba(76, 29, 149, 0.28)',
+                                        cursor: 'pointer',
+                                        background: promotionEvent?.imageUrl
+                                            ? undefined
+                                            : 'linear-gradient(135deg, #7C3AED 0%, #4C1D95 100%)',
+                                    }}
+                                    onClick={() => handlePromotionClick(promotionEvent)}
+                                >
+                                    {promotionEvent?.imageUrl && (
+                                        <>
+                                            <img
+                                                src={promotionEvent.imageUrl}
+                                                alt={promotionEvent.title}
+                                                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                                            />
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    inset: 0,
+                                                    background: 'linear-gradient(135deg, rgba(76, 29, 149, 0.88) 0%, rgba(30, 10, 60, 0.92) 100%)',
+                                                    mixBlendMode: 'multiply',
+                                                }}
+                                            />
+                                        </>
+                                    )}
+                                    <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '20px 22px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(4px)', color: '#FFFFFF', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, letterSpacing: '0.05em' }}>
+                                                PROMOTION
+                                            </span>
+                                            <div style={{ display: 'flex', gap: 4 }}>
+                                                <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#FFFFFF' }} />
+                                                <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.3)' }} />
+                                                <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'rgba(255, 255, 255, 0.3)' }} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h4 style={{ fontWeight: 800, fontSize: 16, color: '#FFFFFF', margin: 0, lineHeight: 1.3 }}>
+                                                {promotionEvent ? promotionEvent.title : '친구 추천 시 2회 무료 추가 증정'}
+                                            </h4>
+                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'rgba(255, 255, 255, 0.9)', marginTop: 8 }}>
+                                                <span>혜택 확인하기</span>
+                                                <span>→</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <h4 style={{ fontWeight: 800, fontSize: 16, color: '#FFFFFF', margin: 0, lineHeight: 1.3 }}>
-                                        친구 추천 시 2회 무료 추가 증정
-                                    </h4>
-                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'rgba(255, 255, 255, 0.9)', marginTop: 8 }}>
-                                        <span>혜택 확인하기</span>
-                                        <span>→</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                            );
+                        })()}
                     </aside>
 
                     {/* Right Column (700px Workspace Content) */}
@@ -952,10 +1139,26 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                             {activeTab === 'passes' && (
                                 <div>
                                     {/* Top Switcher Bar */}
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                                         <div style={{ display: 'flex', alignItems: 'center' }}>
-                                            <span style={{ fontWeight: 700, fontSize: 16, color: '#18181B' }}>보유 이용권 목록</span>
-                                            <span style={{ fontSize: 12, fontWeight: 700, color: '#6D28D9', background: '#F5F3FF', padding: '2px 9px', borderRadius: 9999, marginLeft: 8 }}>
+                                            <h3 className="text-lg font-bold text-[#18181B] tracking-tight" style={{ fontWeight: 700, fontSize: 18, color: '#18181B', margin: 0, letterSpacing: '-0.02em' }}>
+                                                보유 이용권 목록
+                                            </h3>
+                                            <span
+                                                className="bg-[#F5F3FF] text-[#7C3AED] px-2.5 py-0.5 rounded-full text-xs font-semibold ml-2 inline-flex items-center font-num"
+                                                style={{
+                                                    fontSize: 12,
+                                                    fontWeight: 600,
+                                                    color: '#7C3AED',
+                                                    backgroundColor: '#F5F3FF',
+                                                    border: '1px solid #DDD6FE',
+                                                    padding: '2px 10px',
+                                                    borderRadius: 9999,
+                                                    marginLeft: 8,
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                }}
+                                            >
                                                 2개
                                             </span>
                                         </div>
@@ -981,215 +1184,279 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                         </button>
                                     </div>
 
-                                    {/* Card 1: Expanded Pass Card */}
-                                    <div
-                                        style={{
-                                            background: '#FFFFFF',
-                                            border: '1.5px solid #EDE9FE',
-                                            borderRadius: 20,
-                                            padding: '24px 28px',
-                                            marginBottom: 16,
-                                            boxShadow: '0 4px 20px -4px rgba(112, 110, 180, 0.05)',
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <span style={{ background: '#F5F3FF', color: '#6D28D9', fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 6 }}>
-                                                    PT 회원권
-                                                </span>
-                                                <span style={{ background: '#F5F3FF', color: '#6D28D9', fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 6 }}>
-                                                    강남 시그니처점
-                                                </span>
-                                            </div>
-                                            <div
-                                                style={{ cursor: 'pointer', color: '#A1A1AA' }}
-                                                onClick={() => setExpandedPass1(!expandedPass1)}
-                                            >
-                                                {expandedPass1 ? <UpOutlined /> : <DownOutlined />}
-                                            </div>
-                                        </div>
+                                    {/* Active Passes Accordion Cards */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                        {ACTIVE_PASSES.map((pass) => {
+                                            const isExpanded = !!expandedPassIds[pass.id];
 
-                                        <div>
-                                            <h3 style={{ fontWeight: 800, fontSize: 20, color: '#18181B', margin: '4px 0' }}>
-                                                1:1 개인 PT 30회권
-                                            </h3>
-                                            <div style={{ fontSize: 12, color: '#71717A' }}>
-                                                <span>잔여 횟수:</span>
-                                                <span style={{ fontWeight: 800, color: '#6D28D9', marginLeft: 4 }} className="font-num">12회</span>
-                                                <span className="font-num"> / 30회 (40%)</span>
-                                            </div>
-                                            <div style={{ fontSize: 12, color: '#71717A', marginTop: 4, display: 'flex', alignItems: 'center' }}>
-                                                <span className="font-num">유효기간: 2026.07.01 ~ 2026.12.31</span>
-                                                <span style={{ background: '#FEF2F2', color: '#DC2626', fontWeight: 700, fontSize: 11, padding: '2px 8px', borderRadius: 6, marginLeft: 8 }} className="font-num">
-                                                    D-111
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Progress Bar */}
-                                        <div style={{ width: '100%', height: 6, background: '#F4F1FC', borderRadius: 9999, overflow: 'hidden', margin: '14px 0 22px' }}>
-                                            <div style={{ width: '40%', height: '100%', background: '#6D28D9', borderRadius: 9999 }} />
-                                        </div>
-
-                                        {expandedPass1 && (
-                                            <div style={{ borderTop: '1px solid #F4F1FC', paddingTop: 18 }}>
-                                                {/* Payment Info Row */}
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 36 }}>
+                                            return (
+                                                <div
+                                                    key={pass.id}
+                                                    className="ticket-accordion-card"
+                                                    style={{
+                                                        background: '#FFFFFF',
+                                                        border: isExpanded ? '1px solid #DDD6FE' : '1px solid #F1F0F7',
+                                                        borderRadius: 24,
+                                                        padding: '16px 20px',
+                                                        marginBottom: 0,
+                                                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+                                                        cursor: 'pointer',
+                                                        transition: 'border-color 0.25s ease, box-shadow 0.25s ease',
+                                                    }}
+                                                    onClick={() => togglePass(pass.id)}
+                                                >
+                                                    {/* Collapsed Header */}
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                        {/* 좌측 컨텐츠 스택 */}
                                                         <div>
-                                                            <span style={{ fontSize: 11, color: '#A1A1AA', display: 'block', marginBottom: 2 }}>결제 일시</span>
-                                                            <div style={{ fontSize: 12, fontWeight: 600, color: '#18181B' }} className="font-num">2026.06.25 14:22</div>
+                                                            {/* 1) 상단 뱃지 영역 */}
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                                <span
+                                                                    className="bg-[#F5F3FF] text-[#7C3AED] px-2.5 py-1 rounded-md text-xs font-semibold"
+                                                                    style={{
+                                                                        backgroundColor: '#F5F3FF',
+                                                                        color: '#7C3AED',
+                                                                        padding: '4px 10px',
+                                                                        borderRadius: 6,
+                                                                        fontSize: 12,
+                                                                        fontWeight: 600,
+                                                                    }}
+                                                                >
+                                                                    {pass.branch}
+                                                                </span>
+                                                                <span
+                                                                    className="bg-[#F5F3FF] text-[#7C3AED] px-2.5 py-1 rounded-md text-xs font-semibold ml-1.5"
+                                                                    style={{
+                                                                        backgroundColor: '#F5F3FF',
+                                                                        color: '#7C3AED',
+                                                                        padding: '4px 10px',
+                                                                        borderRadius: 6,
+                                                                        fontSize: 12,
+                                                                        fontWeight: 600,
+                                                                    }}
+                                                                >
+                                                                    {pass.category}
+                                                                </span>
+                                                            </div>
+
+                                                            {/* 2) 메인 이용권 타이틀 */}
+                                                            <h3
+                                                                className="text-base font-bold text-[#18181B] tracking-tight mt-1.5 mb-1"
+                                                                style={{
+                                                                    fontSize: 16,
+                                                                    fontWeight: 700,
+                                                                    color: '#18181B',
+                                                                    letterSpacing: '-0.02em',
+                                                                    margin: '6px 0 4px',
+                                                                }}
+                                                            >
+                                                                {pass.title}
+                                                            </h3>
+
+                                                            {/* 3) 하단 서브 정보 (인라인 한 줄) */}
+                                                            <div
+                                                                className="text-xs text-[#71717A] flex items-center gap-2"
+                                                                style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 8 }}
+                                                            >
+                                                                <span>
+                                                                    잔여 횟수: <strong className="font-bold text-[#7C3AED] font-num" style={{ color: '#7C3AED', fontWeight: 800 }}>{pass.remainingCount}회</strong> / {pass.totalCount}회 ({pass.rate}%)
+                                                                </span>
+                                                                <span style={{ color: '#D4D4D8' }}>·</span>
+                                                                <span className="font-num">유효기간: {pass.startDate} ~ {pass.endDate}</span>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <span style={{ fontSize: 11, color: '#A1A1AA', display: 'block', marginBottom: 2 }}>결제 수단</span>
-                                                            <div style={{ fontSize: 12, fontWeight: 600, color: '#18181B' }}>신한카드 (일시불)</div>
-                                                        </div>
-                                                        <div>
-                                                            <span style={{ fontSize: 11, color: '#A1A1AA', display: 'block', marginBottom: 2 }}>승인 금액</span>
-                                                            <div style={{ fontSize: 14, fontWeight: 800, color: '#18181B' }} className="font-num">1,980,000원</div>
+
+                                                        {/* 우측 인디케이터 스택 */}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                            <span
+                                                                className="bg-[#F5F3FF] text-[#7C3AED] px-3.5 py-1 rounded-full text-xs font-bold mr-3 font-num"
+                                                                style={{
+                                                                    backgroundColor: '#F5F3FF',
+                                                                    color: '#7C3AED',
+                                                                    padding: '4px 14px',
+                                                                    borderRadius: 9999,
+                                                                    fontSize: 12,
+                                                                    fontWeight: 700,
+                                                                }}
+                                                            >
+                                                                {pass.dDay}
+                                                            </span>
+                                                            <DownOutlined
+                                                                className={`transition-transform duration-300 ${isExpanded ? 'rotate-180 text-[#7C3AED]' : 'rotate-0 text-[#A1A1AA]'}`}
+                                                                style={{
+                                                                    fontSize: 14,
+                                                                    color: isExpanded ? '#7C3AED' : '#A1A1AA',
+                                                                    transition: 'transform 0.3s ease, color 0.3s ease',
+                                                                    transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                                }}
+                                                            />
                                                         </div>
                                                     </div>
 
-                                                    <button
-                                                        type="button"
+                                                    {/* 부드러운 인터랙티브 애니메이션 효과 (Expanded Content) */}
+                                                    <div
+                                                        className={`grid transition-all duration-300 ease-in-out ${
+                                                            isExpanded ? 'grid-rows-[1fr] opacity-100 mt-5' : 'grid-rows-[0fr] opacity-0 mt-0 pointer-events-none'
+                                                        }`}
                                                         style={{
-                                                            border: '1px solid #E4E4E7',
-                                                            background: '#FFFFFF',
-                                                            fontSize: 12,
-                                                            fontWeight: 500,
-                                                            color: '#52525B',
-                                                            padding: '8px 14px',
-                                                            borderRadius: 10,
-                                                            cursor: 'pointer',
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            gap: 6,
+                                                            display: 'grid',
+                                                            gridTemplateRows: isExpanded ? '1fr' : '0fr',
+                                                            opacity: isExpanded ? 1 : 0,
+                                                            marginTop: isExpanded ? 20 : 0,
+                                                            paddingTop: isExpanded ? 20 : 0,
+                                                            borderTop: isExpanded ? '1px solid #F4F1FC' : 'none',
+                                                            transition: 'all 0.3s ease-in-out',
                                                         }}
-                                                        onClick={() => message.success('영수증 PDF가 다운로드되었습니다.')}
                                                     >
-                                                        <FilePdfOutlined />
-                                                        <span>영수증 발급 (PDF)</span>
-                                                    </button>
-                                                </div>
+                                                        <div style={{ overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+                                                            {/* 프로그레스 바 */}
+                                                            <div style={{ width: '100%', height: 6, background: '#F4F1FC', borderRadius: 9999, overflow: 'hidden', margin: '4px 0 20px' }}>
+                                                                <div style={{ width: `${pass.rate}%`, height: '100%', background: '#7C3AED', borderRadius: 9999 }} />
+                                                            </div>
 
-                                                {/* Secondary Actions Bar */}
-                                                <div style={{ borderTop: '1px solid #F4F1FC', paddingTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                    <button
-                                                        type="button"
-                                                        style={{
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            gap: 6,
-                                                            fontSize: 12,
-                                                            fontWeight: 600,
-                                                            color: '#6D28D9',
-                                                            background: '#F5F3FF',
-                                                            padding: '8px 16px',
-                                                            borderRadius: 10,
-                                                            border: 'none',
-                                                            cursor: 'pointer',
-                                                        }}
-                                                        onClick={() => message.info('1:1 개인 PT 30회권에 대한 18회 차감 완료 내역을 조회합니다.')}
-                                                    >
-                                                        <ClockCircleOutlined />
-                                                        <span>차감 이력 조회</span>
-                                                    </button>
+                                                            {/* 결제 정보 Row */}
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 36 }}>
+                                                                    <div>
+                                                                        <span style={{ fontSize: 11, color: '#A1A1AA', display: 'block', marginBottom: 2 }}>결제 일시</span>
+                                                                        <div style={{ fontSize: 12, fontWeight: 600, color: '#18181B' }} className="font-num">{pass.paymentDate}</div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <span style={{ fontSize: 11, color: '#A1A1AA', display: 'block', marginBottom: 2 }}>결제 수단</span>
+                                                                        <div style={{ fontSize: 12, fontWeight: 600, color: '#18181B' }}>{pass.paymentMethod}</div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <span style={{ fontSize: 11, color: '#A1A1AA', display: 'block', marginBottom: 2 }}>승인 금액</span>
+                                                                        <div style={{ fontSize: 14, fontWeight: 800, color: '#18181B' }} className="font-num">{pass.paymentAmount}</div>
+                                                                    </div>
+                                                                </div>
 
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                        <button
-                                                            type="button"
-                                                            style={{
-                                                                background: '#FFFFFF',
-                                                                border: '1px solid #E4E4E7',
-                                                                fontSize: 12,
-                                                                fontWeight: 500,
-                                                                color: '#52525B',
-                                                                padding: '8px 14px',
-                                                                borderRadius: 10,
-                                                                cursor: 'pointer',
-                                                            }}
-                                                            onClick={() => setPauseModalOpen(true)}
-                                                        >
-                                                            일시정지 신청
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            style={{
-                                                                background: '#FFFFFF',
-                                                                border: '1px solid #E4E4E7',
-                                                                fontSize: 12,
-                                                                fontWeight: 500,
-                                                                color: '#DC2626',
-                                                                padding: '8px 14px',
-                                                                borderRadius: 10,
-                                                                cursor: 'pointer',
-                                                            }}
-                                                            onClick={() => {
-                                                                setRefundAgreed(false);
-                                                                setRefundModalOpen(true);
-                                                            }}
-                                                        >
-                                                            중도 해지 / 환불 신청
-                                                        </button>
+                                                                <button
+                                                                    type="button"
+                                                                    style={{
+                                                                        border: '1px solid #E4E4E7',
+                                                                        background: '#FFFFFF',
+                                                                        fontSize: 12,
+                                                                        fontWeight: 500,
+                                                                        color: '#52525B',
+                                                                        padding: '8px 14px',
+                                                                        borderRadius: 10,
+                                                                        cursor: 'pointer',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 6,
+                                                                    }}
+                                                                    onClick={() => message.success('영수증 PDF가 다운로드되었습니다.')}
+                                                                >
+                                                                    <FilePdfOutlined />
+                                                                    <span>영수증 발급 (PDF)</span>
+                                                                </button>
+                                                            </div>
+
+                                                            {/* Secondary Actions Bar */}
+                                                            <div style={{ borderTop: '1px solid #F4F1FC', paddingTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                <button
+                                                                    type="button"
+                                                                    style={{
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 6,
+                                                                        fontSize: 12,
+                                                                        fontWeight: 600,
+                                                                        color: '#7C3AED',
+                                                                        background: '#F5F3FF',
+                                                                        padding: '8px 16px',
+                                                                        borderRadius: 10,
+                                                                        border: 'none',
+                                                                        cursor: 'pointer',
+                                                                    }}
+                                                                    onClick={() => message.info(`${pass.title}에 대한 차감 이력을 조회합니다.`)}
+                                                                >
+                                                                    <ClockCircleOutlined />
+                                                                    <span>차감 이력 조회</span>
+                                                                </button>
+
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        style={{
+                                                                            background: '#FFFFFF',
+                                                                            border: '1px solid #E4E4E7',
+                                                                            fontSize: 12,
+                                                                            fontWeight: 500,
+                                                                            color: '#52525B',
+                                                                            padding: '8px 14px',
+                                                                            borderRadius: 10,
+                                                                            cursor: 'pointer',
+                                                                        }}
+                                                                        onClick={() => setPauseModalOpen(true)}
+                                                                    >
+                                                                        일시정지 신청
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        style={{
+                                                                            background: '#FFFFFF',
+                                                                            border: '1px solid #E4E4E7',
+                                                                            fontSize: 12,
+                                                                            fontWeight: 500,
+                                                                            color: '#DC2626',
+                                                                            padding: '8px 14px',
+                                                                            borderRadius: 10,
+                                                                            cursor: 'pointer',
+                                                                        }}
+                                                                        onClick={() => {
+                                                                            setRefundAgreed(false);
+                                                                            setRefundModalOpen(true);
+                                                                        }}
+                                                                    >
+                                                                        중도 해지 / 환불 신청
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Card 2: Active Collapsed Pass */}
-                                    <div
-                                        style={{
-                                            background: '#FFFFFF',
-                                            border: '1px solid #F1F0F7',
-                                            borderRadius: 18,
-                                            padding: '18px 24px',
-                                            marginBottom: 16,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            cursor: 'pointer',
-                                        }}
-                                        onClick={() => message.info('필라테스 & 리포머 20회권 상세 정보를 확인합니다.')}
-                                    >
-                                        <div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <span style={{ fontWeight: 700, fontSize: 15, color: '#18181B' }}>필라테스 & 리포머 20회권</span>
-                                                <span style={{ background: '#F5F3FF', color: '#6D28D9', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6 }}>
-                                                    강남 시그니처점
-                                                </span>
-                                            </div>
-                                            <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <span style={{ fontSize: 12, fontWeight: 600, color: '#18181B' }} className="font-num">잔여 횟수: 8회 / 20회 (40%)</span>
-                                                <span style={{ fontSize: 12, color: '#71717A' }} className="font-num">· 유효기간: 2026.05.01 ~ 2026.11.30</span>
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                            <span style={{ background: '#F5F3FF', color: '#6D28D9', fontWeight: 700, fontSize: 12, padding: '3px 10px', borderRadius: 9999 }} className="font-num">
-                                                D-80
-                                            </span>
-                                            <RightOutlined style={{ fontSize: 12, color: '#A1A1AA' }} />
-                                        </div>
+                                            );
+                                        })}
                                     </div>
 
                                     {/* Dedicated Section: 만료된 이용권 */}
                                     <div style={{ marginTop: 36 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                                            <span style={{ fontWeight: 700, fontSize: 16, color: '#18181B' }}>만료된 이용권</span>
-                                            <span style={{ fontSize: 12, fontWeight: 600, color: '#71717A', background: '#F4F4F5', padding: '2px 9px', borderRadius: 9999 }}>
-                                                전체 3건
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                <h3 className="text-lg font-bold text-[#18181B] tracking-tight" style={{ fontWeight: 700, fontSize: 18, color: '#18181B', margin: 0, letterSpacing: '-0.02em' }}>
+                                                    만료된 이용권
+                                                </h3>
+                                                <span
+                                                    className="bg-[#F5F3FF] text-[#7C3AED] px-2.5 py-0.5 rounded-full text-xs font-semibold ml-2 inline-flex items-center font-num"
+                                                    style={{
+                                                        fontSize: 12,
+                                                        fontWeight: 600,
+                                                        color: '#7C3AED',
+                                                        backgroundColor: '#F5F3FF',
+                                                        border: '1px solid #DDD6FE',
+                                                        padding: '2px 10px',
+                                                        borderRadius: 9999,
+                                                        marginLeft: 8,
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                    }}
+                                                >
+                                                    전체 3건
+                                                </span>
+                                            </div>
+                                            <span style={{ fontSize: 12, color: '#A1A1AA', fontWeight: 500 }}>
+                                                최근 1년 이내 만료 기준
                                             </span>
                                         </div>
-                                        <span style={{ fontSize: 12, color: '#A1A1AA', display: 'block', marginBottom: 16 }}>
-                                            최근 1년 이내에 만료된 이용권만 표시됩니다.
-                                        </span>
 
                                         <div
                                             style={{
                                                 background: '#FAFAFC',
                                                 border: '1px solid #F1F0F7',
                                                 borderRadius: 18,
-                                                padding: '18px 24px',
+                                                padding: '16px 20px',
                                                 marginBottom: 12,
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -1218,26 +1485,10 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 14 }}>
                                             <button
                                                 type="button"
-                                                style={{
-                                                    width: '100%',
-                                                    maxWidth: 240,
-                                                    height: 38,
-                                                    background: '#FFFFFF',
-                                                    border: '1px solid #E4E4E7',
-                                                    borderRadius: 12,
-                                                    fontSize: 12,
-                                                    fontWeight: 600,
-                                                    color: '#71717A',
-                                                    cursor: 'pointer',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: 6,
-                                                }}
+                                                className="load-more-text-btn"
                                                 onClick={() => message.info('지난 이용권 2건을 추가로 불러왔습니다.')}
                                             >
-                                                <span>지난 이용권 2건 더보기</span>
-                                                <DownOutlined style={{ fontSize: 10 }} />
+                                                + 지난 이용권 2건 더보기
                                             </button>
                                         </div>
                                     </div>
@@ -1258,8 +1509,9 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                 padding: '6px 16px',
                                                 borderRadius: 9999,
                                                 cursor: 'pointer',
-                                                background: noticeFilter === 'all' ? '#6D28D9' : '#F4F4F5',
+                                                background: noticeFilter === 'all' ? '#7C3AED' : '#F4F4F5',
                                                 color: noticeFilter === 'all' ? '#FFFFFF' : '#71717A',
+                                                transition: 'all 0.2s',
                                             }}
                                             onClick={() => setNoticeFilter('all')}
                                         >
@@ -1274,8 +1526,9 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                 padding: '6px 16px',
                                                 borderRadius: 9999,
                                                 cursor: 'pointer',
-                                                background: noticeFilter === 'notice' ? '#6D28D9' : '#F4F4F5',
+                                                background: noticeFilter === 'notice' ? '#7C3AED' : '#F4F4F5',
                                                 color: noticeFilter === 'notice' ? '#FFFFFF' : '#71717A',
+                                                transition: 'all 0.2s',
                                             }}
                                             onClick={() => setNoticeFilter('notice')}
                                         >
@@ -1290,8 +1543,9 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                 padding: '6px 16px',
                                                 borderRadius: 9999,
                                                 cursor: 'pointer',
-                                                background: noticeFilter === 'event' ? '#6D28D9' : '#F4F4F5',
+                                                background: noticeFilter === 'event' ? '#7C3AED' : '#F4F4F5',
                                                 color: noticeFilter === 'event' ? '#FFFFFF' : '#71717A',
+                                                transition: 'all 0.2s',
                                             }}
                                             onClick={() => setNoticeFilter('event')}
                                         >
@@ -1299,144 +1553,463 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                         </button>
                                     </div>
 
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                        {/* Notice Item 1 (Important Notice Accordion) */}
-                                        {(noticeFilter === 'all' || noticeFilter === 'notice') && (
-                                            <div
-                                                style={{
-                                                    background: '#FFFFFF',
-                                                    border: '1px solid #DDD6FE',
-                                                    borderRadius: 16,
-                                                    padding: 20,
-                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                                                }}
-                                            >
-                                                <div
-                                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-                                                    onClick={() => setNoticeNoticeOpen(!noticeNoticeOpen)}
-                                                >
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                        <span style={{ background: '#FFF1F2', color: '#E11D48', fontWeight: 700, fontSize: 11, padding: '3px 8px', borderRadius: 6, border: '1px solid #FFE4E6' }}>
-                                                            중요 공지
-                                                        </span>
-                                                        <h4 style={{ fontWeight: 700, fontSize: 15, color: '#18181B', margin: 0 }}>
-                                                            스튜디오A 환기 공조 시스템 정기 점검 안내
-                                                        </h4>
-                                                    </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                        <span style={{ fontSize: 12, color: '#71717A' }} className="font-num">2026.09.10</span>
-                                                        {noticeNoticeOpen ? <UpOutlined style={{ fontSize: 12, color: '#71717A' }} /> : <DownOutlined style={{ fontSize: 12, color: '#71717A' }} />}
-                                                    </div>
-                                                </div>
+                                    {/* Notice & Event Items */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                        {NOTICES_AND_EVENTS
+                                            .filter((item) => {
+                                                if (noticeFilter === 'all') return true;
+                                                return item.type === noticeFilter;
+                                            })
+                                            .map((item) => {
+                                                const isExpanded = !!expandedNoticeIds[item.id];
 
-                                                {noticeNoticeOpen && (
-                                                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #F4F1FC', fontSize: 12, color: '#52525B', lineHeight: 1.6 }}>
-                                                        <p style={{ margin: '0 0 10px' }}>
-                                                            회원 여러분의 쾌적하고 안전한 운동 환경을 위해 스튜디오A의 환기 및 공조 시스템 정기 살균 세척 작업이 진행됩니다. 점검 시간 동안 해당 스튜디오의 모든 수업 및 자유 이용이 일시 제한되오니 예약 시 참고 부탁드립니다.
-                                                        </p>
-                                                        <div style={{ borderRadius: 12, padding: '12px 14px', background: '#FAF9FD', border: '1px solid #EDE9FE' }}>
-                                                            <div>· 점검 일시: <strong style={{ color: '#18181B' }}>2026년 9월 12일(토) 10:00 ~ 13:00 (총 3시간)</strong></div>
-                                                            <div style={{ marginTop: 4 }}>· 대체 공간: <strong style={{ color: '#18181B' }}>스튜디오B 및 개인 스트레칭 존 정상 이용 가능</strong></div>
+                                                if (item.type === 'notice') {
+                                                    return (
+                                                        <div
+                                                            key={item.id}
+                                                            className="notice-accordion-card"
+                                                            style={{
+                                                                background: '#FFFFFF',
+                                                                border: isExpanded ? '1px solid #DDD6FE' : '1px solid #F1F0F7',
+                                                                borderRadius: 24,
+                                                                padding: 24,
+                                                                marginBottom: 0,
+                                                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+                                                                transition: 'border-color 0.25s ease, box-shadow 0.25s ease',
+                                                                cursor: 'pointer',
+                                                            }}
+                                                            onClick={() => toggleNotice(item.id)}
+                                                        >
+                                                            {/* Collapsed Header */}
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                                    <span
+                                                                        style={{
+                                                                            background: '#FFF1F2',
+                                                                            color: '#E11D48',
+                                                                            fontWeight: 700,
+                                                                            fontSize: 11,
+                                                                            padding: '3px 8px',
+                                                                            borderRadius: 6,
+                                                                            border: '1px solid #FFE4E6',
+                                                                        }}
+                                                                    >
+                                                                        {item.badge}
+                                                                    </span>
+                                                                    <h4 style={{ fontWeight: 700, fontSize: 16, color: '#18181B', margin: 0 }}>
+                                                                        {item.title}
+                                                                    </h4>
+                                                                </div>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                                    <span style={{ fontSize: 12, color: '#71717A' }} className="font-num">
+                                                                        {item.date}
+                                                                    </span>
+                                                                    <DownOutlined
+                                                                        className={`transition-transform duration-300 ${isExpanded ? 'rotate-180 text-[#7C3AED]' : 'rotate-0 text-[#A1A1AA]'}`}
+                                                                        style={{
+                                                                            fontSize: 12,
+                                                                            color: isExpanded ? '#7C3AED' : '#A1A1AA',
+                                                                            transition: 'transform 0.3s ease, color 0.3s ease',
+                                                                            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Smooth Expanded Section */}
+                                                            <div
+                                                                className={`grid transition-all duration-300 ease-in-out ${
+                                                                    isExpanded ? 'grid-rows-[1fr] opacity-100 mt-5' : 'grid-rows-[0fr] opacity-0 mt-0 pointer-events-none'
+                                                                }`}
+                                                                style={{
+                                                                    display: 'grid',
+                                                                    gridTemplateRows: isExpanded ? '1fr' : '0fr',
+                                                                    opacity: isExpanded ? 1 : 0,
+                                                                    marginTop: isExpanded ? 20 : 0,
+                                                                    paddingTop: isExpanded ? 20 : 0,
+                                                                    borderTop: isExpanded ? '1px solid #F4F1FC' : 'none',
+                                                                    transition: 'all 0.3s ease-in-out',
+                                                                }}
+                                                            >
+                                                                <div style={{ overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+                                                                    {/* 안내 인트로 본문 */}
+                                                                    <p className="text-sm text-[#3F3F46] leading-relaxed mb-5" style={{ fontSize: 14, color: '#3F3F46', lineHeight: 1.6, margin: '0 0 20px' }}>
+                                                                        {item.intro}
+                                                                    </p>
+
+                                                                    {/* [주요 안내] 라운드 박스 */}
+                                                                    <div
+                                                                        className="bg-[#FAF9FF] border border-[#EDE9FE] rounded-2xl p-5 mb-5"
+                                                                        style={{
+                                                                            backgroundColor: '#FAF9FF',
+                                                                            border: '1px solid #EDE9FE',
+                                                                            borderRadius: 16,
+                                                                            padding: 20,
+                                                                            marginBottom: 20,
+                                                                        }}
+                                                                    >
+                                                                        <div
+                                                                            className="text-sm font-bold text-[#7C3AED] flex items-center gap-1.5 mb-3"
+                                                                            style={{
+                                                                                fontSize: 14,
+                                                                                fontWeight: 700,
+                                                                                color: '#7C3AED',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: 6,
+                                                                                marginBottom: 12,
+                                                                            }}
+                                                                        >
+                                                                            <BellOutlined style={{ fontSize: 15 }} />
+                                                                            <span>주요 안내</span>
+                                                                        </div>
+                                                                        <div className="text-xs text-[#52525B] space-y-1.5" style={{ fontSize: 12, color: '#52525B', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                                            {item.keyPoints?.map((point, pIdx) => (
+                                                                                <div key={pIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                                                                                    <span style={{ color: '#A1A1AA' }}>·</span>
+                                                                                    <div>
+                                                                                        <strong style={{ color: '#3F3F46' }}>{point.label}:</strong>{' '}
+                                                                                        <span style={{ color: '#18181B', fontWeight: 500 }}>{point.value}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* [이용 안내] 섹션 */}
+                                                                    <div style={{ marginBottom: 20 }}>
+                                                                        <div className="text-sm font-bold text-[#18181B] mb-2" style={{ fontSize: 14, fontWeight: 700, color: '#18181B', marginBottom: 8 }}>
+                                                                            이용 안내
+                                                                        </div>
+                                                                        <div className="text-xs text-[#71717A] space-y-1" style={{ fontSize: 12, color: '#71717A', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                                            {item.guidelines?.map((guide, gIdx) => (
+                                                                                <div key={gIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                                                                                    <span style={{ color: '#A1A1AA' }}>·</span>
+                                                                                    <span>{guide}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* [문의] 섹션 */}
+                                                                    <div style={{ marginBottom: 20 }}>
+                                                                        <div className="text-sm font-bold text-[#18181B] mb-2" style={{ fontSize: 14, fontWeight: 700, color: '#18181B', marginBottom: 8 }}>
+                                                                            문의
+                                                                        </div>
+                                                                        <div style={{ fontSize: 12, color: '#71717A' }}>
+                                                                            궁금하신 사항은 고객센터로 문의해주세요.
+                                                                        </div>
+                                                                        <div
+                                                                            className="bg-white border border-[#E4E4E7] rounded-xl px-4 py-2.5 text-xs text-[#52525B] flex items-center gap-3 mt-2"
+                                                                            style={{
+                                                                                backgroundColor: '#FFFFFF',
+                                                                                border: '1px solid #E4E4E7',
+                                                                                borderRadius: 12,
+                                                                                padding: '10px 16px',
+                                                                                fontSize: 12,
+                                                                                color: '#52525B',
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                gap: 12,
+                                                                                marginTop: 8,
+                                                                            }}
+                                                                        >
+                                                                            <strong style={{ color: '#18181B' }}>{item.contact?.title}</strong>
+                                                                            <span style={{ color: '#D4D4D8' }}>|</span>
+                                                                            <span style={{ color: '#7C3AED', fontWeight: 700 }} className="font-num">{item.contact?.phone}</span>
+                                                                            <span style={{ color: '#D4D4D8' }}>|</span>
+                                                                            <span style={{ color: '#71717A' }}>{item.contact?.hours}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                // item.type === 'event'
+                                                return (
+                                                    <div
+                                                        key={item.id}
+                                                        className="notice-accordion-card"
+                                                        style={{
+                                                            background: '#FFFFFF',
+                                                            border: isExpanded ? '1px solid #DDD6FE' : '1px solid #F1F0F7',
+                                                            borderRadius: 24,
+                                                            padding: 24,
+                                                            marginBottom: 0,
+                                                            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+                                                            transition: 'border-color 0.25s ease, box-shadow 0.25s ease',
+                                                            cursor: 'pointer',
+                                                        }}
+                                                        onClick={() => toggleNotice(item.id)}
+                                                    >
+                                                        {/* Collapsed Header */}
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                            <div>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                    <span
+                                                                        style={{
+                                                                            background: '#EDE9FE',
+                                                                            color: '#7C3AED',
+                                                                            fontWeight: 700,
+                                                                            fontSize: 11,
+                                                                            padding: '3px 8px',
+                                                                            borderRadius: 6,
+                                                                        }}
+                                                                    >
+                                                                        {item.badge}
+                                                                    </span>
+                                                                    <h4 style={{ fontWeight: 700, fontSize: 16, color: '#18181B', margin: 0 }}>
+                                                                        {item.title}
+                                                                    </h4>
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 flex-wrap" style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                                                                    <span style={{ fontSize: 12, color: '#71717A' }} className="font-num">
+                                                                        {item.dateRange}
+                                                                    </span>
+                                                                    {item.conditionTag && (
+                                                                        <span
+                                                                            className="border border-[#FED7AA] bg-[#FFF7ED] text-[#EA580C] px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                                            style={{
+                                                                                background: '#FFF7ED',
+                                                                                color: '#EA580C',
+                                                                                fontSize: 11,
+                                                                                fontWeight: 600,
+                                                                                padding: '2px 8px',
+                                                                                borderRadius: 9999,
+                                                                                border: '1px solid #FED7AA',
+                                                                            }}
+                                                                        >
+                                                                            {item.conditionTag}
+                                                                        </span>
+                                                                    )}
+                                                                    {item.showDDay && item.dDay && (
+                                                                        <span
+                                                                            className="bg-[#FEF2F2] text-[#EF4444] px-2.5 py-0.5 rounded-full text-xs font-bold"
+                                                                            style={{
+                                                                                background: '#FEF2F2',
+                                                                                color: '#EF4444',
+                                                                                fontSize: 11,
+                                                                                fontWeight: 700,
+                                                                                padding: '2px 8px',
+                                                                                borderRadius: 9999,
+                                                                            }}
+                                                                        >
+                                                                            {item.dDay}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                                <span
+                                                                    style={{
+                                                                        fontSize: 12,
+                                                                        fontWeight: 600,
+                                                                        padding: '4px 12px',
+                                                                        borderRadius: 9999,
+                                                                        background: '#ECFDF5',
+                                                                        color: '#059669',
+                                                                        border: '1px solid #A7F3D0',
+                                                                    }}
+                                                                >
+                                                                    {item.status}
+                                                                </span>
+                                                                <DownOutlined
+                                                                    className={`transition-transform duration-300 ${isExpanded ? 'rotate-180 text-[#7C3AED]' : 'rotate-0 text-[#A1A1AA]'}`}
+                                                                    style={{
+                                                                        fontSize: 12,
+                                                                        color: isExpanded ? '#7C3AED' : '#A1A1AA',
+                                                                        transition: 'transform 0.3s ease, color 0.3s ease',
+                                                                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Smooth Expanded Section */}
+                                                        <div
+                                                            className={`grid transition-all duration-300 ease-in-out ${
+                                                                isExpanded ? 'grid-rows-[1fr] opacity-100 mt-5' : 'grid-rows-[0fr] opacity-0 mt-0 pointer-events-none'
+                                                            }`}
+                                                            style={{
+                                                                display: 'grid',
+                                                                gridTemplateRows: isExpanded ? '1fr' : '0fr',
+                                                                opacity: isExpanded ? 1 : 0,
+                                                                marginTop: isExpanded ? 20 : 0,
+                                                                paddingTop: isExpanded ? 20 : 0,
+                                                                borderTop: isExpanded ? '1px solid #F4F1FC' : 'none',
+                                                                transition: 'all 0.3s ease-in-out',
+                                                            }}
+                                                        >
+                                                            <div style={{ overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+                                                                {/* 1) [이벤트 혜택] 섹션 */}
+                                                                <div
+                                                                    className="text-sm font-bold text-[#18181B] flex items-center gap-2 mb-3"
+                                                                    style={{ fontSize: 14, fontWeight: 700, color: '#18181B', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}
+                                                                >
+                                                                    <GiftOutlined style={{ color: '#7C3AED', fontSize: 16 }} />
+                                                                    <span>이벤트 혜택</span>
+                                                                </div>
+                                                                <div
+                                                                    className="bg-[#FAF9FF] border border-[#EDE9FE] rounded-2xl p-4 divide-y divide-[#EDE9FE]"
+                                                                    style={{
+                                                                        backgroundColor: '#FAF9FF',
+                                                                        border: '1px solid #EDE9FE',
+                                                                        borderRadius: 16,
+                                                                        padding: 16,
+                                                                    }}
+                                                                >
+                                                                    {item.benefits?.map((benefit, bIdx) => (
+                                                                        <div
+                                                                            key={bIdx}
+                                                                            style={{
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'space-between',
+                                                                                gap: 12,
+                                                                                paddingTop: bIdx > 0 ? 14 : 0,
+                                                                                marginTop: bIdx > 0 ? 14 : 0,
+                                                                                borderTop: bIdx > 0 ? '1px solid #EDE9FE' : 'none',
+                                                                            }}
+                                                                        >
+                                                                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                                                                                <ShoppingOutlined
+                                                                                    style={{
+                                                                                        fontSize: 18,
+                                                                                        color: '#7C3AED',
+                                                                                        marginTop: 2,
+                                                                                        flexShrink: 0,
+                                                                                    }}
+                                                                                />
+                                                                                <div>
+                                                                                    <div className="text-xs font-bold text-[#18181B]" style={{ fontSize: 13, fontWeight: 700, color: '#18181B' }}>
+                                                                                        {benefit.title}
+                                                                                    </div>
+                                                                                    <div className="text-xs text-[#71717A] mt-0.5" style={{ fontSize: 12, color: '#71717A', marginTop: 2 }}>
+                                                                                        {benefit.desc}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <span
+                                                                                className="bg-[#F5F3FF] text-[#7C3AED] px-3 py-1 rounded-full text-xs font-semibold"
+                                                                                style={{
+                                                                                    backgroundColor: '#F5F3FF',
+                                                                                    color: '#7C3AED',
+                                                                                    padding: '4px 12px',
+                                                                                    borderRadius: 9999,
+                                                                                    fontSize: 12,
+                                                                                    fontWeight: 600,
+                                                                                    flexShrink: 0,
+                                                                                    whiteSpace: 'nowrap',
+                                                                                }}
+                                                                            >
+                                                                                {benefit.badge}
+                                                                            </span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+
+                                                                {/* 2) [참여 방법] 섹션 */}
+                                                                <div
+                                                                    className="text-sm font-bold text-[#18181B] flex items-center gap-2 mt-5 mb-3"
+                                                                    style={{
+                                                                        fontSize: 14,
+                                                                        fontWeight: 700,
+                                                                        color: '#18181B',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 8,
+                                                                        marginTop: 20,
+                                                                        marginBottom: 12,
+                                                                    }}
+                                                                >
+                                                                    <CalendarOutlined style={{ color: '#7C3AED', fontSize: 15 }} />
+                                                                    <span>참여 방법</span>
+                                                                </div>
+                                                                <div className="text-xs text-[#52525B] space-y-2" style={{ fontSize: 12, color: '#52525B', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                                    {item.steps?.map((step, sIdx) => {
+                                                                        const numSymbols = ['①', '②', '③', '④', '⑤'];
+                                                                        return (
+                                                                            <div key={sIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                                                                <span style={{ fontWeight: 700, color: '#7C3AED', flexShrink: 0 }}>
+                                                                                    {numSymbols[sIdx] || `${sIdx + 1}.`}
+                                                                                </span>
+                                                                                <span style={{ lineHeight: 1.5 }}>{step}</span>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                                {item.stepNote && (
+                                                                    <div className="text-[11px] text-[#A1A1AA] mt-2" style={{ fontSize: 11, color: '#A1A1AA', marginTop: 8 }}>
+                                                                        {item.stepNote}
+                                                                    </div>
+                                                                )}
+
+                                                                {/* 3) [유의사항] 섹션 */}
+                                                                <div
+                                                                    className="text-sm font-bold text-[#18181B] flex items-center gap-2 mt-5 mb-2"
+                                                                    style={{
+                                                                        fontSize: 14,
+                                                                        fontWeight: 700,
+                                                                        color: '#18181B',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 8,
+                                                                        marginTop: 20,
+                                                                        marginBottom: 8,
+                                                                    }}
+                                                                >
+                                                                    <InfoCircleOutlined style={{ color: '#7C3AED', fontSize: 15 }} />
+                                                                    <span>유의사항</span>
+                                                                </div>
+                                                                <div className="text-xs text-[#71717A] space-y-1" style={{ fontSize: 12, color: '#71717A', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                                    {item.notices?.map((notice, nIdx) => (
+                                                                        <div key={nIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                                                                            <span style={{ color: '#A1A1AA' }}>·</span>
+                                                                            <span>{notice}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+
+                                                                {/* 4) 하단 전폭 액션 버튼 */}
+                                                                <button
+                                                                    type="button"
+                                                                    className="w-full h-12 bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer mt-6 flex items-center justify-center"
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        height: 48,
+                                                                        backgroundColor: '#7C3AED',
+                                                                        color: '#FFFFFF',
+                                                                        fontWeight: 700,
+                                                                        fontSize: 14,
+                                                                        borderRadius: 12,
+                                                                        border: 'none',
+                                                                        cursor: 'pointer',
+                                                                        marginTop: 24,
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        transition: 'background-color 0.2s ease',
+                                                                    }}
+                                                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#6D28D9')}
+                                                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#7C3AED')}
+                                                                    onClick={() => message.success('이벤트 참여 신청이 접수되었습니다!')}
+                                                                >
+                                                                    이벤트 참여하기
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Notice Item 2 (Event) */}
-                                        {(noticeFilter === 'all' || noticeFilter === 'event') && (
-                                            <div
-                                                style={{
-                                                    background: '#FFFFFF',
-                                                    border: '1px solid #F4F1FC',
-                                                    borderRadius: 16,
-                                                    padding: 20,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    cursor: 'pointer',
-                                                }}
-                                                onClick={() => message.info('가을맞이 리프레시 빈야사 이벤트 상세 페이지로 이동합니다.')}
-                                            >
-                                                <div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                        <span style={{ background: '#EDE9FE', color: '#6D28D9', fontWeight: 700, fontSize: 11, padding: '3px 8px', borderRadius: 6 }}>
-                                                            이벤트
-                                                        </span>
-                                                        <h4 style={{ fontWeight: 700, fontSize: 15, color: '#18181B', margin: 0 }}>
-                                                            가을맞이 리프레시 빈야사 & 사운드 배스 오픈
-                                                        </h4>
-                                                    </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-                                                        <span style={{ fontSize: 12, color: '#71717A' }} className="font-num">2026.09.08 ~ 2026.09.30</span>
-                                                        <span style={{ background: '#FFF7ED', color: '#EA580C', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 9999, border: '1px solid #FED7AA' }}>
-                                                            선착순 15명 한정 (D-9)
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                    <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 9999, background: '#ECFDF5', color: '#059669', border: '1px solid #A7F3D0' }}>
-                                                        진행중
-                                                    </span>
-                                                    <RightOutlined style={{ fontSize: 12, color: '#94A3B8' }} />
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Notice Item 3 (Event) */}
-                                        {(noticeFilter === 'all' || noticeFilter === 'event') && (
-                                            <div
-                                                style={{
-                                                    background: '#FFFFFF',
-                                                    border: '1px solid #F4F1FC',
-                                                    borderRadius: 16,
-                                                    padding: 20,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    cursor: 'pointer',
-                                                }}
-                                                onClick={() => message.info('친구 초대 리워드 상세 페이지로 이동합니다.')}
-                                            >
-                                                <div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                        <span style={{ background: '#EDE9FE', color: '#6D28D9', fontWeight: 700, fontSize: 11, padding: '3px 8px', borderRadius: 6 }}>
-                                                            이벤트
-                                                        </span>
-                                                        <h4 style={{ fontWeight: 700, fontSize: 15, color: '#18181B', margin: 0 }}>
-                                                            친구 초대 리워드 — 2회 추가 횟수 즉시 적립
-                                                        </h4>
-                                                    </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-                                                        <span style={{ fontSize: 12, color: '#71717A' }}>상시 혜택</span>
-                                                        <span style={{ background: '#FFF7ED', color: '#EA580C', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 9999, border: '1px solid #FED7AA' }}>
-                                                            신규 등록 시 적용
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                    <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 9999, background: '#ECFDF5', color: '#059669', border: '1px solid #A7F3D0' }}>
-                                                        진행중
-                                                    </span>
-                                                    <RightOutlined style={{ fontSize: 12, color: '#94A3B8' }} />
-                                                </div>
-                                            </div>
-                                        )}
+                                                );
+                                            })}
                                     </div>
 
-                                    <div style={{ textAlign: 'center', marginTop: 16 }}>
+                                    {/* 하단 더보기 버튼 */}
+                                    <div style={{ textAlign: 'center', marginTop: 20 }}>
                                         <button
                                             type="button"
-                                            style={{
-                                                background: 'transparent',
-                                                border: 'none',
-                                                color: '#71717A',
-                                                fontSize: 12,
-                                                fontWeight: 600,
-                                                cursor: 'pointer',
-                                                padding: '10px 20px',
-                                                borderRadius: 12,
-                                            }}
+                                            className="load-more-text-btn"
                                             onClick={() => message.info('지난 소식 목록을 불러옵니다.')}
                                         >
                                             + 지난 소식 더보기 (3/8)

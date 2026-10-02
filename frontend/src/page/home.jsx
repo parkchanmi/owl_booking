@@ -3,6 +3,7 @@ import { Button, Checkbox, Divider, Form, Input, Typography, message } from 'ant
 import { UserOutlined, LockOutlined, SafetyCertificateOutlined, CustomerServiceOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import './auth.css';
+import yogaIllustration from '../assets/Yoga_Illustration.png';
 
 const { Title, Text, Link } = Typography;
 
@@ -84,37 +85,47 @@ const Home = () => {
     // TODO: [Backend] 아이디 중복확인 API 연동 (POST /api/auth/check-username)
     const handleCheckUsername = () => {
         const usernameRegex = /^[a-z0-9]{4,16}$/;
-        if (!signupForm.loginId.trim()) {
-            message.warning('아이디를 입력해주세요.');
+        const trimmed = signupForm.loginId.trim();
+        if (!trimmed) {
+            setIsIdChecked(false);
+            setIdCheckMsg({ text: '아이디를 입력해주세요.', isError: true });
             return;
         }
-        if (!usernameRegex.test(signupForm.loginId.trim())) {
+        if (!usernameRegex.test(trimmed)) {
             setIsIdChecked(false);
-            setIdCheckMsg({ text: '영문 소문자, 숫자 조합 4~16자로 입력해주세요.', isError: true });
-            message.error('아이디는 영문 소문자와 숫자 조합 4~16자여야 합니다.');
+            setIdCheckMsg({ text: '아이디는 영문 소문자와 숫자 조합 4~16자여야 합니다.', isError: true });
+            return;
+        }
+        if (trimmed === 'admin' || trimmed === 'test' || trimmed === 'owlfit') {
+            setIsIdChecked(false);
+            setIdCheckMsg({ text: '이미 사용 중인 아이디입니다.', isError: true });
             return;
         }
         setIsIdChecked(true);
         setIdCheckMsg({ text: '사용 가능한 아이디입니다.', isError: false });
-        message.success('사용 가능한 아이디입니다.');
     };
 
     // TODO: [Backend] 이메일 인증번호 발송 API 연동 (POST /api/auth/email/send-code)
     const handleSendEmailCode = () => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!signupForm.email.trim()) {
-            message.warning('이메일을 입력해주세요.');
+        const trimmed = signupForm.email.trim();
+        if (!trimmed) {
+            setIsEmailVerified(false);
+            setEmailVerifyMsg({ text: '이메일을 입력해주세요.', isError: true });
             return;
         }
-        if (!emailRegex.test(signupForm.email.trim())) {
+        if (!emailRegex.test(trimmed)) {
             setIsEmailVerified(false);
             setEmailVerifyMsg({ text: '올바른 이메일 형식을 입력해주세요.', isError: true });
-            message.error('올바른 이메일 형식을 입력해주세요.');
+            return;
+        }
+        if (trimmed.startsWith('fail@') || trimmed.includes('error')) {
+            setIsEmailVerified(false);
+            setEmailVerifyMsg({ text: '인증번호가 일치하지 않거나 유효시간이 만료되었습니다.', isError: true });
             return;
         }
         setIsEmailVerified(true);
-        setEmailVerifyMsg({ text: '인증 요청이 완료되었습니다 (모의 처리).', isError: false });
-        message.success('인증 요청이 완료되었습니다 (모의 처리).');
+        setEmailVerifyMsg({ text: '이메일 인증이 완료되었습니다.', isError: false });
     };
 
     // 전화번호 010-0000-0000 자동 하이픈 포맷팅
@@ -181,37 +192,47 @@ const Home = () => {
     // TODO: [Backend] 아이디 중복확인 API 연동 (POST /api/auth/check-username)
     const handleAdminCheckUsername = () => {
         const usernameRegex = /^[a-z0-9]{4,16}$/;
-        if (!adminSignupForm.loginId.trim()) {
-            message.warning('아이디를 입력해주세요.');
+        const trimmed = adminSignupForm.loginId.trim();
+        if (!trimmed) {
+            setIsAdminIdChecked(false);
+            setAdminIdCheckMsg({ text: '아이디를 입력해주세요.', isError: true });
             return;
         }
-        if (!usernameRegex.test(adminSignupForm.loginId.trim())) {
+        if (!usernameRegex.test(trimmed)) {
             setIsAdminIdChecked(false);
-            setAdminIdCheckMsg({ text: '영문 소문자, 숫자 조합 4~16자로 입력해주세요.', isError: true });
-            message.error('아이디는 영문 소문자와 숫자 조합 4~16자여야 합니다.');
+            setAdminIdCheckMsg({ text: '아이디는 영문 소문자와 숫자 조합 4~16자여야 합니다.', isError: true });
+            return;
+        }
+        if (trimmed === 'admin' || trimmed === 'test' || trimmed === 'owlfit') {
+            setIsAdminIdChecked(false);
+            setAdminIdCheckMsg({ text: '이미 사용 중인 아이디입니다.', isError: true });
             return;
         }
         setIsAdminIdChecked(true);
         setAdminIdCheckMsg({ text: '사용 가능한 아이디입니다.', isError: false });
-        message.success('사용 가능한 아이디입니다.');
     };
 
     // TODO: [Backend] 이메일 인증번호 발송 API 연동 (POST /api/auth/email/send-code)
     const handleAdminSendEmailCode = () => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!adminSignupForm.email.trim()) {
-            message.warning('이메일을 입력해주세요.');
+        const trimmed = adminSignupForm.email.trim();
+        if (!trimmed) {
+            setIsAdminEmailVerified(false);
+            setAdminEmailVerifyMsg({ text: '이메일을 입력해주세요.', isError: true });
             return;
         }
-        if (!emailRegex.test(adminSignupForm.email.trim())) {
+        if (!emailRegex.test(trimmed)) {
             setIsAdminEmailVerified(false);
             setAdminEmailVerifyMsg({ text: '올바른 이메일 형식을 입력해주세요.', isError: true });
-            message.error('올바른 이메일 형식을 입력해주세요.');
+            return;
+        }
+        if (trimmed.startsWith('fail@') || trimmed.includes('error')) {
+            setIsAdminEmailVerified(false);
+            setAdminEmailVerifyMsg({ text: '인증번호가 일치하지 않거나 유효시간이 만료되었습니다.', isError: true });
             return;
         }
         setIsAdminEmailVerified(true);
-        setAdminEmailVerifyMsg({ text: '인증 요청이 완료되었습니다 (모의 처리).', isError: false });
-        message.success('인증 요청이 완료되었습니다 (모의 처리).');
+        setAdminEmailVerifyMsg({ text: '이메일 인증이 완료되었습니다.', isError: false });
     };
 
     const handleAdminPhoneChange = (e) => {
@@ -762,7 +783,7 @@ const Home = () => {
                                         <input
                                             type="text"
                                             placeholder="영문 소문자, 숫자 조합 4~16자"
-                                            className="signup-input"
+                                            className={`signup-input ${idCheckMsg.isError ? 'is-error' : ''}`}
                                             value={signupForm.loginId}
                                             onChange={(e) => {
                                                 setSignupForm((prev) => ({ ...prev, loginId: e.target.value.trim() }));
@@ -777,8 +798,9 @@ const Home = () => {
                                             type="button"
                                             className={`signup-side-btn ${isIdChecked ? 'is-completed' : ''}`}
                                             onClick={handleCheckUsername}
+                                            disabled={isIdChecked}
                                         >
-                                            {isIdChecked ? '확인완료' : '중복확인'}
+                                            {isIdChecked ? '✓ 확인완료' : '중복확인'}
                                         </button>
                                     </div>
                                     {idCheckMsg.text && (
@@ -796,7 +818,7 @@ const Home = () => {
                                     <input
                                         type="password"
                                         placeholder="영문, 숫자, 특수문자 포함 8자 이상"
-                                        className="signup-input"
+                                        className={`signup-input ${signupForm.password && signupForm.password.length < 8 ? 'is-error' : ''}`}
                                         value={signupForm.password}
                                         onChange={(e) => setSignupForm((prev) => ({ ...prev, password: e.target.value }))}
                                         required
@@ -816,7 +838,7 @@ const Home = () => {
                                     <input
                                         type="password"
                                         placeholder="비밀번호를 다시 입력해주세요"
-                                        className="signup-input"
+                                        className={`signup-input ${isPasswordMismatch ? 'is-error' : ''}`}
                                         value={signupForm.passwordConfirm}
                                         onChange={(e) => setSignupForm((prev) => ({ ...prev, passwordConfirm: e.target.value }))}
                                         required
@@ -857,7 +879,7 @@ const Home = () => {
                                         <input
                                             type="email"
                                             placeholder="example@owlfit.com"
-                                            className="signup-input"
+                                            className={`signup-input ${emailVerifyMsg.isError ? 'is-error' : ''}`}
                                             value={signupForm.email}
                                             onChange={(e) => {
                                                 setSignupForm((prev) => ({ ...prev, email: e.target.value.trim() }));
@@ -872,8 +894,9 @@ const Home = () => {
                                             type="button"
                                             className={`signup-side-btn ${isEmailVerified ? 'is-completed' : ''}`}
                                             onClick={handleSendEmailCode}
+                                            disabled={isEmailVerified}
                                         >
-                                            {isEmailVerified ? '인증완료' : '인증요청'}
+                                            {isEmailVerified ? '✓ 인증완료' : '인증요청'}
                                         </button>
                                     </div>
                                     {emailVerifyMsg.text && (
@@ -942,7 +965,7 @@ const Home = () => {
                                 <img
                                     alt="요가 스트레칭 캐릭터 일러스트"
                                     className="signup-completed-img"
-                                    src="https://lh3.googleusercontent.com/aida/AEtjO1V-85Fri_3UWsAD04qoROCY9m_BMFhbCNyTGXb73C19Be6aPk_MSCvHfGJKDH7omqmQpJKnXsglLdoANApkjCCqg9XS24_nojPiMRL6FVRvm2UqrAsJCWizs8PnHi2EF2T-SZWu--NiGCaRXthu1FTml5eQK_VN64incGkvUIYoPkiC0LxtPRP0YTihGPh1myTtSOfe7y8n_3dedJnvpPNh9yVpFCgTrv0Yz3_eIoT_4AwVaFEpeGaH12Q"
+                                    src={yogaIllustration}
                                     onError={(e) => {
                                         e.currentTarget.style.display = 'none';
                                         const fb = document.getElementById('yoga-hero-svg-fallback');
@@ -1064,12 +1087,14 @@ const Home = () => {
                                         <input
                                             type="text"
                                             placeholder="영문 소문자, 숫자 조합 4~16자"
-                                            className="signup-input"
+                                            className={`signup-input ${adminIdCheckMsg.isError ? 'is-error' : ''}`}
                                             value={adminSignupForm.loginId}
                                             onChange={(e) => {
-                                                setAdminSignupForm((prev) => ({ ...prev, loginId: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '') }));
-                                                setIsAdminIdChecked(false);
-                                                setAdminIdCheckMsg({ text: '', isError: false });
+                                                setAdminSignupForm((prev) => ({ ...prev, loginId: e.target.value.trim() }));
+                                                if (isAdminIdChecked || adminIdCheckMsg.text) {
+                                                    setIsAdminIdChecked(false);
+                                                    setAdminIdCheckMsg({ text: '', isError: false });
+                                                }
                                             }}
                                             required
                                         />
@@ -1077,8 +1102,9 @@ const Home = () => {
                                             type="button"
                                             className={`signup-side-btn ${isAdminIdChecked ? 'is-completed' : ''}`}
                                             onClick={handleAdminCheckUsername}
+                                            disabled={isAdminIdChecked}
                                         >
-                                            {isAdminIdChecked ? '확인완료' : '중복확인'}
+                                            {isAdminIdChecked ? '✓ 확인완료' : '중복확인'}
                                         </button>
                                     </div>
                                     {adminIdCheckMsg.text && (
@@ -1096,7 +1122,7 @@ const Home = () => {
                                     <input
                                         type="password"
                                         placeholder="영문, 숫자, 특수문자 포함 8자 이상"
-                                        className="signup-input"
+                                        className={`signup-input ${adminSignupForm.password && adminSignupForm.password.length < 8 ? 'is-error' : ''}`}
                                         value={adminSignupForm.password}
                                         onChange={(e) => setAdminSignupForm((prev) => ({ ...prev, password: e.target.value }))}
                                         required
@@ -1116,7 +1142,7 @@ const Home = () => {
                                     <input
                                         type="password"
                                         placeholder="비밀번호를 다시 입력해주세요"
-                                        className="signup-input"
+                                        className={`signup-input ${isAdminPasswordMismatch ? 'is-error' : ''}`}
                                         value={adminSignupForm.passwordConfirm}
                                         onChange={(e) => setAdminSignupForm((prev) => ({ ...prev, passwordConfirm: e.target.value }))}
                                         required
@@ -1157,12 +1183,14 @@ const Home = () => {
                                         <input
                                             type="email"
                                             placeholder="admin@studio.com"
-                                            className="signup-input"
+                                            className={`signup-input ${adminEmailVerifyMsg.isError ? 'is-error' : ''}`}
                                             value={adminSignupForm.email}
                                             onChange={(e) => {
-                                                setAdminSignupForm((prev) => ({ ...prev, email: e.target.value }));
-                                                setIsAdminEmailVerified(false);
-                                                setAdminEmailVerifyMsg({ text: '', isError: false });
+                                                setAdminSignupForm((prev) => ({ ...prev, email: e.target.value.trim() }));
+                                                if (isAdminEmailVerified || adminEmailVerifyMsg.text) {
+                                                    setIsAdminEmailVerified(false);
+                                                    setAdminEmailVerifyMsg({ text: '', isError: false });
+                                                }
                                             }}
                                             required
                                         />
@@ -1170,8 +1198,9 @@ const Home = () => {
                                             type="button"
                                             className={`signup-side-btn ${isAdminEmailVerified ? 'is-completed' : ''}`}
                                             onClick={handleAdminSendEmailCode}
+                                            disabled={isAdminEmailVerified}
                                         >
-                                            {isAdminEmailVerified ? '인증완료' : '인증요청'}
+                                            {isAdminEmailVerified ? '✓ 인증완료' : '인증요청'}
                                         </button>
                                     </div>
                                     {adminEmailVerifyMsg.text && (
