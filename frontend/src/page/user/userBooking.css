@@ -853,6 +853,8 @@
 
 /* Ticket Card */
 .ticket-pass-card {
+  width: 100%;
+  box-sizing: border-box;
   background: linear-gradient(135deg, #FFFFFF 0%, #F8F7FD 100%);
   border: 1.5px solid #EDE9FE;
   border-radius: 18px;
@@ -882,25 +884,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .ticket-pass-name {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   color: #18181B;
+  letter-spacing: -0.01em;
 }
 
 .ticket-remain-badge {
-  padding: 3px 9px;
+  padding: 3px 10px;
   border-radius: 9999px;
   background: #EDE9FE;
   color: #6D28D9;
   font-size: 11px;
   font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .ticket-pass-card__bottom {
-  margin-top: 10px;
+  margin-top: 12px;
   padding-top: 10px;
   border-top: 1px solid #F1F0F7;
   display: flex;
@@ -911,17 +917,21 @@
 
 .ticket-expire-date {
   color: #71717A;
+  font-weight: 500;
 }
 
 .ticket-change-btn {
   border: none;
   background: transparent;
   color: #7C3AED;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  padding: 0;
+  transition: color 0.15s ease;
 }
 
 .ticket-change-btn:hover {

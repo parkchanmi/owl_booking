@@ -24,8 +24,9 @@ import {
     LogoutOutlined,
     SettingOutlined,
     CalendarOutlined,
+    SyncOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import Header, { INITIAL_NOTIFICATIONS } from '../../components/common/Header';
 import './userBooking.css';
@@ -34,12 +35,35 @@ const { Text } = Typography;
 
 const KOREAN_DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
-const User = () => {
+const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNavigateBuyTicket }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [form] = Form.useForm();
 
     // 로그인한 실제 회원 정보
     const [memberInfo, setMemberInfo] = useState(null);
+
+    // 지점 목록 (실제 백엔드 조회) - activeTicket 및 displayTicketName보다 먼저 선언
+    const [centers, setCenters] = useState([]);
+    const [selectedCenterId, setSelectedCenterId] = useState(null);
+    const selectedCenter = useMemo(
+        () => centers.find((c) => c.id === selectedCenterId) ?? centers[0] ?? null,
+        [centers, selectedCenterId]
+    );
+
+    // URL 쿼리 파라미터 확인 (?hasTicket=false 또는 ?noTicket=true 등 개발/테스트/연동 지원)
+    const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+    const queryOverride = useMemo(() => {
+        if (searchParams.get('noTicket') === 'true' || searchParams.get('noTicket') === '1') return false;
+        if (searchParams.get('hasTicket') === 'false' || searchParams.get('hasTicket') === '0') return false;
+        if (searchParams.get('hasTicket') === 'true' || searchParams.get('hasTicket') === '1') return true;
+        return null;
+    }, [searchParams]);
+
+    const [userMemberships, setUserMemberships] = useState([]);
+    const [selectedTicketIndex, setSelectedTicketIndex] = useState(0);
+    const [ticketModalOpen, setTicketModalOpen] = useState(false);
+    const [hasTicketState, setHasTicketState] = useState(true);
 
     useEffect(() => {
         fetch('/api/member/info', { credentials: 'include' })
@@ -48,13 +72,86 @@ const User = () => {
             .catch((err) => console.error('회원 정보 조회 실패:', err));
     }, []);
 
-    // 지점 목록 (실제 백엔드 조회)
-    const [centers, setCenters] = useState([]);
-    const [selectedCenterId, setSelectedCenterId] = useState(null);
-    const selectedCenter = useMemo(
-        () => centers.find((c) => c.id === selectedCenterId) ?? centers[0] ?? null,
-        [centers, selectedCenterId]
-    );
+    // 회원의 실제 유효 이용권 보유 여부 확인 (잔여 횟수 및 만료일 기준)
+    useEffect(() => {
+        if (queryOverride !== null || propHasTicket !== undefined || propUserTickets !== undefined) return;
+        if (!memberInfo?.id) return;
+
+        fetch(`/api/admin/membermemberships?memberId=${memberInfo.id}`, { credentials: 'include' })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+                if (Array.isArray(data)) {
+                    setUserMemberships(data);
+                    const validPasses = data.filter((mm) => {
+                        const countValid = mm.remainCount == null || mm.remainCount > 0;
+                        const dateValid = !mm.endDat || !dayjs(mm.endDat).isBefore(dayjs().startOf('day'));
+                        return countValid && dateValid;
+                    });
+                    setHasTicketState(validPasses.length > 0);
+                }
+            })
+            .catch((err) => console.error('회원 이용권 조회 실패:', err));
+    }, [memberInfo, queryOverride, propHasTicket, propUserTickets]);
+
+    // 유효한 이용권 목록
+    const validMemberships = useMemo(() => {
+        if (Array.isArray(propUserTickets)) {
+            return propUserTickets;
+        }
+        return userMemberships.filter((mm) => {
+            const countValid = mm.remainCount == null || mm.remainCount > 0;
+            const dateValid = !mm.endDat || !dayjs(mm.endDat).isBefore(dayjs().startOf('day'));
+            return countValid && dateValid;
+        });
+    }, [propUserTickets, userMemberships]);
+
+    const hasTicket = useMemo(() => {
+        if (propHasTicket !== undefined) return Boolean(propHasTicket);
+        if (Array.isArray(propUserTickets)) return propUserTickets.length > 0;
+        if (queryOverride !== null) return queryOverride;
+        return hasTicketState;
+    }, [propHasTicket, propUserTickets, queryOverride, hasTicketState]);
+
+    // 현재 표시할 활성 이용권 데이터 (없을 시 레퍼런스 시안의 기본값 표출)
+    const activeTicket = useMemo(() => {
+        if (validMemberships.length > 0) {
+            return validMemberships[selectedTicketIndex % validMemberships.length];
+        }
+        return null;
+    }, [validMemberships, selectedTicketIndex]);
+
+    const displayTicketName = useMemo(() => {
+        return activeTicket?.membership?.name
+            || (selectedCenter?.name ? `${selectedCenter.name} 전용 30회권` : '강남 시그니처점 전용 30회권');
+    }, [activeTicket, selectedCenter]);
+
+    const displayTicketRemain = useMemo(() => {
+        return activeTicket?.remainCount != null
+            ? `${activeTicket.remainCount}회 남음`
+            : '8회 남음';
+    }, [activeTicket]);
+
+    const displayTicketExpiry = useMemo(() => {
+        return activeTicket?.endDat
+            ? `유효기간: ${dayjs(activeTicket.endDat).format('YYYY.MM.DD')} 만료`
+            : '유효기간: 2026.12.31 만료';
+    }, [activeTicket]);
+
+    const handleChangeTicket = () => {
+        if (validMemberships.length > 1) {
+            setTicketModalOpen(true);
+        } else {
+            message.info('보유 중인 다른 이용권 목록이 없습니다.');
+        }
+    };
+
+    const handleBuyTicket = () => {
+        if (onNavigateBuyTicket) {
+            onNavigateBuyTicket();
+        } else {
+            navigate('/mypage?tab=passes');
+        }
+    };
 
     // 실제 스케줄(RealProgram) 목록
     const [realPrograms, setRealPrograms] = useState([]);
@@ -172,6 +269,11 @@ const User = () => {
 
     // 예약 제출 핸들러 (실제 백엔드 예약 생성 API 호출)
     const handleReservationSubmit = async () => {
+        if (!hasTicket) {
+            message.warning('사용 가능한 이용권이 없습니다. 이용권을 먼저 구매해 주세요.');
+            return;
+        }
+
         try {
             const values = await form.validateFields();
             setSubmitting(true);
@@ -646,83 +748,154 @@ const User = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Pass / Ticket Information Card */}
-                                            <div className="ticket-pass-card">
-                                                <div className="ticket-pass-card__top">
-                                                    <div className="ticket-pass-title-group">
-                                                        <div className="ticket-pass-icon">
-                                                            <CalendarOutlined style={{ fontSize: 14 }} />
+                                            {hasTicket ? (
+                                                <>
+                                                    {/* 보유 이용권 카드 박스 (Reference: rsvp-general.png & code.html) */}
+                                                    <div className="ticket-pass-card">
+                                                        <div className="ticket-pass-card__top">
+                                                            <div className="ticket-pass-title-group">
+                                                                <div className="ticket-pass-icon">
+                                                                    <svg
+                                                                        width="14"
+                                                                        height="14"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth="2"
+                                                                        viewBox="0 0 24 24"
+                                                                    >
+                                                                        <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                                                                        <path d="M13 5v2" />
+                                                                        <path d="M13 17v2" />
+                                                                        <path d="M13 11v2" />
+                                                                    </svg>
+                                                                </div>
+                                                                <span className="ticket-pass-name">{displayTicketName}</span>
+                                                            </div>
+                                                            <span className="ticket-remain-badge">{displayTicketRemain}</span>
                                                         </div>
-                                                        <span className="ticket-pass-name">보유하신 이용권으로 예약됩니다</span>
+                                                        <div className="ticket-pass-card__bottom">
+                                                            <span className="ticket-expire-date">{displayTicketExpiry}</span>
+                                                            <button
+                                                                type="button"
+                                                                className="ticket-change-btn"
+                                                                onClick={handleChangeTicket}
+                                                            >
+                                                                <span>다른 이용권 사용</span>
+                                                                <span style={{ fontSize: 13, lineHeight: 1 }}>›</span>
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </div>
 
-                                            {/* Policy & Terms Checkbox */}
-                                            <div className="policy-box">
-                                                <div className="policy-header">
-                                                    <SafetyCertificateOutlined className="policy-header-icon" />
-                                                    <span>취소 및 환불 규정</span>
-                                                </div>
-                                                <p className="policy-desc">
-                                                    수업 시작 3시간 전까지 무료 취소 가능하며, 무단 결석 시 이용권이 차감됩니다.
-                                                </p>
+                                                    {/* 대기 예약 유의사항 박스 (Reference: rsvp-wait.png) */}
+                                                    {isWaitlist && (
+                                                        <div className="waitlist-notice-box">
+                                                            <div className="waitlist-notice-title">
+                                                                <InfoCircleOutlined style={{ color: '#D97706', fontSize: 13 }} />
+                                                                <span>대기 예약 유의사항</span>
+                                                            </div>
+                                                            <div className="waitlist-notice-desc">
+                                                                <p>• 공석 발생 시 즉시 카카오 알림톡이 발송됩니다.</p>
+                                                                <p>• 알림 수신 후 1시간 이내 미확정 시 자동 취소되며, 최종 확정 시 이용권 1회가 차감됩니다.</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
 
-                                                <Form.Item
-                                                    name="termsAgree"
-                                                    valuePropName="checked"
-                                                    rules={[
-                                                        {
-                                                            validator: (_, value) =>
-                                                                value
-                                                                    ? Promise.resolve()
-                                                                    : Promise.reject(new Error('취소 규정에 동의해주세요.')),
-                                                        },
-                                                    ]}
-                                                    style={{ marginBottom: 0 }}
-                                                >
-                                                    <Checkbox>
-                                                        <span className="policy-checkbox-label">
-                                                            이용 약관 및 취소 규정에 동의합니다.{' '}
-                                                            <span className="policy-required-tag">(필수)</span>
-                                                        </span>
-                                                    </Checkbox>
-                                                </Form.Item>
-                                                <Button
-                                                    type="link"
-                                                    size="small"
-                                                    style={{ padding: 0, fontSize: 11, color: '#8B5CF6' }}
-                                                    onClick={() => setPolicyModalOpen(true)}
-                                                >
-                                                    전문 확인하기 ›
-                                                </Button>
-                                            </div>
+                                                    {/* 취소 및 환불 규정 문구 & 약관 동의 체크박스 */}
+                                                    <div className="policy-box">
+                                                        <div className="policy-header">
+                                                            <SafetyCertificateOutlined className="policy-header-icon" />
+                                                            <span>취소 및 환불 규정</span>
+                                                        </div>
+                                                        <p className="policy-desc">
+                                                            수업 시작 3시간 전까지 무료 취소 가능하며, 무단 결석 시 이용권이 차감됩니다.
+                                                        </p>
 
-                                            {/* Bottom Action CTA Button */}
-                                            <div style={{ marginTop: 16 }}>
-                                                {isWaitlist ? (
-                                                    <Button
-                                                        type="primary"
-                                                        htmlType="submit"
-                                                        loading={submitting}
-                                                        className="btn-waitlist-submit"
+                                                        <Form.Item
+                                                            name="termsAgree"
+                                                            valuePropName="checked"
+                                                            initialValue={true}
+                                                            rules={[
+                                                                {
+                                                                    validator: (_, value) =>
+                                                                        value
+                                                                            ? Promise.resolve()
+                                                                            : Promise.reject(new Error('취소 규정에 동의해주세요.')),
+                                                                },
+                                                            ]}
+                                                            style={{ marginBottom: 0 }}
+                                                        >
+                                                            <Checkbox>
+                                                                <span className="policy-checkbox-label">
+                                                                    이용 약관 및 취소 규정에 동의합니다.{' '}
+                                                                    <span className="policy-required-tag">(필수)</span>
+                                                                </span>
+                                                            </Checkbox>
+                                                        </Form.Item>
+                                                    </div>
+
+                                                    {/* 예약 액션 버튼 및 하단 안내 문구 */}
+                                                    <div style={{ marginTop: 16 }}>
+                                                        {isWaitlist ? (
+                                                            <Button
+                                                                type="primary"
+                                                                htmlType="submit"
+                                                                loading={submitting}
+                                                                className="btn-waitlist-submit"
+                                                            >
+                                                                <span>대기 예약 하기</span>
+                                                                <SyncOutlined style={{ fontSize: 13 }} />
+                                                            </Button>
+                                                        ) : (
+                                                            <Button
+                                                                type="primary"
+                                                                htmlType="submit"
+                                                                loading={submitting}
+                                                                className="btn-reserve-submit"
+                                                            >
+                                                                <span>예약 완료하기</span>
+                                                                <span style={{ fontSize: 16 }}>→</span>
+                                                            </Button>
+                                                        )}
+                                                        <p className="cta-sub-note">
+                                                            예약 관련 문의는 각 센터 고객센터를 이용해주세요.
+                                                        </p>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                /* No Ticket Card Component (Reference: uiux/reservationpage/rsvp-noticket.png) */
+                                                <div className="rsvp-no-ticket-card">
+                                                    <div className="rsvp-no-ticket-icon-wrap">
+                                                        <svg
+                                                            width="26"
+                                                            height="26"
+                                                            viewBox="0 0 24 24"
+                                                            fill="none"
+                                                            stroke="#7C3AED"
+                                                            strokeWidth="2"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                        >
+                                                            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                                                            <path d="M12 9v3" />
+                                                            <circle cx="12" cy="15.5" r="0.75" fill="#7C3AED" />
+                                                        </svg>
+                                                    </div>
+                                                    <h4 className="rsvp-no-ticket-title">사용 가능한 이용권이 없습니다</h4>
+                                                    <p className="rsvp-no-ticket-desc">
+                                                        해당 클래스를 예약하려면 이용권을 먼저 구매해 주세요.
+                                                    </p>
+                                                    <button
+                                                        type="button"
+                                                        className="btn-buy-ticket"
+                                                        onClick={handleBuyTicket}
                                                     >
-                                                        대기 예약 하기
-                                                    </Button>
-                                                ) : (
-                                                    <Button
-                                                        type="primary"
-                                                        htmlType="submit"
-                                                        loading={submitting}
-                                                        className="btn-reserve-submit"
-                                                    >
-                                                        예약 완료하기 →
-                                                    </Button>
-                                                )}
-                                                <p className="cta-sub-note">
-                                                    예약 관련 문의는 각 센터 고객센터를 이용해주세요.
-                                                </p>
-                                            </div>
+                                                        <span>이용권 구매하러 가기</span>
+                                                        <span style={{ fontSize: 16 }}>→</span>
+                                                    </button>
+                                                </div>
+                                            )}
                                         </Form>
                                     </div>
                                 </div>
@@ -833,6 +1006,83 @@ const User = () => {
                         <h4>제 3 조 (대기 예약 및 자동 확정)</h4>
                         <p>대기 인원 중 취소자 발생 시 우선순위에 따라 카카오 알림톡/메일이 발송되며, 알림 수신 후 60분 이내 확정 버튼을 눌러야 최종 접수됩니다.</p>
                     </div>
+                </div>
+            </Modal>
+
+            {/* 다른 이용권 선택 모달 */}
+            <Modal
+                title={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 800, fontSize: 16 }}>
+                        <svg
+                            width="16"
+                            height="16"
+                            fill="none"
+                            stroke="#7C3AED"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                            <path d="M13 5v2" />
+                            <path d="M13 17v2" />
+                            <path d="M13 11v2" />
+                        </svg>
+                        <span>보유 이용권 선택</span>
+                    </div>
+                }
+                open={ticketModalOpen}
+                onCancel={() => setTicketModalOpen(false)}
+                footer={null}
+                centered
+                width={440}
+            >
+                <div style={{ padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {validMemberships.map((mm, idx) => {
+                        const isSelected = (selectedTicketIndex % validMemberships.length) === idx;
+                        return (
+                            <div
+                                key={mm.id || idx}
+                                onClick={() => {
+                                    setSelectedTicketIndex(idx);
+                                    setTicketModalOpen(false);
+                                    message.success(`'${mm.membership?.name || '선택한 이용권'}'(으)로 변경되었습니다.`);
+                                }}
+                                style={{
+                                    padding: '14px 18px',
+                                    borderRadius: 14,
+                                    border: isSelected ? '1.5px solid #7C3AED' : '1px solid #EDE9FE',
+                                    background: isSelected ? '#FAF8FF' : '#FFFFFF',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    transition: 'all 0.15s ease',
+                                }}
+                            >
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: 14, color: '#18181B' }}>
+                                        {mm.membership?.name || '이용권'}
+                                    </div>
+                                    <div style={{ fontSize: 12, color: '#71717A', marginTop: 3 }}>
+                                        {mm.endDat ? `유효기간: ${dayjs(mm.endDat).format('YYYY.MM.DD')} 만료` : '무제한'}
+                                    </div>
+                                </div>
+                                <span
+                                    style={{
+                                        padding: '4px 10px',
+                                        borderRadius: 9999,
+                                        background: '#EDE9FE',
+                                        color: '#6D28D9',
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                    }}
+                                >
+                                    {mm.remainCount != null ? `${mm.remainCount}회 남음` : '기간제'}
+                                </span>
+                            </div>
+                        );
+                    })}
                 </div>
             </Modal>
 
