@@ -15,7 +15,16 @@ import { fetchCenterConfig, updateCenterConfig } from '../../../api/centerConfig
 
 const { Text, Title } = Typography;
 
-const buildEmailTemplate = ({ badge, title, intro, details, notice }) => `
+const actionButton = (href, label) => `
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 22px;">
+  <tr>
+    <td style="border-radius:4px;background-color:#17212b;">
+      <a href="${href}" target="_blank" rel="noopener" style="display:inline-block;padding:13px 22px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;line-height:1;">${label}</a>
+    </td>
+  </tr>
+</table>`.trim();
+
+const buildEmailTemplate = ({ badge, title, intro, details, action = '', notice }) => `
 <div data-owl-email-template="v1" style="margin:0;padding:32px 16px;background-color:#f4f6f8;font-family:Arial,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;color:#20252b;">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;">
     <tr>
@@ -47,6 +56,7 @@ const buildEmailTemplate = ({ badge, title, intro, details, notice }) => `
           </tr>
           <tr>
             <td style="padding:0 32px 36px;">
+              ${action}
               <p style="margin:0;padding:16px 18px;border-left:4px solid #2f80c9;background-color:#f1f7fc;color:#34414e;font-size:14px;line-height:1.7;">${notice}</p>
               <p style="margin:26px 0 0;color:#56616d;font-size:14px;line-height:1.8;">감사합니다.<br><strong style="color:#20252b;">{센터명}</strong> 드림</p>
             </td>
@@ -114,9 +124,10 @@ const TEMPLATE_TYPES = [
             title: '{회원명}님, 예약 가능한 자리가 생겼습니다.',
             intro: '대기 중이던 <strong style="color:#20252b;">{수업명}</strong> 수업에 자리가 발생했습니다.',
             details: detailRow('수업 일시', '{수업일시}') + detailRow('예약 확정 기한', '{확정기한}', false),
+            action: actionButton('{예약링크}', '예약하기'),
             notice: '예약 확정 기한이 지나면 다음 대기 회원에게 기회가 넘어갈 수 있으니 기한 내 확정해 주세요.',
         }),
-        variables: ['{회원명}', '{센터명}', '{수업명}', '{수업일시}', '{확정기한}'],
+        variables: ['{회원명}', '{센터명}', '{수업명}', '{수업일시}', '{확정기한}', '{예약링크}'],
     },
     {
         key: 'waitlist-confirmed',
@@ -176,6 +187,7 @@ const PREVIEW_VALUES = {
     '{수업명}': '리포머 필라테스',
     '{수업일시}': '2026년 9월 28일 오후 7:00',
     '{확정기한}': '2026년 9월 27일 오후 6:00',
+    '{예약링크}': 'https://example.com/waitlist/reserve?token=sample',
 };
 
 const VARIABLE_DESCRIPTIONS = {
@@ -187,6 +199,7 @@ const VARIABLE_DESCRIPTIONS = {
     '{수업명}': '예약 또는 대기 중인 수업의 이름',
     '{수업일시}': '해당 수업이 진행되는 날짜와 시간',
     '{확정기한}': '대기 예약을 확정할 수 있는 마감 일시',
+    '{예약링크}': '예약 가능 메일에서 회원이 예약을 확정하는 링크',
 };
 
 const renderPreviewHtml = (template) => Object.entries(PREVIEW_VALUES).reduce(

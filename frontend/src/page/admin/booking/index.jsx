@@ -129,7 +129,7 @@ export const BookingSchedule = () => {
           rawId: s.id,
           title: prog.name || '수업',
           type: cat,
-          studioId: s.id % 2 === 0 ? 'B' : 'A',
+          studioId: s.studioId || 'A',
           instructorId: String(s.instructor?.id || prog.instructor?.id || ''),
           instructorName: s.instructor?.name || prog.instructor?.name || '-',
           date: dayjs(s.programDat).format('YYYY-MM-DD'),
@@ -138,24 +138,9 @@ export const BookingSchedule = () => {
           capacity: prog.maxCapacity || 10,
           bookingCount: s.bookingCount || 0,
           waitlistCount: s.waitlistCount || 0,
-          booked: Array.from({ length: s.bookingCount || 0 }, (_, i) => ({
-            id: `b-${s.id}-${i}`,
-            name: `회원 ${i + 1}`,
-            phone: `010-${1000 + i}-${2000 + i}`,
-            ticketStatus: '이용권 예약',
-            ticketRemaining: 8,
-            ticketTotal: 10,
-            bookedAt: '최근 예약',
-          })),
-          waitlist: Array.from({ length: s.waitlistCount || 0 }, (_, i) => ({
-            id: `w-${s.id}-${i}`,
-            name: `대기자 ${i + 1}`,
-            phone: `010-${9000 + i}-${8000 + i}`,
-            ticketStatus: '대기 접수',
-            ticketRemaining: 0,
-            ticketTotal: 0,
-            bookedAt: '대기 신청',
-          })),
+          waitlistCapacity: s.waitlistCapacity,
+          booked: Array.from({ length: s.bookingCount || 0 }, (_, i) => ({ id: `booking-count-${s.id}-${i}` })),
+          waitlist: Array.from({ length: s.waitlistCount || 0 }, (_, i) => ({ id: `wait-count-${s.id}-${i}` })),
         };
       });
 
@@ -709,9 +694,8 @@ export const BookingSchedule = () => {
           onInstructorChange={(newInstructorId) => {
             loadData();
           }}
-          onCancelBooking={() => {
-            loadData();
-          }}
+          onScheduleChanged={loadData}
+          onCancelBooking={loadData}
           onPromoteWaitlist={() => {
             loadData();
           }}

@@ -11,7 +11,10 @@ import {
   Search,
   Zap,
   ArrowRight,
+  Repeat,
 } from './Icons';
+import axios from 'axios';
+import { message } from 'antd';
 
 export function ScheduleDetailDrawer({
   open,
@@ -21,6 +24,7 @@ export function ScheduleDetailDrawer({
   isInstructor = false,
   instructors = [],
   onInstructorChange,
+  onScheduleChanged,
   onCancelBooking,
   onPromoteWaitlist,
   onNavigateToAttendance,
@@ -30,24 +34,92 @@ export function ScheduleDetailDrawer({
   const [pendingInstructorId, setPendingInstructorId] = useState(null);
   const [pendingCancelMember, setPendingCancelMember] = useState(null);
   const [searchMember, setSearchMember] = useState('');
+  const [detailData, setDetailData] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [scheduleSaving, setScheduleSaving] = useState(false);
+  const [scheduleDraft, setScheduleDraft] = useState({
+    programDat: '',
+    startTime: '',
+    endTime: '',
+    maxCapacity: 1,
+    instructorId: '',
+  });
+
+  const loadDetail = async ({ showSuccess = false } = {}) => {
+    if (!cls?.id || String(cls.id).startsWith('mock-')) return;
+    setDetailLoading(true);
+    try {
+      const res = await axios.get(`/api/realprograms/${cls.id}/detail`);
+      const data = res.data;
+      setDetailData(data);
+      setScheduleDraft({
+        programDat: data.programDat ? String(data.programDat).slice(0, 10) : cls.date || '',
+        startTime: data.startTime || cls.startTime || '',
+        endTime: data.endTime || cls.endTime || '',
+        maxCapacity: data.maxCapacity ?? cls.capacity ?? 1,
+        instructorId: data.instructorId || cls.instructorId || '',
+      });
+      if (showSuccess) {
+        message.success('예약 회원 목록을 다시 조회했습니다.');
+      }
+    } catch (error) {
+      message.error('스케줄 상세 정보를 불러오지 못했습니다.');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!open || !cls?.id) {
+      setDetailData(null);
+      return;
+    }
+    setSearchMember('');
+    setActiveTab('booked');
+    loadDetail();
+  }, [open, cls?.id]);
 
   // 안전한 배열 및 속성 참조 (옵셔널 체이닝 및 기본값)
   const bookedList = useMemo(() => {
+    if (Array.isArray(detailData?.bookings)) {
+      return detailData.bookings
+        .filter((m) => m.status === '예약')
+        .map((m) => ({
+          id: m.id,
+          name: m.memberName,
+          phone: m.memberHp,
+          loginId: m.memberLoginId,
+          ticketStatus: '예약',
+        }));
+    }
     return Array.isArray(cls?.booked) ? cls.booked : [];
-  }, [cls?.booked]);
+  }, [detailData?.bookings, cls?.booked]);
 
   const waitlistList = useMemo(() => {
+    if (Array.isArray(detailData?.bookings)) {
+      return detailData.bookings
+        .filter((m) => m.status === '대기')
+        .map((m) => ({
+          id: m.id,
+          name: m.memberName,
+          phone: m.memberHp,
+          loginId: m.memberLoginId,
+          ticketStatus: '대기 접수',
+        }));
+    }
     return Array.isArray(cls?.waitlist) ? cls.waitlist : [];
-  }, [cls?.waitlist]);
+  }, [detailData?.bookings, cls?.waitlist]);
 
-  const capacity = Number(cls?.capacity) || 10;
+  const capacity = Number(detailData?.maxCapacity ?? cls?.capacity) || 10;
   const isFull = bookedList.length >= capacity;
+  const waitlistCapacity = detailData?.waitlistCapacity ?? cls?.waitlistCapacity;
 
   const currentInstructor = useMemo(() => {
-    if (!cls?.instructorId) return { name: cls?.instructorName || '강사 미지정' };
-    const found = instructors.find((i) => String(i.id) === String(cls.instructorId));
-    return found || { name: cls?.instructorName || '강사 미지정' };
-  }, [cls?.instructorId, cls?.instructorName, instructors]);
+    const instructorId = scheduleDraft.instructorId || detailData?.instructorId || cls?.instructorId;
+    if (!instructorId) return { name: detailData?.instructorName || cls?.instructorName || '강사 미지정' };
+    const found = instructors.find((i) => String(i.id) === String(instructorId));
+    return found || { name: detailData?.instructorName || cls?.instructorName || '강사 미지정' };
+  }, [scheduleDraft.instructorId, detailData?.instructorId, detailData?.instructorName, cls?.instructorId, cls?.instructorName, instructors]);
 
   const studioDisplayName = useMemo(() => {
     if (!cls?.studioId) return '스튜디오 미지정';
@@ -93,22 +165,68 @@ export function ScheduleDetailDrawer({
 
   if (!open || !cls) return null;
 
-  const handleConfirmInstructorChange = () => {
-    if (pendingInstructorId && onInstructorChange) {
-      onInstructorChange(pendingInstructorId);
+  const saveScheduleInfo = async (instructorIdOverride) => {
+    if (!cls?.id || String(cls.id).startsWith('mock-')) return;
+    const instructorId = instructorIdOverride ?? scheduleDraft.instructorId;
+    setScheduleSaving(true);
+    try {
+      await axios.put(`/api/realprograms/${cls.id}`, {
+        programDat: scheduleDraft.programDat ? `${scheduleDraft.programDat}T00:00:00` : undefined,
+        startTime: scheduleDraft.startTime,
+        endTime: scheduleDraft.endTime,
+        maxCapacity: Number(scheduleDraft.maxCapacity),
+        instructor: instructorId ? { id: instructorId } : null,
+      });
+      message.success('스케줄 정보가 변경되었습니다.');
+      await loadDetail();
+      onScheduleChanged?.();
+      onInstructorChange?.(instructorId);
+    } catch (error) {
+      message.error(error?.response?.data?.message || '스케줄 정보 변경 중 오류가 발생했습니다.');
+    } finally {
+      setScheduleSaving(false);
+    }
+  };
+
+  const handleConfirmInstructorChange = async () => {
+    if (pendingInstructorId) {
+      setScheduleDraft((prev) => ({ ...prev, instructorId: pendingInstructorId }));
+      await saveScheduleInfo(pendingInstructorId);
       setPendingInstructorId(null);
     }
   };
 
-  const handleConfirmCancelBooking = () => {
-    if (pendingCancelMember && onCancelBooking) {
-      onCancelBooking(pendingCancelMember);
-      setPendingCancelMember(null);
+  const handleConfirmCancelBooking = async () => {
+    if (pendingCancelMember?.id) {
+      try {
+        await axios.delete(`/api/bookings/${pendingCancelMember.id}`);
+        message.success('예약이 취소되었습니다.');
+        setPendingCancelMember(null);
+        await loadDetail();
+        onCancelBooking?.();
+      } catch (error) {
+        message.error(error?.response?.data?.message || '예약 취소 중 오류가 발생했습니다.');
+      }
     }
   };
 
-  const formattedDate = cls.date ? String(cls.date).replace(/-/g, '.') : '';
-  const formattedTime = cls.startTime && cls.endTime ? `${cls.startTime} - ${cls.endTime}` : (cls.time || '');
+  const handlePromoteWaitlist = async (member) => {
+    if (!member?.id) return;
+    try {
+      await axios.post(`/api/waitlists/${member.id}/confirm`);
+      message.success('대기가 확정(예약)되었습니다.');
+      await loadDetail();
+      onPromoteWaitlist?.();
+    } catch (error) {
+      message.error(error?.response?.data?.message || '대기 확정 중 오류가 발생했습니다.');
+    }
+  };
+
+  const formattedDate = scheduleDraft.programDat ? String(scheduleDraft.programDat).replace(/-/g, '.') : '';
+  const formattedTime = scheduleDraft.startTime && scheduleDraft.endTime
+    ? `${scheduleDraft.startTime} - ${scheduleDraft.endTime}`
+    : (cls.time || '');
+  const confirmModeLabel = detailData?.confirmMode === 'AUTO' ? '자동 확정' : detailData?.confirmMode === 'MANUAL' ? '수동 확정' : '-';
 
   const drawerContent = (
     <>
@@ -183,6 +301,76 @@ export function ScheduleDetailDrawer({
             </div>
           </div>
 
+          {/* 스케줄 정보 수정 카드 */}
+          <div className="p-3.5 rounded-2xl bg-white border border-violet-100/80 space-y-3 shadow-2xs">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs font-bold text-zinc-900">수업 정보</div>
+              {isAdmin && !isInstructor && (
+                <button
+                  type="button"
+                  onClick={() => saveScheduleInfo()}
+                  disabled={scheduleSaving || detailLoading}
+                  className="px-3 py-1.5 rounded-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-[11px] font-bold transition-all shadow-xs border-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {scheduleSaving ? '저장 중...' : '스케줄 정보 저장'}
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <label className="space-y-1">
+                <span className="text-zinc-400 block text-[10px]">수업일자</span>
+                <input
+                  type="date"
+                  value={scheduleDraft.programDat}
+                  disabled={!isAdmin || isInstructor}
+                  onChange={(e) => setScheduleDraft((prev) => ({ ...prev, programDat: e.target.value }))}
+                  className="w-full rounded-xl border border-violet-100 bg-violet-50/40 px-2.5 py-2 text-xs font-bold text-zinc-800 outline-none disabled:bg-zinc-50 disabled:text-zinc-500"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-zinc-400 block text-[10px]">예약정원</span>
+                <input
+                  type="number"
+                  min={bookedList.length}
+                  value={scheduleDraft.maxCapacity}
+                  disabled={!isAdmin || isInstructor}
+                  onChange={(e) => setScheduleDraft((prev) => ({ ...prev, maxCapacity: e.target.value }))}
+                  className="w-full rounded-xl border border-violet-100 bg-violet-50/40 px-2.5 py-2 text-xs font-bold text-zinc-800 outline-none disabled:bg-zinc-50 disabled:text-zinc-500"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-zinc-400 block text-[10px]">시작시간</span>
+                <input
+                  type="time"
+                  value={scheduleDraft.startTime}
+                  disabled={!isAdmin || isInstructor}
+                  onChange={(e) => setScheduleDraft((prev) => ({ ...prev, startTime: e.target.value }))}
+                  className="w-full rounded-xl border border-violet-100 bg-violet-50/40 px-2.5 py-2 text-xs font-bold text-zinc-800 outline-none disabled:bg-zinc-50 disabled:text-zinc-500"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-zinc-400 block text-[10px]">종료시간</span>
+                <input
+                  type="time"
+                  value={scheduleDraft.endTime}
+                  disabled={!isAdmin || isInstructor}
+                  onChange={(e) => setScheduleDraft((prev) => ({ ...prev, endTime: e.target.value }))}
+                  className="w-full rounded-xl border border-violet-100 bg-violet-50/40 px-2.5 py-2 text-xs font-bold text-zinc-800 outline-none disabled:bg-zinc-50 disabled:text-zinc-500"
+                />
+              </label>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-violet-50/60 p-2.5 rounded-xl border border-violet-100/60">
+                <span className="text-zinc-400 block text-[10px] mb-0.5">대기정원</span>
+                <span className="font-bold text-zinc-800">{waitlistCapacity ?? '-'}명</span>
+              </div>
+              <div className="bg-violet-50/60 p-2.5 rounded-xl border border-violet-100/60">
+                <span className="text-zinc-400 block text-[10px] mb-0.5">예약인원 / 대기인원</span>
+                <span className="font-bold text-zinc-800">{bookedList.length}명 / {waitlistList.length}명</span>
+              </div>
+            </div>
+          </div>
+
           {/* 적용 정책 카드 */}
           <div className="p-3.5 rounded-2xl bg-violet-50/60 border border-violet-100/80 space-y-2">
             <div className="flex items-center gap-1.5 text-xs font-bold text-violet-900">
@@ -192,11 +380,13 @@ export function ScheduleDetailDrawer({
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="bg-white/90 p-2.5 rounded-xl border border-violet-100/60 shadow-2xs">
                 <span className="text-zinc-400 block text-[10px] mb-0.5">취소 가능 시간</span>
-                <span className="font-bold text-zinc-800">수업 60분 전까지</span>
+                <span className="font-bold text-zinc-800">
+                  {detailData?.cancleDeadlineMinutes != null ? `수업 ${detailData.cancleDeadlineMinutes}분 전까지` : '-'}
+                </span>
               </div>
               <div className="bg-white/90 p-2.5 rounded-xl border border-violet-100/60 shadow-2xs">
                 <span className="text-zinc-400 block text-[10px] mb-0.5">대기 확정 방식</span>
-                <span className="font-bold text-zinc-800">자동 확정</span>
+                <span className="font-bold text-zinc-800">{confirmModeLabel}</span>
               </div>
             </div>
           </div>
@@ -227,7 +417,7 @@ export function ScheduleDetailDrawer({
             {instructorDropdownOpen && isAdmin && (
               <div className="absolute top-full left-0 right-0 mt-1.5 bg-white/98 backdrop-blur-2xl rounded-2xl shadow-xl border border-violet-100 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 max-h-56 overflow-y-auto custom-scrollbar">
                 {instructors.map((ins) => {
-                  const isSelected = String(ins.id) === String(cls.instructorId);
+                  const isSelected = String(ins.id) === String(scheduleDraft.instructorId);
                   return (
                     <button
                       key={ins.id}
@@ -262,28 +452,39 @@ export function ScheduleDetailDrawer({
 
           {/* 예약 회원 / 대기자 탭 & 검색 인풋 */}
           <div className="space-y-2.5 pt-1">
-            <div className="flex items-center gap-1 p-1 rounded-full bg-violet-50/70 border border-violet-200/60">
+            <div className="flex items-center gap-1.5">
+              <div className="flex flex-1 items-center gap-1 p-1 rounded-full bg-violet-50/70 border border-violet-200/60">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('booked')}
+                  className={`flex-1 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border-0 ${
+                    activeTab === 'booked'
+                      ? 'bg-white text-violet-700 shadow-xs font-bold'
+                      : 'text-zinc-500 bg-transparent hover:text-zinc-800'
+                  }`}
+                >
+                  예약 회원 ({bookedList.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('waitlist')}
+                  className={`flex-1 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border-0 ${
+                    activeTab === 'waitlist'
+                      ? 'bg-white text-violet-700 shadow-xs font-bold'
+                      : 'text-zinc-500 bg-transparent hover:text-zinc-800'
+                  }`}
+                >
+                  대기자 ({waitlistList.length})
+                </button>
+              </div>
               <button
                 type="button"
-                onClick={() => setActiveTab('booked')}
-                className={`flex-1 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border-0 ${
-                  activeTab === 'booked'
-                    ? 'bg-white text-violet-700 shadow-xs font-bold'
-                    : 'text-zinc-500 bg-transparent hover:text-zinc-800'
-                }`}
+                title="예약 회원 목록 새로고침"
+                onClick={() => loadDetail({ showSuccess: true })}
+                disabled={detailLoading}
+                className="w-8 h-8 rounded-full bg-white border border-violet-200 text-violet-600 hover:bg-violet-50 flex items-center justify-center shadow-xs transition-colors cursor-pointer disabled:opacity-50"
               >
-                예약 회원 ({bookedList.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('waitlist')}
-                className={`flex-1 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border-0 ${
-                  activeTab === 'waitlist'
-                    ? 'bg-white text-violet-700 shadow-xs font-bold'
-                    : 'text-zinc-500 bg-transparent hover:text-zinc-800'
-                }`}
-              >
-                대기자 ({waitlistList.length})
+                <Repeat className={`w-3.5 h-3.5 ${detailLoading ? 'animate-spin' : ''}`} />
               </button>
             </div>
 
@@ -362,7 +563,7 @@ export function ScheduleDetailDrawer({
                       {isAdmin && (
                         <button
                           type="button"
-                          onClick={() => onPromoteWaitlist && onPromoteWaitlist(m)}
+                          onClick={() => handlePromoteWaitlist(m)}
                           className="px-2.5 py-1 rounded-full bg-violet-600 text-white text-[11px] font-bold hover:bg-violet-700 transition-colors flex-shrink-0 flex items-center gap-1 shadow-xs border-0 cursor-pointer"
                         >
                           <Crown className="w-3 h-3" />

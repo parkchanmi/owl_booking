@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
@@ -84,7 +85,7 @@ public class RealProgramService {
                             .build())
                     .bookingCount(bookings.size())
                     .waitlistCount(waitlists.size())
-                    .waitlistCapacity(config != null ? config.getWaitlistCapacity() : null)
+                    .waitlistCapacity(resolveWaitlistCapacity(config))
                     .build();
         }).collect(Collectors.toList());
     }
@@ -95,8 +96,26 @@ public class RealProgramService {
 
     public RealProgram save(RealProgramDto dto) {
         if (dto.getId() != null) {
-            // 수정: 기존 스냅샷 보존, 강사만 갱신
+            // 수정: 기존 스냅샷을 기준으로 전달된 필드만 갱신
             return realProgramRepository.findById(dto.getId()).map(rp -> {
+                long bookingCount = bookingRepository.findByProgram(rp).size();
+
+                if (dto.getProgramDat() != null) {
+                    rp.setProgramDat(dto.getProgramDat());
+                    rp.setDayOfWeek(koreanDow(dto.getProgramDat().toLocalDate()));
+                }
+                if (dto.getStartTime() != null) {
+                    rp.setStartTime(dto.getStartTime());
+                }
+                if (dto.getEndTime() != null) {
+                    rp.setEndTime(dto.getEndTime());
+                }
+                if (dto.getMaxCapacity() != null) {
+                    if (dto.getMaxCapacity() < bookingCount) {
+                        throw new ResponseStatusException(BAD_REQUEST, "현재 예약 인원보다 작은 수업정원으로 변경할 수 없습니다.");
+                    }
+                    rp.setMaxCapacity(dto.getMaxCapacity());
+                }
                 if (dto.getInstructor() != null && dto.getInstructor().getId() != null) {
                     instructorRepository.findById(dto.getInstructor().getId()).ifPresent(instr -> {
                         rp.setInstructorId(instr.getId());
@@ -201,7 +220,7 @@ public class RealProgramService {
                 .maxCapacity(rp.getMaxCapacity())
                 .bookingCount(bookings.size())
                 .waitlistCount(waitlists.size())
-                .waitlistCapacity(configOpt.map(CenterConfig::getWaitlistCapacity).orElse(null))
+                .waitlistCapacity(resolveWaitlistCapacity(configOpt.orElse(null)))
                 .cancleDeadlineMinutes(configOpt.map(CenterConfig::getCancleDeadlineMinutes).orElse(null))
                 .confirmMode(configOpt.map(c -> c.getConfirmMode() != null ? c.getConfirmMode().name() : null).orElse(null))
                 .hasAttendance(hasAttendance)
@@ -250,5 +269,9 @@ public class RealProgramService {
             }
         }
         return created;
+    }
+
+    private Long resolveWaitlistCapacity(CenterConfig config) {
+        return config != null ? config.getWaitlistCapacity() : null;
     }
 }

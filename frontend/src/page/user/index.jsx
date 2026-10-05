@@ -232,6 +232,11 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
 
             const maxCapacity = rp.program?.maxCapacity;
             const remain = maxCapacity != null ? Math.max(maxCapacity - (rp.bookingCount || 0), 0) : null;
+            const hasBookingSeat = remain === null || remain > 0;
+            const hasWaitlist = (rp.waitlistCount ?? 0) > 0;
+            const waitlistCapacity = rp.waitlistCapacity;
+            const isWaitlistFull = waitlistCapacity != null && (rp.waitlistCount ?? 0) >= waitlistCapacity;
+            const isWaitlistAvailable = !isWaitlistFull && (!hasBookingSeat || hasWaitlist);
             groups.get(groupKey).slots.push({
                 id: rp.id,
                 realProgramId: rp.id,
@@ -240,7 +245,9 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                 time: `${rp.program?.startTime ?? ''} - ${rp.program?.endTime ?? ''}`,
                 remain,
                 total: maxCapacity,
-                status: remain !== null && remain <= 0 ? 'closed' : 'open',
+                waitlistCount: rp.waitlistCount ?? 0,
+                waitlistCapacity,
+                status: isWaitlistFull ? 'waitlistClosed' : isWaitlistAvailable ? 'waitlist' : 'open',
             });
         });
 
@@ -249,11 +256,11 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
 
     // 슬롯 선택 핸들러
     const handleSelectSlot = (program, slot) => {
-        if (slot.status === 'closed') return;
+        if (slot.status === 'waitlistClosed') return;
 
         setSelectedProgram(program);
         setSelectedSlot(slot);
-        setIsWaitlist(false);
+        setIsWaitlist(slot.status === 'waitlist');
         setPanelState('form');
 
         // Form.Item DTO 필드 동기화
@@ -278,7 +285,7 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
             const values = await form.validateFields();
             setSubmitting(true);
 
-            const response = await fetch('/api/bookings', {
+            const response = await fetch(isWaitlist ? '/api/waitlists' : '/api/bookings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ realProgramId: values.realProgramId || selectedSlot?.realProgramId }),
@@ -291,14 +298,14 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                 return;
             }
 
-            message.success('수업 예약이 정상적으로 완료되었습니다!');
+            message.success(isWaitlist ? '대기 신청이 완료되었습니다!' : '수업 예약이 정상적으로 완료되었습니다!');
 
             setConfirmedData({
                 programTitle: selectedProgram.title,
                 instructor: selectedProgram.instructor,
                 dateTime: `${formattedDateString} · ${selectedSlot.time}`,
                 location: selectedCenter?.name,
-                isWaitlist: false,
+                isWaitlist,
             });
 
             setPanelState('confirmed');
@@ -636,7 +643,8 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                             <div className="class-card-slots">
                                                 {prog.slots.map((slot) => {
                                                     const isSlotActive = selectedSlot?.id === slot.id;
-                                                    const isClosed = slot.status === 'closed';
+                                                    const isClosed = slot.status === 'waitlistClosed';
+                                                    const isWaitlistSlot = slot.status === 'waitlist';
 
                                                     return (
                                                         <button
@@ -654,7 +662,7 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                                         >
                                                             <span className="slot-time">{slot.startTime}</span>
                                                             <span className="slot-count text-[10px] whitespace-nowrap tracking-tight leading-none mt-0.5">
-                                                                {isClosed ? '마감' : `${slot.remain}/${slot.total}`}
+                                                                {isClosed ? '대기마감' : isWaitlistSlot ? '대기' : `${slot.remain}/${slot.total}`}
                                                             </span>
                                                         </button>
                                                     );
@@ -796,8 +804,8 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                                                 <span>대기 예약 유의사항</span>
                                                             </div>
                                                             <div className="waitlist-notice-desc">
-                                                                <p>• 공석 발생 시 즉시 카카오 알림톡이 발송됩니다.</p>
-                                                                <p>• 알림 수신 후 1시간 이내 미확정 시 자동 취소되며, 최종 확정 시 이용권 1회가 차감됩니다.</p>
+                                                                <p>• 공석 발생 시 대기 순서와 센터 설정에 따라 안내 메일이 발송됩니다.</p>
+                                                                <p>• 예약 확정 시 이용권 1회가 차감됩니다.</p>
                                                             </div>
                                                         </div>
                                                     )}

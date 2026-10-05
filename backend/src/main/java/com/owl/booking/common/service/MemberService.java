@@ -184,7 +184,7 @@ public class MemberService {
         String ownerMappingJson = "{\"OWNER\":[\"" + owner.getId() + "\"],\"MANAGER\":[],\"INSTRUCTOR\":[]}";
 
         CenterConfig config = CenterConfig.builder().center(center).build();
-        config.setConfirmMode(ConfirmMode.AUTO);
+        config.setConfirmMode(ConfirmMode.MANUAL);
         config.setBookingOpenDays(7L);
         config.setGenerationStartDat(14L);
         config.setAutoGenerateEnabled(true);

@@ -47,6 +47,14 @@ public class CenterConfigService {
             + "<p>수업 일시: <strong>{수업일시}</strong><br>예약 확정 기한: <strong>{확정기한}</strong></p>"
             + "<p>기한 내 예약을 확정해 주세요.</p>"
             + "<p>감사합니다.<br>{센터명} 드림</p>";
+    private static final String PREVIOUS_WAITLIST_AVAILABLE_EMAIL_TEMPLATE =
+            buildEmailTemplate(
+                    "예약 가능 안내",
+                    "{회원명}님, 예약 가능한 자리가 생겼습니다.",
+                    "대기 중이던 <strong style=\"color:#20252b;\">{수업명}</strong> 수업에 자리가 발생했습니다.",
+                    detailRow("수업 일시", "{수업일시}", true)
+                            + detailRow("예약 확정 기한", "{확정기한}", false),
+                    "예약 확정 기한이 지나면 다음 대기 회원에게 기회가 넘어갈 수 있으니 기한 내 확정해 주세요.");
     private static final String DEFAULT_WAITLIST_AVAILABLE_EMAIL_TEMPLATE =
             buildEmailTemplate(
                     "예약 가능 안내",
@@ -54,6 +62,7 @@ public class CenterConfigService {
                     "대기 중이던 <strong style=\"color:#20252b;\">{수업명}</strong> 수업에 자리가 발생했습니다.",
                     detailRow("수업 일시", "{수업일시}", true)
                             + detailRow("예약 확정 기한", "{확정기한}", false),
+                    actionButton("{예약링크}", "예약하기"),
                     "예약 확정 기한이 지나면 다음 대기 회원에게 기회가 넘어갈 수 있으니 기한 내 확정해 주세요.");
     private static final String DEFAULT_WAITLIST_CONFIRMED_EMAIL_SUBJECT =
             "[{센터명}] 대기 예약이 확정되었습니다";
@@ -151,7 +160,7 @@ public class CenterConfigService {
         Center center = centerRepository.findById(centerId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Center not found"));
         CenterConfig config = CenterConfig.builder().center(center).build();
-        config.setConfirmMode(ConfirmMode.AUTO);
+        config.setConfirmMode(ConfirmMode.MANUAL);
         config.setBookingOpenDays(7L);
         config.setGenerationStartDat(14L);
         config.setRefundCountThresholdPercent(0);
@@ -228,7 +237,8 @@ public class CenterConfigService {
             config.setMembershipExpiryEmailTemplate(DEFAULT_MEMBERSHIP_EXPIRY_EMAIL_TEMPLATE);
             changed = true;
         }
-        if (LEGACY_WAITLIST_AVAILABLE_EMAIL_TEMPLATE.equals(config.getWaitlistAvailableEmailTemplate())) {
+        if (LEGACY_WAITLIST_AVAILABLE_EMAIL_TEMPLATE.equals(config.getWaitlistAvailableEmailTemplate())
+                || PREVIOUS_WAITLIST_AVAILABLE_EMAIL_TEMPLATE.equals(config.getWaitlistAvailableEmailTemplate())) {
             config.setWaitlistAvailableEmailTemplate(DEFAULT_WAITLIST_AVAILABLE_EMAIL_TEMPLATE);
             changed = true;
         }
@@ -251,6 +261,19 @@ public class CenterConfigService {
 
     private static String buildEmailTemplate(
             String badge, String title, String intro, String details, String notice) {
+        return buildEmailTemplate(badge, title, intro, details, "", notice);
+    }
+
+    private static String actionButton(String href, String label) {
+        return "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;margin:0 0 22px;\">"
+                + "<tr><td style=\"border-radius:4px;background-color:#17212b;\">"
+                + "<a href=\"" + href + "\" target=\"_blank\" rel=\"noopener\" style=\"display:inline-block;padding:13px 22px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;line-height:1;\">"
+                + label
+                + "</a></td></tr></table>";
+    }
+
+    private static String buildEmailTemplate(
+            String badge, String title, String intro, String details, String action, String notice) {
         return """
                 <div data-owl-email-template="v1" style="margin:0;padding:32px 16px;background-color:#f4f6f8;font-family:Arial,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;color:#20252b;">
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;">
@@ -271,6 +294,7 @@ public class CenterConfigService {
                           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:separate;background-color:#f7f9fb;border:1px solid #e7ebef;border-radius:6px;">{{DETAILS}}</table>
                         </td></tr>
                         <tr><td style="padding:0 32px 36px;">
+                          {{ACTION}}
                           <p style="margin:0;padding:16px 18px;border-left:4px solid #2f80c9;background-color:#f1f7fc;color:#34414e;font-size:14px;line-height:1.7;">{{NOTICE}}</p>
                           <p style="margin:26px 0 0;color:#56616d;font-size:14px;line-height:1.8;">감사합니다.<br><strong style="color:#20252b;">{센터명}</strong> 드림</p>
                         </td></tr>
@@ -286,6 +310,7 @@ public class CenterConfigService {
                 .replace("{{TITLE}}", title)
                 .replace("{{INTRO}}", intro)
                 .replace("{{DETAILS}}", details)
+                .replace("{{ACTION}}", action)
                 .replace("{{NOTICE}}", notice)
                 .trim();
     }

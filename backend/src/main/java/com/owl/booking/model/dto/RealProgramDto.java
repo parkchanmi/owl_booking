@@ -17,4 +17,10 @@ public class RealProgramDto {
     ProgramDto program;
 
     InstructorDto instructor;
+
+    String startTime;
+
+    String endTime;
+
+    Long maxCapacity;
 }
