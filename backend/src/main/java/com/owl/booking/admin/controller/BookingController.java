@@ -1,5 +1,6 @@
 package com.owl.booking.admin.controller;
 
+import com.owl.booking.admin.service.WaitlistReservationService;
 import com.owl.booking.model.dto.BookingCreateRequestDto;
 import com.owl.booking.model.dto.MyBookingDto;
 import com.owl.booking.model.entity.Booking;
@@ -8,6 +9,7 @@ import com.owl.booking.model.entity.RealProgram;
 import com.owl.booking.model.repository.BookingRepository;
 import com.owl.booking.model.repository.MemberRepository;
 import com.owl.booking.model.repository.RealProgramRepository;
+import com.owl.booking.model.repository.WaitlistRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +34,12 @@ public class BookingController {
     @Autowired
     private MemberRepository memberRepository;
 
+    @Autowired
+    private WaitlistReservationService waitlistReservationService;
+
+    @Autowired
+    private WaitlistRepository waitlistRepository;
+
     @GetMapping("/mine")
     public List<MyBookingDto> getMyBookings() {
         Member member = currentMember();
@@ -52,6 +60,9 @@ public class BookingController {
         if (program.getMaxCapacity() != null && currentBookingCount >= program.getMaxCapacity()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "정원이 마감된 수업입니다.");
         }
+        if (waitlistRepository.existsByProgram(program)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "대기자가 있는 수업은 대기자에게 우선권이 있습니다.");
+        }
 
         Booking booking = Booking.builder()
                 .center(program.getCenter())
@@ -65,10 +76,14 @@ public class BookingController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> cancelBooking(@PathVariable String id) {
-        if (!bookingRepository.existsById(id)) {
+        Booking booking = bookingRepository.findById(id).orElse(null);
+        if (booking == null) {
             return ResponseEntity.notFound().build();
         }
+        String programId = booking.getProgram() != null ? booking.getProgram().getId() : null;
         bookingRepository.deleteById(id);
+        bookingRepository.flush();
+        waitlistReservationService.handleAvailableSeatAsync(programId);
         return ResponseEntity.noContent().build();
     }
 

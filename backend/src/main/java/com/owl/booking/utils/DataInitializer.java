@@ -89,7 +89,7 @@ public class DataInitializer implements CommandLineRunner {
         Member instructorMember2 = memberRepository.save(new Member(null, MemberType.USER, "instructor2", encodedPassword, "이강사", "instructor2@gmail.com", "010-9876-5432", MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
         Member user1 = memberRepository.save(new Member(null, MemberType.USER, "user", encodedPassword, "사용자", "user@gmail.com", "010-1111-2222", MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
         Member user2 = memberRepository.save(new Member(null, MemberType.USER, "user2", encodedPassword, "김회원", "user2@gmail.com", "010-3333-4444", MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
-        Member user3 = memberRepository.save(new Member(null, MemberType.USER, "user3", encodedPassword, "이회원", "user3@gmail.com", "010-5555-6666", MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
+        Member user3 = memberRepository.save(new Member(null, MemberType.USER, "user3", encodedPassword, "이회원", "mimi226kr@gmail.com", "010-5555-6666", MemberProvider.LOCAL, null, MemberStatus.ACTIVE));
 
         Center center = centerRepository.save(Center.builder()
                 .name("OWL 센터")
@@ -109,7 +109,7 @@ public class DataInitializer implements CommandLineRunner {
         centerMemberRepository.save(CenterMember.builder().center(center).member(instructorMember2).type(MemberType.ADMIN).build());
 
         CenterConfig centerConfig = CenterConfig.builder().center(center).build();
-        centerConfig.setConfirmMode(ConfirmMode.AUTO);
+        centerConfig.setConfirmMode(ConfirmMode.MANUAL);
         centerConfig.setWaitlistCapacity(5L);
         centerConfig.setCancleDeadlineMinutes(60L);
         centerConfig.setBookingOpenDays(7L);
@@ -142,7 +142,7 @@ public class DataInitializer implements CommandLineRunner {
                 .dayOfWeek("월,수,금")
                 .startTime("10:00")
                 .endTime("11:00")
-                .maxCapacity(10L)
+                .maxCapacity(2L)
                 .active(true)
                 .center(center)
                 .instructor(instructor1)
@@ -250,6 +250,30 @@ public class DataInitializer implements CommandLineRunner {
                 .hDay(membership10.getHoldDays())
                 .center(center)
                 .member(user1)
+                .membership(membership10)
+                .build());
+
+        memberMembershipRepository.save(MemberMembership.builder()
+                .startDat(now)
+                .endDat(now.plusDays(membership10.getDurationDays()))
+                .paymentDate(now.toLocalDate())
+                .uCnt(membership10.getUseCnt())
+                .purchasePrice(membership10.getPrice())
+                .hDay(membership10.getHoldDays())
+                .center(center)
+                .member(user2)
+                .membership(membership10)
+                .build());
+
+        memberMembershipRepository.save(MemberMembership.builder()
+                .startDat(now)
+                .endDat(now.plusDays(membership10.getDurationDays()))
+                .paymentDate(now.toLocalDate())
+                .uCnt(membership10.getUseCnt())
+                .purchasePrice(membership10.getPrice())
+                .hDay(membership10.getHoldDays())
+                .center(center)
+                .member(user3)
                 .membership(membership10)
                 .build());
 

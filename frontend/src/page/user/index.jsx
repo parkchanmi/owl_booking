@@ -135,6 +135,11 @@ const User = () => {
 
             const maxCapacity = rp.program?.maxCapacity;
             const remain = maxCapacity != null ? Math.max(maxCapacity - (rp.bookingCount || 0), 0) : null;
+            const hasBookingSeat = remain === null || remain > 0;
+            const hasWaitlist = (rp.waitlistCount ?? 0) > 0;
+            const waitlistCapacity = rp.waitlistCapacity;
+            const isWaitlistFull = waitlistCapacity != null && (rp.waitlistCount ?? 0) >= waitlistCapacity;
+            const isWaitlistAvailable = !isWaitlistFull && (!hasBookingSeat || hasWaitlist);
             groups.get(groupKey).slots.push({
                 id: rp.id,
                 realProgramId: rp.id,
@@ -143,7 +148,9 @@ const User = () => {
                 time: `${rp.program?.startTime ?? ''} - ${rp.program?.endTime ?? ''}`,
                 remain,
                 total: maxCapacity,
-                status: remain !== null && remain <= 0 ? 'closed' : 'open',
+                waitlistCount: rp.waitlistCount ?? 0,
+                waitlistCapacity,
+                status: isWaitlistFull ? 'waitlistClosed' : isWaitlistAvailable ? 'waitlist' : 'open',
             });
         });
 
@@ -156,7 +163,7 @@ const User = () => {
 
         setSelectedProgram(program);
         setSelectedSlot(slot);
-        setIsWaitlist(false);
+        setIsWaitlist(slot.status === 'waitlist');
         setPanelState('form');
 
         // Form.Item DTO 필드 동기화
@@ -176,7 +183,7 @@ const User = () => {
             const values = await form.validateFields();
             setSubmitting(true);
 
-            const response = await fetch('/api/bookings', {
+            const response = await fetch(isWaitlist ? '/api/waitlists' : '/api/bookings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ realProgramId: values.realProgramId || selectedSlot?.realProgramId }),
@@ -189,14 +196,14 @@ const User = () => {
                 return;
             }
 
-            message.success('수업 예약이 정상적으로 완료되었습니다!');
+            message.success(isWaitlist ? '대기 신청이 완료되었습니다!' : '수업 예약이 정상적으로 완료되었습니다!');
 
             setConfirmedData({
                 programTitle: selectedProgram.title,
                 instructor: selectedProgram.instructor,
                 dateTime: `${formattedDateString} · ${selectedSlot.time}`,
                 location: selectedCenter?.name,
-                isWaitlist: false,
+                isWaitlist,
             });
 
             setPanelState('confirmed');
@@ -535,15 +542,21 @@ const User = () => {
                                                 {prog.slots.map((slot) => {
                                                     const isSlotActive = selectedSlot?.id === slot.id;
                                                     const isClosed = slot.status === 'closed';
+                                                    const isWaitlistSlot = slot.status === 'waitlist';
+                                                    const isWaitlistClosed = slot.status === 'waitlistClosed';
 
                                                     return (
                                                         <button
                                                             key={slot.id}
                                                             type="button"
-                                                            disabled={isClosed}
+                                                            disabled={isClosed || isWaitlistClosed}
                                                             className={`fixed-slot-btn min-w-[84px] w-[84px] h-[44px] flex flex-col items-center justify-center ${
-                                                                isClosed
+                                                                isClosed || isWaitlistClosed
                                                                     ? 'is-disabled'
+                                                                    : isWaitlistSlot
+                                                                    ? isSlotActive
+                                                                        ? 'is-waitlist is-active-waitlist'
+                                                                        : 'is-waitlist'
                                                                     : isSlotActive
                                                                     ? 'is-active-regular'
                                                                     : ''
@@ -552,7 +565,7 @@ const User = () => {
                                                         >
                                                             <span className="slot-time">{slot.startTime}</span>
                                                             <span className="slot-count text-[10px] whitespace-nowrap tracking-tight leading-none mt-0.5">
-                                                                {isClosed ? '마감' : `${slot.remain}/${slot.total}`}
+                                                                {isClosed ? '마감' : isWaitlistClosed ? '대기마감' : isWaitlistSlot ? '대기' : `${slot.remain}/${slot.total}`}
                                                             </span>
                                                         </button>
                                                     );
@@ -707,7 +720,7 @@ const User = () => {
                                                         loading={submitting}
                                                         className="btn-waitlist-submit"
                                                     >
-                                                        대기 예약 하기
+                                                        대기 신청하기
                                                     </Button>
                                                 ) : (
                                                     <Button

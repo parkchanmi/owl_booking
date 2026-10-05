@@ -1,6 +1,7 @@
 package com.owl.booking.model.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.*;
 
 @Entity
@@ -23,4 +24,17 @@ public class Waitlist {
     @ManyToOne
     @JoinColumn(name = "real_program_id", referencedColumnName = "id")
     RealProgram program;
+
+    @Column(name = "reservation_token", unique = true, length = 64)
+    private String reservationToken;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }

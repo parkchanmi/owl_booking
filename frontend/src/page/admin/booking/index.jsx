@@ -2,13 +2,13 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
     Calendar, Badge, Card, Button, List, Modal, Form,
     Select, DatePicker, Popconfirm, message, Flex, Tag, ConfigProvider,
-    Drawer, Descriptions, Table, Input, Space, Segmented,
+    Drawer, Descriptions, Table, Input, InputNumber, Space, Segmented, TimePicker, Tooltip,
 } from 'antd';
 import koKR from 'antd/locale/ko_KR';
 import {
     PlusOutlined, DeleteOutlined, InfoCircleOutlined,
     SaveOutlined, LeftOutlined, RightOutlined, AuditOutlined,
-    CalendarOutlined, BarsOutlined,
+    CalendarOutlined, BarsOutlined, ReloadOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
@@ -56,7 +56,9 @@ const BookingSchedule = () => {
     const [statusFilter, setStatusFilter] = useState('전체');
     const [memberSearch, setMemberSearch] = useState('');
     const [instructorSelectId, setInstructorSelectId] = useState(null);
-    const [instructorSaving, setInstructorSaving] = useState(false);
+    const [scheduleSaving, setScheduleSaving] = useState(false);
+    const [memberListRefreshing, setMemberListRefreshing] = useState(false);
+    const [detailForm] = Form.useForm();
 
     // 출석 드로어
     const [attendanceOpen, setAttendanceOpen] = useState(false);
@@ -197,6 +199,12 @@ const BookingSchedule = () => {
         const res = await axios.get(`${REAL_PROGRAMS_URL}/${scheduleId}/detail`);
         setDetailData(res.data);
         setInstructorSelectId(res.data.instructorId ?? null);
+        detailForm.setFieldsValue({
+            programDat: res.data.programDat ? dayjs(res.data.programDat) : null,
+            startTime: res.data.startTime ? dayjs(res.data.startTime, 'HH:mm') : null,
+            endTime: res.data.endTime ? dayjs(res.data.endTime, 'HH:mm') : null,
+            maxCapacity: res.data.maxCapacity ?? null,
+        });
     };
 
     const openDetail = async (schedule) => {
@@ -216,12 +224,27 @@ const BookingSchedule = () => {
         }
     };
 
+    const refreshDetailMemberList = async ({ showSuccess = false } = {}) => {
+        if (!detailTarget?.id) return;
+        setMemberListRefreshing(true);
+        try {
+            await loadDetail(detailTarget.id);
+            loadSchedules();
+            if (showSuccess) {
+                message.success('예약 회원 목록을 다시 조회했습니다.');
+            }
+        } catch {
+            message.error('예약 회원 목록을 다시 조회하지 못했습니다.');
+        } finally {
+            setMemberListRefreshing(false);
+        }
+    };
+
     const handleCancelBooking = async (bookingId) => {
         try {
             await axios.delete(`/api/bookings/${bookingId}`);
             message.success('예약이 취소되었습니다.');
-            await loadDetail(detailTarget.id);
-            loadSchedules();
+            await refreshDetailMemberList();
         } catch {
             message.error('예약 취소 중 오류가 발생했습니다.');
         }
@@ -238,22 +261,27 @@ const BookingSchedule = () => {
         }
     };
 
-    const handleSaveInstructor = async () => {
-        if (!detailTarget) return;
-        setInstructorSaving(true);
+    const handleSaveScheduleInfo = async (values) => {
+        if (!detailTarget || !detailData) return;
+
+        const payload = {
+            programDat: values.programDat?.format('YYYY-MM-DD') + 'T00:00:00',
+            startTime: values.startTime?.format('HH:mm'),
+            endTime: values.endTime?.format('HH:mm'),
+            maxCapacity: values.maxCapacity,
+            instructor: instructorSelectId ? { id: instructorSelectId } : null,
+        };
+
+        setScheduleSaving(true);
         try {
-            await axios.put(`${REAL_PROGRAMS_URL}/${detailTarget.id}`, {
-                programDat: dayjs(detailTarget.programDat).format('YYYY-MM-DDTHH:mm:ss'),
-                center: detailTarget.center?.id ? { id: detailTarget.center.id } : null,
-                program: detailTarget.program?.id ? { id: detailTarget.program.id } : null,
-                instructor: instructorSelectId ? { id: instructorSelectId } : null,
-            });
-            message.success('강사가 변경되었습니다.');
+            await axios.put(`${REAL_PROGRAMS_URL}/${detailTarget.id}`, payload);
+            message.success('스케줄 정보가 변경되었습니다.');
             await loadDetail(detailTarget.id);
-        } catch {
-            message.error('강사 변경 중 오류가 발생했습니다.');
+            loadSchedules();
+        } catch (error) {
+            message.error(error?.response?.data?.message || '스케줄 정보 변경 중 오류가 발생했습니다.');
         } finally {
-            setInstructorSaving(false);
+            setScheduleSaving(false);
         }
     };
 
@@ -670,33 +698,75 @@ const BookingSchedule = () => {
             </Modal>
 
             {/* 상세 드로어 */}
-            <Drawer title="스케줄 상세" open={detailOpen} onClose={() => setDetailOpen(false)} width={560} loading={detailLoading}>
+            <Drawer title="스케줄 상세" open={detailOpen} onClose={() => setDetailOpen(false)} width={720} loading={detailLoading}>
                 {detailData && (
                     <>
-                        <Descriptions title="수업 정보" bordered column={2} size="small" style={{ marginBottom: 24 }}>
-                            <Descriptions.Item label="수업명" span={2}>{detailData.programName}</Descriptions.Item>
-                            <Descriptions.Item label="강사" span={2}>
-                                <Flex gap={8} align="center">
-                                    <Select style={{ flex: 1 }} size="small" value={instructorSelectId} onChange={setInstructorSelectId} placeholder="강사 선택">
-                                        {detailCenterInstructors.map((i) => (
-                                            <Select.Option key={i.id} value={i.id}>{i.name}</Select.Option>
-                                        ))}
-                                    </Select>
-                                    <Button size="small" type="primary" icon={<SaveOutlined />} loading={instructorSaving}
-                                        disabled={instructorSelectId === detailData.instructorId} onClick={handleSaveInstructor}>
-                                        저장
-                                    </Button>
-                                </Flex>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="일자">{dayjs(detailData.programDat).format('YYYY-MM-DD (ddd)')}</Descriptions.Item>
-                            <Descriptions.Item label="시간">{detailData.startTime} ~ {detailData.endTime}</Descriptions.Item>
-                            <Descriptions.Item label="예약 인원">
-                                <Tag color="blue">{detailData.bookingCount} / {detailData.maxCapacity ?? '-'}명</Tag>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="대기 인원">
-                                <Tag color="orange">{detailData.waitlistCount} / {detailData.waitlistCapacity ?? '-'}명</Tag>
-                            </Descriptions.Item>
-                        </Descriptions>
+                        <Form form={detailForm} layout="vertical" onFinish={handleSaveScheduleInfo}>
+                            <Descriptions
+                                title={(
+                                    <Flex justify="space-between" align="center">
+                                        <span>수업 정보</span>
+                                        <Button type="primary" size="small" icon={<SaveOutlined />} loading={scheduleSaving} onClick={() => detailForm.submit()}>
+                                            스케줄 정보 저장
+                                        </Button>
+                                    </Flex>
+                                )}
+                                bordered
+                                column={2}
+                                size="small"
+                                style={{ marginBottom: 24 }}
+                            >
+                                <Descriptions.Item label="수업명" span={2}>{detailData.programName}</Descriptions.Item>
+                                <Descriptions.Item label="강사" span={2}>
+                                    <Flex gap={8} align="center">
+                                        <Select style={{ flex: 1 }} size="small" value={instructorSelectId} onChange={setInstructorSelectId} placeholder="강사 선택">
+                                            {detailCenterInstructors.map((i) => (
+                                                <Select.Option key={i.id} value={i.id}>{i.name}</Select.Option>
+                                            ))}
+                                        </Select>
+                                    </Flex>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="수업일자">
+                                    <Form.Item name="programDat" noStyle rules={[{ required: true, message: '수업일자를 선택해주세요.' }]}>
+                                        <DatePicker size="small" style={{ width: '100%' }} format="YYYY-MM-DD" />
+                                    </Form.Item>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="수업시간">
+                                    <Space.Compact style={{ width: '100%' }}>
+                                        <Form.Item name="startTime" noStyle rules={[{ required: true, message: '시작시간을 선택해주세요.' }]}>
+                                            <TimePicker size="small" style={{ width: '50%' }} format="HH:mm" minuteStep={5} />
+                                        </Form.Item>
+                                        <Form.Item name="endTime" noStyle rules={[{ required: true, message: '종료시간을 선택해주세요.' }]}>
+                                            <TimePicker size="small" style={{ width: '50%' }} format="HH:mm" minuteStep={5} />
+                                        </Form.Item>
+                                    </Space.Compact>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="예약정원">
+                                    <Space size={4} align="center">
+                                        <Form.Item name="maxCapacity" noStyle rules={[{ required: true, message: '수업정원을 입력해주세요.' }]}>
+                                            <InputNumber
+                                                size="small"
+                                                min={detailData.bookingCount ?? 0}
+                                                precision={0}
+                                                controls={false}
+                                                bordered={false}
+                                                style={{ width: 56, background: '#f5f5f5', borderRadius: 4, textAlign: 'center' }}
+                                            />
+                                        </Form.Item>
+                                        <span style={{ color: '#666' }}>명</span>
+                                    </Space>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="대기정원">
+                                    {detailData.waitlistCapacity ?? '-'}명
+                                </Descriptions.Item>
+                                <Descriptions.Item label="예약인원">
+                                    <Tag color="blue">{detailData.bookingCount}명</Tag>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="대기인원">
+                                    <Tag color="orange">{detailData.waitlistCount}명</Tag>
+                                </Descriptions.Item>
+                            </Descriptions>
+                        </Form>
 
                         <Descriptions title="적용 정책" bordered column={1} size="small" style={{ marginBottom: 24 }}>
                             <Descriptions.Item label="취소 가능 시간">
@@ -706,7 +776,17 @@ const BookingSchedule = () => {
                         </Descriptions>
 
                         <div>
-                            <div style={{ fontWeight: 600, marginBottom: 12 }}>예약 회원 목록</div>
+                            <Flex align="center" gap={6} style={{ marginBottom: 12 }}>
+                                <div style={{ fontWeight: 600 }}>예약 회원 목록</div>
+                                <Tooltip title="예약 회원 목록 새로고침">
+                                    <Button
+                                        size="small"
+                                        icon={<ReloadOutlined />}
+                                        loading={memberListRefreshing}
+                                        onClick={() => refreshDetailMemberList({ showSuccess: true })}
+                                    />
+                                </Tooltip>
+                            </Flex>
                             <Space style={{ marginBottom: 8 }}>
                                 <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 100 }} size="small">
                                     <Select.Option value="전체">전체</Select.Option>
@@ -717,6 +797,7 @@ const BookingSchedule = () => {
                                     onChange={(e) => setMemberSearch(e.target.value)} style={{ width: 200 }} size="small" allowClear />
                             </Space>
                             <Table dataSource={filteredBookings} columns={bookingColumns} rowKey="id" size="small"
+                                loading={memberListRefreshing}
                                 pagination={{ pageSize: 10, hideOnSinglePage: true }} locale={{ emptyText: '예약 회원이 없습니다.' }} />
                         </div>
                     </>

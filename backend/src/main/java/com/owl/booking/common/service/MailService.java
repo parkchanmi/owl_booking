@@ -3,6 +3,7 @@ package com.owl.booking.common.service;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.owl.booking.utils.RandomUtils;
@@ -19,6 +20,15 @@ import lombok.extern.slf4j.Slf4j;
 public class MailService {
 
     private final JavaMailSender javaMailSender;
+
+    @Async
+    public void sendHtmlMessageAsync(String email, String subject, String content) {
+        try {
+            sendHtmlMessage(email, subject, content);
+        } catch (RuntimeException e) {
+            log.error("비동기 HTML 메일 발송 실패: {}", email, e);
+        }
+    }
 
     public void sendHtmlMessage(String email, String subject, String content) {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
