@@ -425,6 +425,45 @@
   align-items: center;
   justify-content: center;
   margin-top: 4px;
+  gap: 3px;
+}
+
+.reservation-calendar-dot,
+.reservation-calendar-legend i {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+}
+
+.reservation-calendar-month-dots {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  min-height: 8px;
+  transform: translateX(-50%);
+}
+
+.reservation-calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #F4F1FC;
+  color: #71717A;
+  font-size: 11px;
+}
+
+.reservation-calendar-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .today-indicator-dot {
@@ -467,6 +506,8 @@
 }
 
 .month-day-cell {
+  position: relative;
+  margin-bottom: 12px;
   width: 36px;
   height: 36px;
   border-radius: 9999px;
@@ -1183,6 +1224,45 @@
 }
 
 /* Detailed Policy Modal Content */
+.rsvp-existing-status {
+  margin-top: 20px;
+  padding: 24px 18px;
+  border: 1px solid #EDE9FE;
+  border-radius: 16px;
+  background: #FBFBFE;
+  color: #6D28D9;
+  text-align: center;
+}
+
+.rsvp-existing-status > .anticon {
+  font-size: 24px;
+}
+
+.rsvp-existing-status h4 {
+  margin: 12px 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.rsvp-existing-status p {
+  margin: 0 0 16px;
+  color: #71717A;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.rsvp-existing-status.is-waiting {
+  border-color: #FFEDD5;
+  background: #FFFBF5;
+  color: #D97706;
+}
+
+.rsvp-existing-status.is-closed {
+  border-color: #E4E4E7;
+  background: #FAFAFA;
+  color: #71717A;
+}
+
 .policy-modal-card {
   background: #FBFBFE;
   border: 1px solid #EDE9FE;

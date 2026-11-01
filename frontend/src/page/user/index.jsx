@@ -26,19 +26,29 @@ import {
     CalendarOutlined,
     SyncOutlined,
 } from '@ant-design/icons';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import Header, { INITIAL_NOTIFICATIONS } from '../../components/common/Header';
 import './userBooking.css';
+import { remainingUses, usableMemberships, reservationPolicy, myReservationStatus, isReservationClosed } from '../../utils/reservationData';
+import useReservationStatus from '../../hooks/useReservationStatus';
+import { calendarDots } from '../../utils/myPageData';
 
 const { Text } = Typography;
 
 const KOREAN_DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
-const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNavigateBuyTicket }) => {
+const User = () => {
     const navigate = useNavigate();
-    const location = useLocation();
     const [form] = Form.useForm();
+    const [now, setNow] = useState(() => dayjs());
+    useEffect(() => {
+        const tick = () => setNow(dayjs());
+        const timer = window.setInterval(tick, 1000);
+        window.addEventListener('focus', tick);
+        return () => { window.clearInterval(timer); window.removeEventListener('focus', tick); };
+    }, []);
+    const { bookings: myBookings, waitlists: myWaitlists, attendance: myAttendance, loading: statusLoading, error: statusError, refresh: refreshMyStatus } = useReservationStatus();
 
     // 로그인한 실제 회원 정보
     const [memberInfo, setMemberInfo] = useState(null);
@@ -50,92 +60,70 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
         () => centers.find((c) => c.id === selectedCenterId) ?? centers[0] ?? null,
         [centers, selectedCenterId]
     );
-
-    // URL 쿼리 파라미터 확인 (?hasTicket=false 또는 ?noTicket=true 등 개발/테스트/연동 지원)
-    const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-    const queryOverride = useMemo(() => {
-        if (searchParams.get('noTicket') === 'true' || searchParams.get('noTicket') === '1') return false;
-        if (searchParams.get('hasTicket') === 'false' || searchParams.get('hasTicket') === '0') return false;
-        if (searchParams.get('hasTicket') === 'true' || searchParams.get('hasTicket') === '1') return true;
-        return null;
-    }, [searchParams]);
+    const calendarReservations = useMemo(
+        () => [...myBookings, ...myWaitlists].filter((row) => row.centerId === selectedCenterId),
+        [myBookings, myWaitlists, selectedCenterId]
+    );
+    const calendarAttendance = useMemo(
+        () => myAttendance.filter((row) => row.centerId === selectedCenterId),
+        [myAttendance, selectedCenterId]
+    );
 
     const [userMemberships, setUserMemberships] = useState([]);
+    const [membershipsLoading, setMembershipsLoading] = useState(true);
+    const [membershipsError, setMembershipsError] = useState(false);
+    const [membershipRefresh, setMembershipRefresh] = useState(0);
     const [selectedTicketIndex, setSelectedTicketIndex] = useState(0);
     const [ticketModalOpen, setTicketModalOpen] = useState(false);
-    const [hasTicketState, setHasTicketState] = useState(true);
+    const [centerPolicy, setCenterPolicy] = useState(null);
+    const [policyLoading, setPolicyLoading] = useState(false);
+    const [policyError, setPolicyError] = useState(false);
+    const [policyRefresh, setPolicyRefresh] = useState(0);
+    const policyText = reservationPolicy(centerPolicy);
 
     useEffect(() => {
         fetch('/api/member/info', { credentials: 'include' })
             .then((res) => (res.ok ? res.json() : null))
-            .then((data) => setMemberInfo(data))
+            .then(setMemberInfo)
             .catch((err) => console.error('회원 정보 조회 실패:', err));
     }, []);
 
-    // 회원의 실제 유효 이용권 보유 여부 확인 (잔여 횟수 및 만료일 기준)
     useEffect(() => {
-        if (queryOverride !== null || propHasTicket !== undefined || propUserTickets !== undefined) return;
-        if (!memberInfo?.id) return;
-
-        fetch(`/api/admin/membermemberships?memberId=${memberInfo.id}`, { credentials: 'include' })
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => {
-                if (Array.isArray(data)) {
-                    setUserMemberships(data);
-                    const validPasses = data.filter((mm) => {
-                        const countValid = mm.remainCount == null || mm.remainCount > 0;
-                        const dateValid = !mm.endDat || !dayjs(mm.endDat).isBefore(dayjs().startOf('day'));
-                        return countValid && dateValid;
-                    });
-                    setHasTicketState(validPasses.length > 0);
-                }
+        let active = true;
+        setMembershipsLoading(true);
+        setMembershipsError(false);
+        fetch('/api/member/memberships', { credentials: 'include' })
+            .then((res) => {
+                if (!res.ok) throw new Error('회원 이용권 조회 실패');
+                return res.json();
             })
-            .catch((err) => console.error('회원 이용권 조회 실패:', err));
-    }, [memberInfo, queryOverride, propHasTicket, propUserTickets]);
+            .then((data) => {
+                if (!Array.isArray(data)) throw new Error('잘못된 이용권 응답');
+                if (active) setUserMemberships(data);
+            })
+            .catch(() => {
+                if (active) { setUserMemberships([]); setMembershipsError(true); }
+            })
+            .finally(() => { if (active) setMembershipsLoading(false); });
+        return () => { active = false; };
+    }, [membershipRefresh]);
 
-    // 유효한 이용권 목록
-    const validMemberships = useMemo(() => {
-        if (Array.isArray(propUserTickets)) {
-            return propUserTickets;
-        }
-        return userMemberships.filter((mm) => {
-            const countValid = mm.remainCount == null || mm.remainCount > 0;
-            const dateValid = !mm.endDat || !dayjs(mm.endDat).isBefore(dayjs().startOf('day'));
-            return countValid && dateValid;
-        });
-    }, [propUserTickets, userMemberships]);
-
-    const hasTicket = useMemo(() => {
-        if (propHasTicket !== undefined) return Boolean(propHasTicket);
-        if (Array.isArray(propUserTickets)) return propUserTickets.length > 0;
-        if (queryOverride !== null) return queryOverride;
-        return hasTicketState;
-    }, [propHasTicket, propUserTickets, queryOverride, hasTicketState]);
-
-    // 현재 표시할 활성 이용권 데이터 (없을 시 레퍼런스 시안의 기본값 표출)
-    const activeTicket = useMemo(() => {
-        if (validMemberships.length > 0) {
-            return validMemberships[selectedTicketIndex % validMemberships.length];
-        }
-        return null;
-    }, [validMemberships, selectedTicketIndex]);
-
-    const displayTicketName = useMemo(() => {
-        return activeTicket?.membership?.name
-            || (selectedCenter?.name ? `${selectedCenter.name} 전용 30회권` : '강남 시그니처점 전용 30회권');
-    }, [activeTicket, selectedCenter]);
-
-    const displayTicketRemain = useMemo(() => {
-        return activeTicket?.remainCount != null
-            ? `${activeTicket.remainCount}회 남음`
-            : '8회 남음';
-    }, [activeTicket]);
-
-    const displayTicketExpiry = useMemo(() => {
-        return activeTicket?.endDat
-            ? `유효기간: ${dayjs(activeTicket.endDat).format('YYYY.MM.DD')} 만료`
-            : '유효기간: 2026.12.31 만료';
-    }, [activeTicket]);
+    useEffect(() => {
+        let active = true;
+        setCenterPolicy(null);
+        setPolicyError(false);
+        if (!selectedCenterId) return;
+        setPolicyLoading(true);
+        fetch('/api/centers/' + selectedCenterId + '/reservation-policy', { credentials: 'include' })
+            .then((res) => {
+                if (!res.ok) throw new Error('센터 규정 조회 실패');
+                return res.json();
+            })
+            .then((data) => { if (active) setCenterPolicy(data); })
+            .catch(() => { if (active) setPolicyError(true); })
+            .finally(() => { if (active) setPolicyLoading(false); });
+        return () => { active = false; };
+    }, [selectedCenterId, policyRefresh]);
 
     const handleChangeTicket = () => {
         if (validMemberships.length > 1) {
@@ -145,13 +133,7 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
         }
     };
 
-    const handleBuyTicket = () => {
-        if (onNavigateBuyTicket) {
-            onNavigateBuyTicket();
-        } else {
-            navigate('/mypage?tab=passes');
-        }
-    };
+    const handleBuyTicket = () => navigate('/mypage?tab=passes');
 
     // 실제 스케줄(RealProgram) 목록
     const [realPrograms, setRealPrograms] = useState([]);
@@ -159,22 +141,22 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
 
     useEffect(() => {
         fetch('/api/centers', { credentials: 'include' })
-            .then((res) => res.json())
+            .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
             .then((data) => {
                 setCenters(data);
                 if (data.length > 0) {
                     setSelectedCenterId((prev) => prev ?? data[0].id);
                 }
             })
-            .catch((err) => console.error('센터 목록 조회 실패:', err));
+            .catch(() => message.error('센터 목록을 불러오지 못했습니다. 새로고침해 주세요.'));
     }, []);
 
     useEffect(() => {
         setProgramsLoading(true);
         fetch('/api/realprograms', { credentials: 'include' })
-            .then((res) => res.json())
+            .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
             .then((data) => setRealPrograms(data))
-            .catch((err) => console.error('수업 스케줄 조회 실패:', err))
+            .catch(() => message.error('수업 목록을 불러오지 못했습니다. 새로고침해 주세요.'))
             .finally(() => setProgramsLoading(false));
     }, []);
 
@@ -186,9 +168,24 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
     const [currentMonthDate, setCurrentMonthDate] = useState(BASE_TODAY.startOf('month'));
     const [viewMode, setViewMode] = useState('week'); // 'week' | 'month'
 
+    const validMemberships = useMemo(
+        () => usableMemberships(userMemberships, selectedCenterId, selectedDate),
+        [userMemberships, selectedCenterId, selectedDate]
+    );
+    const activeTicket = validMemberships[selectedTicketIndex % validMemberships.length] ?? null;
+    const hasTicket = !membershipsLoading && !membershipsError && activeTicket !== null;
+    const displayTicketName = activeTicket?.membership?.name || '이용권';
+    const displayTicketRemain = activeTicket && remainingUses(activeTicket) !== null
+        ? remainingUses(activeTicket) + '회 남음' : '횟수 제한 없음';
+    const displayTicketExpiry = activeTicket?.endDat
+        ? '유효기간: ' + dayjs(activeTicket.endDat).format('YYYY.MM.DD') + ' 만료' : '만료일 제한 없음';
+
+
     // 선택된 수업 및 슬롯 상태 (realProgramId, programDate, startTime 등)
     const [selectedProgram, setSelectedProgram] = useState(null);
     const [selectedSlot, setSelectedSlot] = useState(null);
+    const selectedMyStatus = myReservationStatus(selectedSlot?.realProgramId, myBookings, myWaitlists);
+    const selectedClosed = selectedSlot && isReservationClosed(selectedSlot.programDat, selectedSlot.startTime, now);
     const [isWaitlist, setIsWaitlist] = useState(false);
 
     // 예약 프로세스 상태: 'empty' (State 0) | 'form' (State 1/2) | 'confirmed' (State 3)
@@ -240,6 +237,7 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
             groups.get(groupKey).slots.push({
                 id: rp.id,
                 realProgramId: rp.id,
+                programDat: rp.programDat,
                 startTime: rp.program?.startTime,
                 endTime: rp.program?.endTime,
                 time: `${rp.program?.startTime ?? ''} - ${rp.program?.endTime ?? ''}`,
@@ -256,7 +254,9 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
 
     // 슬롯 선택 핸들러
     const handleSelectSlot = (program, slot) => {
-        if (slot.status === 'waitlistClosed') return;
+        if (isReservationClosed(slot.programDat, slot.startTime)) return;
+        if (slot.status === 'waitlistClosed' && !myReservationStatus(slot.realProgramId, myBookings, myWaitlists)) return;
+        refreshMyStatus();
 
         setSelectedProgram(program);
         setSelectedSlot(slot);
@@ -276,6 +276,23 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
 
     // 예약 제출 핸들러 (실제 백엔드 예약 생성 API 호출)
     const handleReservationSubmit = async () => {
+        if (submitting) return;
+        if (!selectedSlot || isReservationClosed(selectedSlot.programDat, selectedSlot.startTime)) {
+            message.warning('수업 시작 시간이 지나 예약이 마감되었습니다.');
+            return;
+        }
+        if (statusLoading || statusError) {
+            message.warning('내 예약 상태를 확인한 후 다시 시도해 주세요.');
+            return;
+        }
+        if (selectedMyStatus) {
+            message.info(selectedMyStatus === 'booked' ? '이미 예약한 수업입니다.' : '이미 대기 신청한 수업입니다.');
+            return;
+        }
+        if (policyLoading || !centerPolicy || policyError) {
+            message.warning('센터 규정을 확인한 후 다시 시도해 주세요.');
+            return;
+        }
         if (!hasTicket) {
             message.warning('사용 가능한 이용권이 없습니다. 이용권을 먼저 구매해 주세요.');
             return;
@@ -293,11 +310,18 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
             });
 
             if (!response.ok) {
+                if (response.status === 409) refreshMyStatus();
                 const errorBody = await response.json().catch(() => null);
                 message.error(errorBody?.message || '수업 예약이 마감되었거나 처리 중 오류가 발생했습니다.');
                 return;
             }
 
+            setMembershipRefresh((value) => value + 1);
+            refreshMyStatus();
+            fetch('/api/realprograms', { credentials: 'include' })
+                .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
+                .then(setRealPrograms)
+                .catch(() => message.warning('최신 수업 현황을 불러오지 못했습니다.'));
             message.success(isWaitlist ? '대기 신청이 완료되었습니다!' : '수업 예약이 정상적으로 완료되었습니다!');
 
             setConfirmedData({
@@ -356,13 +380,14 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                 dayName: KOREAN_DAY_NAMES[date.day()],
                 dayNum: date.date(),
                 dateObj: date,
+                dots: calendarDots(date, calendarReservations, calendarAttendance),
                 isToday: date.isSame(BASE_TODAY, 'day'),
                 isSelected: date.isSame(selectedDate, 'day'),
                 isSat: date.day() === 6,
                 isSun: date.day() === 0,
             };
         });
-    }, [selectedDate, BASE_TODAY]);
+    }, [selectedDate, BASE_TODAY, calendarReservations, calendarAttendance]);
 
     // 월간 달력 날짜 그리드 생성
     const monthCalendarGrid = useMemo(() => {
@@ -396,6 +421,7 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                 isSun: date.day() === 0,
                 key: `cur-${d}`,
                 dateObj: date,
+                dots: calendarDots(date, calendarReservations, calendarAttendance),
             });
         }
 
@@ -413,10 +439,11 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
             }
         }
         return cells;
-    }, [currentMonthDate, selectedDate, BASE_TODAY]);
+    }, [currentMonthDate, selectedDate, BASE_TODAY, calendarReservations, calendarAttendance]);
 
     // 전주/다음 주 또는 이전 달/다음 달 이동 핸들러
     const handlePrev = () => {
+        resetBookingState();
         if (viewMode === 'week') {
             setSelectedDate((prev) => {
                 const next = prev.subtract(1, 'week');
@@ -429,6 +456,7 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
     };
 
     const handleNext = () => {
+        resetBookingState();
         if (viewMode === 'week') {
             setSelectedDate((prev) => {
                 const next = prev.add(1, 'week');
@@ -442,6 +470,7 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
 
     // 오늘 버튼 클릭 시 기준일(2026.09.11)로 복귀
     const handleGoToToday = () => {
+        resetBookingState();
         setSelectedDate(BASE_TODAY);
         setCurrentMonthDate(BASE_TODAY.startOf('month'));
     };
@@ -562,16 +591,13 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                             key={`week-${day.dateObj.format('YYYY-MM-DD')}`}
                                             type="button"
                                             className={`week-day-pill ${day.isSelected ? 'is-selected' : ''} ${day.isToday ? 'is-today' : ''} ${day.isSat ? 'is-sat' : ''} ${day.isSun ? 'is-sun' : ''}`}
-                                            onClick={() => setSelectedDate(day.dateObj)}
+                                            aria-label={`${day.dateObj.format('YYYY년 M월 D일')}${day.dots.length ? ' · 내 이용 내역 있음' : ''}`}
+                                            onClick={() => { resetBookingState(); setSelectedDate(day.dateObj); }}
                                         >
                                             <span className="week-day-name">{day.dayName}</span>
                                             <div className="week-day-num">{day.dayNum}</div>
                                             <div className="today-indicator-slot">
-                                                {day.isToday ? (
-                                                    <span className="today-indicator-dot" />
-                                                ) : (
-                                                    <span className="today-indicator-dot" style={{ opacity: 0 }} />
-                                                )}
+                                                {day.dots.map((color) => <span key={color} className="reservation-calendar-dot" style={{ backgroundColor: color }} aria-hidden="true" />)}
                                             </div>
                                         </button>
                                     ))}
@@ -595,14 +621,21 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                                 type="button"
                                                 disabled={cell.isMuted}
                                                 className={`month-day-cell ${cell.isMuted ? 'is-muted' : ''} ${cell.isSelected ? 'is-selected' : ''} ${cell.isSat ? 'is-sat' : ''} ${cell.isSun ? 'is-sun' : ''}`}
-                                                onClick={() => !cell.isMuted && setSelectedDate(cell.dateObj)}
+                                                aria-label={`${cell.dateObj.format('YYYY년 M월 D일')}${cell.dots?.length ? ' · 내 이용 내역 있음' : ''}`}
+                                                onClick={() => { if (!cell.isMuted) { resetBookingState(); setSelectedDate(cell.dateObj); } }}
                                             >
                                                 {cell.num}
+                                                {!cell.isMuted && <span className="reservation-calendar-month-dots" aria-hidden="true">{cell.dots.map((color) => <span key={color} className="reservation-calendar-dot" style={{ backgroundColor: color }} />)}</span>}
                                             </button>
                                         ))}
                                     </div>
                                 </div>
                             )}
+                            <div className="reservation-calendar-legend">
+                                <span><i style={{ backgroundColor: '#6D28D9' }} />예약/출석</span>
+                                <span><i style={{ backgroundColor: '#EA580C' }} />대기</span>
+                                <span><i style={{ backgroundColor: '#D4D4D8' }} />결석</span>
+                            </div>
                         </div>
 
                         {/* Selected Day Classes Section */}
@@ -643,7 +676,9 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                             <div className="class-card-slots">
                                                 {prog.slots.map((slot) => {
                                                     const isSlotActive = selectedSlot?.id === slot.id;
-                                                    const isClosed = slot.status === 'waitlistClosed';
+                                                    const myStatus = myReservationStatus(slot.realProgramId, myBookings, myWaitlists);
+                                                    const isPast = isReservationClosed(slot.programDat, slot.startTime, now);
+                                                    const isClosed = isPast || (slot.status === 'waitlistClosed' && !myStatus);
                                                     const isWaitlistSlot = slot.status === 'waitlist';
 
                                                     return (
@@ -662,7 +697,7 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                                         >
                                                             <span className="slot-time">{slot.startTime}</span>
                                                             <span className="slot-count text-[10px] whitespace-nowrap tracking-tight leading-none mt-0.5">
-                                                                {isClosed ? '대기마감' : isWaitlistSlot ? '대기' : `${slot.remain}/${slot.total}`}
+                                                                {isPast ? '예약마감' : myStatus === 'booked' ? '예약 확정' : myStatus === 'waitlisted' ? '대기 신청됨' : isClosed ? '대기마감' : isWaitlistSlot ? '대기' : `${slot.remain}/${slot.total}`}
                                                             </span>
                                                         </button>
                                                     );
@@ -756,7 +791,25 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                                 </div>
                                             </div>
 
-                                            {hasTicket ? (
+                                            {selectedClosed ? (
+                                                <div className="rsvp-existing-status is-closed" role="status">
+                                                    <ClockCircleOutlined />
+                                                    <h4>예약마감</h4>
+                                                    <p>수업 시작 시간이 지나 예약 및 대기 신청이 마감되었습니다.</p>
+                                                    <Button block className="btn-history-link" onClick={() => navigate('/mypage?tab=reservations')}>내 예약 내역 확인하기</Button>
+                                                </div>
+                                            ) : statusLoading ? (
+                                                <div className="rsvp-existing-status" role="status"><Spin /><p>내 예약 상태를 확인하고 있습니다.</p></div>
+                                            ) : selectedMyStatus ? (
+                                                <div className={`rsvp-existing-status ${selectedMyStatus === 'waitlisted' ? 'is-waiting' : ''}`} role="status">
+                                                    {selectedMyStatus === 'booked' ? <CheckOutlined /> : <ClockCircleOutlined />}
+                                                    <h4>{selectedMyStatus === 'booked' ? '이미 예약한 수업입니다' : '이미 대기 신청한 수업입니다'}</h4>
+                                                    <p>{selectedMyStatus === 'booked' ? '예약이 확정되어 있습니다. 예약 내역에서 상세 정보를 확인해 주세요.' : '현재 대기 신청된 수업입니다. 대기 내역에서 신청 상태를 확인해 주세요.'}</p>
+                                                    <Button type="primary" block className="btn-history-link" onClick={() => navigate('/mypage?tab=reservations')}>내 예약 내역 확인하기</Button>
+                                                </div>
+                                            ) : statusError ? (
+                                                <div className="rsvp-existing-status" role="alert"><InfoCircleOutlined /><h4>내 예약 상태를 불러오지 못했습니다</h4><p>중복 신청을 방지하기 위해 예약 상태를 다시 확인해 주세요.</p><Button block onClick={refreshMyStatus}>예약 상태 다시 조회</Button></div>
+                                            ) : hasTicket ? (
                                                 <>
                                                     {/* 보유 이용권 카드 박스 (Reference: rsvp-general.png & code.html) */}
                                                     <div className="ticket-pass-card">
@@ -804,7 +857,7 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                                                 <span>대기 예약 유의사항</span>
                                                             </div>
                                                             <div className="waitlist-notice-desc">
-                                                                <p>• 공석 발생 시 대기 순서와 센터 설정에 따라 안내 메일이 발송됩니다.</p>
+                                                                <p>• {policyText?.waitlist}</p>
                                                                 <p>• 예약 확정 시 이용권 1회가 차감됩니다.</p>
                                                             </div>
                                                         </div>
@@ -817,8 +870,12 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                                             <span>취소 및 환불 규정</span>
                                                         </div>
                                                         <p className="policy-desc">
-                                                            수업 시작 3시간 전까지 무료 취소 가능하며, 무단 결석 시 이용권이 차감됩니다.
+                                                            {policyText?.cancellation || (policyLoading ? '센터 규정을 불러오는 중입니다.' : '센터 규정을 불러오지 못했습니다.')}
+                                                            {policyText && <><br />{policyText.refund}</>}
                                                         </p>
+                                                        <Button type="link" onClick={() => policyError ? setPolicyRefresh((value) => value + 1) : setPolicyModalOpen(true)} disabled={policyLoading}>
+                                                            {policyError ? '센터 규정 다시 조회' : '상세 규정 보기'}
+                                                        </Button>
 
                                                         <Form.Item
                                                             name="termsAgree"
@@ -850,6 +907,7 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                                                 type="primary"
                                                                 htmlType="submit"
                                                                 loading={submitting}
+                                                                disabled={policyLoading || !centerPolicy || policyError}
                                                                 className="btn-waitlist-submit"
                                                             >
                                                                 <span>대기 예약 하기</span>
@@ -860,6 +918,7 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                                                 type="primary"
                                                                 htmlType="submit"
                                                                 loading={submitting}
+                                                                disabled={policyLoading || !centerPolicy || policyError}
                                                                 className="btn-reserve-submit"
                                                             >
                                                                 <span>예약 완료하기</span>
@@ -890,16 +949,17 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                                             <circle cx="12" cy="15.5" r="0.75" fill="#7C3AED" />
                                                         </svg>
                                                     </div>
-                                                    <h4 className="rsvp-no-ticket-title">사용 가능한 이용권이 없습니다</h4>
+                                                    <h4 className="rsvp-no-ticket-title">{membershipsLoading ? '이용권을 확인하고 있습니다' : membershipsError ? '이용권을 불러오지 못했습니다' : '사용 가능한 이용권이 없습니다'}</h4>
                                                     <p className="rsvp-no-ticket-desc">
-                                                        해당 클래스를 예약하려면 이용권을 먼저 구매해 주세요.
+                                                        {membershipsLoading ? '잠시만 기다려 주세요.' : membershipsError ? '다시 조회한 후 예약해 주세요.' : '선택한 센터와 수업 날짜에 사용할 수 있는 이용권이 필요합니다.'}
                                                     </p>
                                                     <button
                                                         type="button"
                                                         className="btn-buy-ticket"
-                                                        onClick={handleBuyTicket}
+                                                        disabled={membershipsLoading}
+                                                        onClick={membershipsError ? () => setMembershipRefresh((value) => value + 1) : handleBuyTicket}
                                                     >
-                                                        <span>이용권 구매하러 가기</span>
+                                                        <span>{membershipsError ? '이용권 다시 조회' : '이용권 구매하러 가기'}</span>
                                                         <span style={{ fontSize: 16 }}>→</span>
                                                     </button>
                                                 </div>
@@ -921,7 +981,7 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                         </h3>
                                         <p className="success-subtext">
                                             {confirmedData.isWaitlist
-                                                ? '공석 발생 시 우선순위에 따라 카카오톡으로 안내해 드립니다.'
+                                                ? policyText?.waitlist
                                                 : '성공적으로 수업이 예약되었습니다.\n스튜디오에서 뵙겠습니다.'}
                                         </p>
 
@@ -1004,15 +1064,15 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                 <div style={{ padding: '12px 0' }}>
                     <div className="policy-modal-card">
                         <h4>제 1 조 (수업 예약 및 취소 시간)</h4>
-                        <p>모든 그룹 레슨은 시작 3시간 전까지 모바일 웹 및 앱을 통해 무료 취소가 가능합니다.</p>
+                        <p>{policyText?.cancellation || '센터 규정을 확인할 수 없습니다.'}</p>
                     </div>
                     <div className="policy-modal-card">
-                        <h4>제 2 조 (노쇼 및 페널티)</h4>
-                        <p>수업 시작 3시간 이내 취소 또는 미출석(No-Show) 시 수강권 1회가 자동 차감 처리됩니다.</p>
+                        <h4>제 2 조 (이용권 환불 기준)</h4>
+                        <p>{policyText?.refund}</p>
                     </div>
                     <div className="policy-modal-card">
                         <h4>제 3 조 (대기 예약 및 자동 확정)</h4>
-                        <p>대기 인원 중 취소자 발생 시 우선순위에 따라 카카오 알림톡/메일이 발송되며, 알림 수신 후 60분 이내 확정 버튼을 눌러야 최종 접수됩니다.</p>
+                        <p>{policyText?.waitlist}</p>
                     </div>
                 </div>
             </Modal>
@@ -1086,7 +1146,7 @@ const User = ({ hasTicket: propHasTicket, userTickets: propUserTickets, onNaviga
                                         fontWeight: 700,
                                     }}
                                 >
-                                    {mm.remainCount != null ? `${mm.remainCount}회 남음` : '기간제'}
+                                    {remainingUses(mm) !== null ? remainingUses(mm) + '회 남음' : '횟수 제한 없음'}
                                 </span>
                             </div>
                         );

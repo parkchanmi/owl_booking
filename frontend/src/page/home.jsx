@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Button, Checkbox, Divider, Form, Input, Typography, message } from 'antd';
 import { UserOutlined, LockOutlined, SafetyCertificateOutlined, CustomerServiceOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './auth.css';
 import yogaIllustration from '../assets/Yoga_Illustration.png';
+import useSession from '../hooks/useSession';
+import SessionFeedback from '../components/auth/SessionFeedback';
+import AuthenticatedHome from '../components/auth/AuthenticatedHome';
+import { loginDestination } from '../utils/authRoutes';
 
 const { Title, Text, Link } = Typography;
 
@@ -12,6 +16,8 @@ const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
 
 const Home = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const session = useSession();
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [role, setRole] = useState('member'); // 'member' | 'admin'
@@ -329,6 +335,7 @@ const Home = () => {
     };
 
     const handleKakaoLogin = () => {
+        sessionStorage.setItem('owl-login-return-to', loginDestination(false, location.state?.from));
         const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}&response_type=code&scope=profile_nickname`;
         window.location.href = kakaoAuthUrl;
     };
@@ -343,20 +350,20 @@ const Home = () => {
                 body: JSON.stringify({
                     loginId: values.loginId,
                     pwd: values.pwd,
+                    loginType: role === 'admin' ? 'ADMIN' : 'USER',
                 }),
                 credentials: 'include',
             });
 
             if (response.ok) {
-                const loginResult = await response.json();
-                const nextPath = loginResult.typeCode === 1 ? '/admin' : '/user/booking';
+                const nextPath = loginDestination(role === 'admin', location.state?.from);
 
                 message.success('로그인되었습니다.');
                 navigate(nextPath, { replace: true });
                 return;
             }
 
-            message.error('아이디 또는 비밀번호가 일치하지 않습니다.');
+            message.error('아이디, 비밀번호 또는 회원 구분이 일치하지 않습니다.');
         } catch (error) {
             console.error('Login error:', error);
             message.error('서버와 통신 중 오류가 발생했습니다.');
@@ -364,6 +371,7 @@ const Home = () => {
             setLoading(false);
         }
     };
+
 
     return (
         <div className="auth-page">
@@ -403,7 +411,7 @@ const Home = () => {
 
             {/* Main Content Area */}
             <main className="auth-main">
-                {viewMode === 'login' && (
+                {(viewMode === 'login' || session.status !== 'guest') && (
                     <div className="auth-main__inner">
                     {/* Left Column: Hero & Continuous Floating Orbit Canvas */}
                     <div className="auth-hero-col">
@@ -611,6 +619,11 @@ const Home = () => {
 
                     {/* Right Column: Unified Auth Card */}
                     <div className="auth-card-col">
+                        {session.status === 'loading' || session.status === 'error' ? (
+                            <div className="auth-card" style={{ justifyContent: 'center' }}><SessionFeedback embedded error={session.error} onRetry={session.refresh} /></div>
+                        ) : session.member ? (
+                            <AuthenticatedHome member={session.member} onLogout={() => { setViewMode('login'); session.refresh(); }} />
+                        ) : (
                         <div className="auth-card">
                             <div>
                                 {/* Card Title */}
@@ -624,6 +637,7 @@ const Home = () => {
                                     <button
                                         type="button"
                                         className={`role-tab-btn ${role === 'member' ? 'is-active' : ''}`}
+                                        disabled={loading}
                                         onClick={() => setRole('member')}
                                     >
                                         일반 회원
@@ -631,6 +645,7 @@ const Home = () => {
                                     <button
                                         type="button"
                                         className={`role-tab-btn ${role === 'admin' ? 'is-active' : ''}`}
+                                        disabled={loading}
                                         onClick={() => setRole('admin')}
                                     >
                                         센터 관리자
@@ -742,11 +757,12 @@ const Home = () => {
                                 </div>
                             )}
                         </div>
+                        )}
                     </div>
                 </div>
                 )}
 
-                {viewMode === 'member_signup' && (
+                {session.status === 'guest' && viewMode === 'member_signup' && (
                     <div className="signup-wrapper">
                         <div
                             className="signup-card"
@@ -947,7 +963,7 @@ const Home = () => {
                     </div>
                 )}
 
-                {viewMode === 'member_signup_completed' && (
+                {session.status === 'guest' && viewMode === 'member_signup_completed' && (
                     <div className="signup-completed-wrapper">
                         <div
                             className="signup-completed-card"
@@ -1019,7 +1035,7 @@ const Home = () => {
                 )}
 
                 {/* View 4: Center Admin Sign-Up Form (Phase 2) */}
-                {viewMode === 'admin_signup' && (
+                {session.status === 'guest' && viewMode === 'admin_signup' && (
                     <div className="admin-signup-wrapper">
                         <div className="admin-signup-card">
                             {/* Icon Badge & Top Header */}
@@ -1365,7 +1381,7 @@ const Home = () => {
                 )}
 
                 {/* View 5: Center Admin Sign-Up Completed Screen (Phase 2) */}
-                {viewMode === 'admin_signup_completed' && (
+                {session.status === 'guest' && viewMode === 'admin_signup_completed' && (
                     <div className="admin-completed-wrapper">
                         <div className="admin-completed-card">
                             {/* Success Emblem */}

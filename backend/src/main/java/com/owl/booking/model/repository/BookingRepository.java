@@ -13,6 +13,7 @@ import java.util.List;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, String> {
     List<Booking> findByProgram(RealProgram program);
+    boolean existsByProgramAndMember_Id(RealProgram program, String memberId);
 
     void deleteByMember_Id(String memberId);
 

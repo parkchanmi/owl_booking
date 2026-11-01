@@ -10,6 +10,7 @@ import java.util.Optional;
 
 @Repository
 public interface WaitlistRepository extends JpaRepository<Waitlist, String> {
+    List<Waitlist> findByMember_Id(String memberId);
     List<Waitlist> findByProgram(RealProgram program);
 
     Optional<Waitlist> findFirstByProgramOrderByCreatedAtAscIdAsc(RealProgram program);

@@ -1,10 +1,12 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Home from './page/home';
 import DashboardLayout from './components/DashboardLayout';
 import ReservationPage from './page/user/index';
 import MyPage from './page/user/mypage/index';
 import BookingPage from './page/admin/booking/index';
 import AttendancePage from './page/admin/attendance/index';
+import RequireSession from './components/auth/RequireSession';
+import { isUserPage } from './utils/authRoutes';
 
 const pages = import.meta.glob('./page/**/*.jsx', { eager: true });
 
@@ -27,30 +29,44 @@ const adminRoutes = routes
   }));
 
 const nonAdminRoutes = routes.filter(({ path, Element }) => Boolean(Element) && !(path === '/admin' || path.startsWith('/admin/')));
+const userRoutes = nonAdminRoutes.filter(({ path }) => isUserPage(path));
+const publicRoutes = nonAdminRoutes.filter(({ path }) => !isUserPage(path));
+
+function SessionHome() {
+  const location = useLocation();
+  return <Home key={location.key} />;
+}
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/reservation" element={<ReservationPage />} />
-        <Route path="/mypage" element={<MyPage />} />
-        {nonAdminRoutes.map(({ path, Element }) => (
-          <Route key={path} path={path} element={<Element />} />
+        <Route path="/" element={<SessionHome />} />
+        {publicRoutes.map((route) => (
+          <Route key={route.path} path={route.path} element={route.path === '/login' || route.path === '/home' ? <SessionHome /> : <route.Element />} />
         ))}
+        <Route element={<RequireSession />}>
+          <Route path="/reservation" element={<ReservationPage />} />
+          <Route path="/mypage" element={<MyPage />} />
+          {userRoutes.map((route) => (
+            <Route key={route.path} path={route.path} element={<route.Element />} />
+          ))}
+        </Route>
+        <Route element={<RequireSession adminOnly />}>
         <Route path="/admin" element={<DashboardLayout />}>
           <Route path="booking" element={<BookingPage />} />
           <Route path="class" element={<BookingPage />} />
           <Route path="attendance" element={<AttendancePage />} />
           <Route path="instructor/attendance" element={<AttendancePage />} />
-          {adminRoutes.map(({ path, index, Element }) => (
+          {adminRoutes.map((route) => (
             <Route
-              key={index ? 'admin-index' : path}
-              index={index}
-              path={index ? undefined : path}
-              element={<Element />}
+              key={route.index ? 'admin-index' : route.path}
+              index={route.index}
+              path={route.index ? undefined : route.path}
+              element={<route.Element />}
             />
           ))}
+        </Route>
         </Route>
       </Routes>
     </Router>

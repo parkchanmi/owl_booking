@@ -165,11 +165,11 @@ const Header: React.FC<HeaderProps> = ({
     const isReservation = !isMypage;
 
     // 지점 목록 (실제 데이터가 없으면 기본 목업 사용)
-    const centerList = centers && centers.length > 0 ? centers : DEFAULT_CENTERS;
+    const centerList = centers ?? DEFAULT_CENTERS;
 
     // 선택된 센터 객체
     const selectedCenter = useMemo(
-        () => centerList.find((c) => c.id === selectedCenterId) ?? centerList[0],
+        () => centerList.find((c) => c.id === selectedCenterId) ?? centerList[0] ?? { id: '', name: '등록된 센터 없음' },
         [centerList, selectedCenterId]
     );
 

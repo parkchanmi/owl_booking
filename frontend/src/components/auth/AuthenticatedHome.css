@@ -1,0 +1,14 @@
+.auth-card.authenticated-home-card { box-sizing: border-box; width: 100%; justify-content: flex-start; }
+.authenticated-home-avatar { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; margin-bottom: 16px; border-radius: 50%; background: #F5F3FF; color: #7C3AED; font-size: 24px; }
+.authenticated-home-badge { display: inline-flex; align-self: flex-start; padding: 4px 12px; border-radius: 9999px; background: #F5F3FF; color: #6D28D9; font-size: 12px; font-weight: 600; }
+.authenticated-home-card h2 { margin: 12px 0 6px; color: #18181B; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.authenticated-home-description { margin: 0; color: #71717A; font-size: 13px; }
+.authenticated-home-card dl { margin: 24px 0; }
+.authenticated-home-card dl > div { display: flex; justify-content: space-between; gap: 20px; padding: 14px 0; border-bottom: 1px solid #F4F1FC; font-size: 13px; }
+.authenticated-home-card dt { flex-shrink: 0; color: #71717A; }
+.authenticated-home-card dd { margin: 0; color: #18181B; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.authenticated-home-actions { margin-top: auto; }
+.authenticated-home-card .authenticated-home-primary { height: 44px; border-color: #7C3AED; border-radius: 12px; background: #7C3AED; font-weight: 700; box-shadow: none; }
+.authenticated-home-card .authenticated-home-primary:hover { border-color: #6D28D9; background: #6D28D9; }
+.authenticated-home-card .authenticated-home-secondary { height: 44px; margin-top: 10px; border-color: #EDE9FE; border-radius: 12px; color: #6D28D9; font-weight: 600; }
+.authenticated-home-card .authenticated-home-logout { margin-top: 10px; color: #71717A; font-size: 12px; }

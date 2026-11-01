@@ -11,6 +11,8 @@ public class MyBookingDto {
 
     private String id;
     private String realProgramId;
+    private String centerId;
+    private boolean waitlist;
     private String centerName;
     private String programName;
     private String instructorName;

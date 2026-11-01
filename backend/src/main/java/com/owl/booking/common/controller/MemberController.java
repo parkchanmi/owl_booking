@@ -24,9 +24,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.owl.booking.common.service.KakaoOAuthService;
+import com.owl.booking.admin.service.MemberMembershipService;
 import com.owl.booking.common.service.MemberService;
 import com.owl.booking.model.dto.MemberDto;
 import com.owl.booking.model.dto.MemberJoinRequestDto;
+import com.owl.booking.model.dto.MemberLoginRequestDto;
 import com.owl.booking.model.entity.Member;
 import com.owl.booking.model.entity.type.MemberType;
 import com.owl.booking.model.repository.CenterMemberRepository;
@@ -37,6 +39,20 @@ import jakarta.servlet.http.HttpSession;
 @RestController
 @RequestMapping("/api/member")
 public class MemberController {
+    @Autowired
+    private MemberMembershipService memberMembershipService;
+
+    @GetMapping("/memberships")
+    public ResponseEntity<?> getMyMemberships(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        Member member = memberService.findByLoginId(authentication.getName());
+        if (member == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        return ResponseEntity.ok(memberMembershipService.getByMemberId(member.getId()));
+    }
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -73,6 +89,7 @@ public class MemberController {
             memberInfo.put("name", member.getName());
             memberInfo.put("email", member.getEmail());
             memberInfo.put("hp", member.getHp());
+            memberInfo.put("provider", member.getProvider());
             memberInfo.put("type", member.getType());
             memberInfo.put("typeCode", getLoginTypeCode(hasAdminCenter));
             memberInfo.put("hasAdminCenter", hasAdminCenter);
@@ -109,25 +126,31 @@ public class MemberController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Member member, HttpServletRequest request) {
-        Member foundMember = memberService.findByLoginId(member.getLoginId());
+    public ResponseEntity<?> login(@RequestBody MemberLoginRequestDto login, HttpServletRequest request) {
+        if (login.loginType() == null || login.loginId() == null || login.pwd() == null) return loginFailure();
+        Member foundMember = memberService.findByLoginId(login.loginId());
+        if (foundMember == null || !passwordEncoder.matches(login.pwd(), foundMember.getPwd())) return loginFailure();
 
-        if (foundMember != null && passwordEncoder.matches(member.getPwd(), foundMember.getPwd())) {
-            return ResponseEntity.ok(createSessionAndBuildResult(foundMember, request));
-        }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(false);
+        boolean admin = hasAdminCenter(foundMember);
+        if ((login.loginType() == MemberType.ADMIN) != admin) return loginFailure();
+        return ResponseEntity.ok(createSessionAndBuildResult(foundMember, request, admin));
     }
 
     @PostMapping("/oauth/kakao")
     public ResponseEntity<?> kakaoLogin(@RequestBody Map<String, String> body, HttpServletRequest request) {
         KakaoOAuthService.KakaoUserInfo userInfo = kakaoOAuthService.getUserInfo(body.get("code"));
         Member member = memberService.findOrCreateByKakao(userInfo);
-
-        return ResponseEntity.ok(createSessionAndBuildResult(member, request));
+        // 간편 로그인은 로그인 페이지의 일반 회원 구분에서만 제공한다.
+        if (hasAdminCenter(member)) return loginFailure();
+        return ResponseEntity.ok(createSessionAndBuildResult(member, request, false));
     }
 
-    private Map<String, Object> createSessionAndBuildResult(Member member, HttpServletRequest request) {
-        boolean hasAdminCenter = hasAdminCenter(member);
+    private ResponseEntity<?> loginFailure() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("message", "아이디, 비밀번호 또는 회원 구분이 일치하지 않습니다."));
+    }
+
+    private Map<String, Object> createSessionAndBuildResult(Member member, HttpServletRequest request, boolean hasAdminCenter) {
         String role = hasAdminCenter ? "ROLE_ADMIN" : "ROLE_USER";
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
                 member.getLoginId(), null, List.of(new SimpleGrantedAuthority(role)));

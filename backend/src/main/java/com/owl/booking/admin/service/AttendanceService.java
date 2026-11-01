@@ -107,6 +107,7 @@ public class AttendanceService {
                 .bookingId(booking != null ? booking.getId() : null)
                 .realProgramId(realProgram != null ? realProgram.getId() : null)
                 .centerName(center != null ? center.getName() : null)
+                .centerId(center != null ? center.getId() : null)
                 .programName(realProgram != null ? realProgram.getProgramName() : null)
                 .programDat(realProgram != null ? realProgram.getProgramDat() : null)
                 .startTime(realProgram != null ? realProgram.getStartTime() : null)

@@ -1,6 +1,9 @@
 package com.owl.booking.common.controller;
 
 import com.owl.booking.admin.service.CenterService;
+import com.owl.booking.admin.service.CenterConfigService;
+import com.owl.booking.model.dto.ReservationPolicyDto;
+import org.springframework.web.bind.annotation.PathVariable;
 import com.owl.booking.model.dto.CenterDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +19,14 @@ public class PublicCenterController {
 
     @Autowired
     private CenterService centerService;
+
+    @Autowired
+    private CenterConfigService centerConfigService;
+
+    @GetMapping("/{centerId}/reservation-policy")
+    public ReservationPolicyDto getReservationPolicy(@PathVariable String centerId) {
+        return ReservationPolicyDto.from(centerConfigService.getByCenterId(centerId));
+    }
 
     @GetMapping
     public List<CenterDto> getCenters() {

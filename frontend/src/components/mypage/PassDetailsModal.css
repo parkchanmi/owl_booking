@@ -1,0 +1,178 @@
+.pass-details-modal .pass-details-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 20px;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.5;
+}
+
+.pass-details-title .anticon {
+    color: #7C3AED;
+}
+
+.pass-details-body {
+    padding: 12px 0;
+}
+
+.pass-details-subtitle {
+    margin: 0 0 12px;
+    color: #71717A;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.pass-details-card {
+    margin-bottom: 10px;
+    padding: 14px;
+    border: 1px solid #EDE9FE;
+    border-radius: 16px;
+    background: #FBFBFE;
+}
+
+.pass-details-card:last-child {
+    margin-bottom: 0;
+}
+
+.pass-details-card h4 {
+    margin: 0 0 4px;
+    color: #6D28D9;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pass-details-card p {
+    margin: 0;
+    color: #4B5563;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.pass-details-card p + p {
+    margin-top: 6px;
+}
+
+.pass-details-summary {
+    margin: 10px 0 0;
+}
+
+.pass-details-summary > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.pass-details-summary dt {
+    flex-shrink: 0;
+    color: #71717A;
+}
+
+.pass-details-summary dd {
+    margin: 0;
+    color: #18181B;
+    font-weight: 600;
+    text-align: right;
+}
+
+.pass-details-refund-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #DDD6FE;
+    color: #6D28D9;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pass-details-refund-total strong {
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.pass-details-card .pass-details-eligible {
+    color: #6D28D9;
+    font-weight: 600;
+}
+
+.pass-details-card .pass-details-ineligible {
+    color: #D97706;
+    font-weight: 600;
+}
+
+.pass-details-card--error {
+    border-color: #FECACA;
+    background: #FEF2F2;
+}
+
+.pass-details-card--error h4 {
+    color: #DC2626;
+}
+
+.pass-details-hold-form {
+    margin: 16px 0;
+}
+
+.pass-details-hold-form .ant-form-item {
+    margin-bottom: 0;
+}
+
+.pass-details-hold-form .ant-form-item-label > label {
+    color: #6D28D9;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pass-details-hold-form .ant-picker {
+    width: 100%;
+    min-height: 42px;
+    border-color: #EDE9FE;
+    border-radius: 12px;
+}
+
+.pass-details-hold-form .ant-picker input {
+    font-size: 12px;
+}
+
+.pass-details-hold-record + .pass-details-hold-record {
+    padding-top: 6px;
+    border-top: 1px solid #EDE9FE;
+}
+
+.pass-details-usage .ant-table {
+    font-size: 12px;
+}
+
+.pass-details-usage .ant-table-thead > tr > th {
+    background: #FBFBFE;
+    color: #6D28D9;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pass-details-modal .ant-modal-footer .pass-details-confirm {
+    height: 44px;
+    border-color: #7C3AED;
+    border-radius: 12px;
+    background: #7C3AED;
+    font-weight: 700;
+    box-shadow: none;
+}
+
+.pass-details-modal .ant-modal-footer .pass-details-confirm:not(:disabled):hover {
+    border-color: #6D28D9;
+    background: #6D28D9;
+}
+
+.pass-details-modal .ant-modal-footer .pass-details-confirm:disabled {
+    border-color: #E4E4E7;
+    background: #F4F4F5;
+    color: #A1A1AA;
+}
