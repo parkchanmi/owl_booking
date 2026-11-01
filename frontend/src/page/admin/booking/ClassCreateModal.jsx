@@ -18,67 +18,13 @@ import { message } from 'antd';
 import { createProgram } from '../../../api/programApi';
 
 const STUDIO_OPTIONS = [
-  { id: 'A', name: '스튜디오 A룸 (요가/GX)' },
-  { id: 'B', name: '스튜디오 B룸 (기구 필라테스)' },
-  { id: 'C', name: '피트니스존 (헬스장)' },
+  { id: 'A', name: '스튜디오 A룸 (요가/GX)', allowOverlap: false },
+  { id: 'B', name: '스튜디오 B룸 (기구 필라테스)', allowOverlap: false },
+  { id: 'C', name: '스튜디오 C룸 (스피닝)', allowOverlap: false },
+  { id: 'D', name: '피트니스존 (PT/자유운동)', allowOverlap: true },
 ];
 
 const DOW_OPTIONS = ['월', '화', '수', '목', '금', '토', '일'];
-
-const FALLBACK_TEMPLATES = [
-  {
-    id: 'tpl-1',
-    name: '요가 기초',
-    category: '요가',
-    type: 'group',
-    capacity: 15,
-    startTime: '09:00',
-    endTime: '10:00',
-    studioId: 'A',
-    instructorName: '홍길동',
-    instructorId: '1',
-    dayOfWeek: '월, 수, 금',
-  },
-  {
-    id: 'tpl-2',
-    name: '리포머 필라테스',
-    category: '필라테스',
-    type: 'group',
-    capacity: 8,
-    startTime: '09:00',
-    endTime: '09:50',
-    studioId: 'B',
-    instructorName: '김서연',
-    instructorId: '2',
-    dayOfWeek: '금',
-  },
-  {
-    id: 'tpl-3',
-    name: '1:1 퍼스널 트레이닝 (PT)',
-    category: 'PT',
-    type: 'private',
-    capacity: 1,
-    startTime: '10:00',
-    endTime: '10:50',
-    studioId: 'C',
-    instructorName: '김유라',
-    instructorId: '3',
-    dayOfWeek: '',
-  },
-  {
-    id: 'tpl-4',
-    name: '릴리즈 요가',
-    category: '요가',
-    type: 'group',
-    capacity: 10,
-    startTime: '14:00',
-    endTime: '15:00',
-    studioId: 'B',
-    instructorName: '박수민',
-    instructorId: '4',
-    dayOfWeek: '목',
-  },
-];
 
 export function ClassCreateModal({
   open,
@@ -88,6 +34,7 @@ export function ClassCreateModal({
   centers = [],
   instructors = [],
   programs = [],
+  schedules = [],
   selectedCenterId,
   userRole = 'OWNER',
   currentInstructorId,
@@ -157,7 +104,7 @@ export function ClassCreateModal({
         };
       });
     } else {
-      list = FALLBACK_TEMPLATES;
+      list = [];
     }
     return list;
   }, [programs]);
@@ -191,6 +138,7 @@ export function ClassCreateModal({
       setActiveTab('template');
       setClassType('private');
       setCapacity(1);
+      setStudioName('D');
       if (currentInstructor?.id) {
         setInstructorId(String(currentInstructor.id));
       } else if (currentInstructorId) {
@@ -230,6 +178,60 @@ export function ClassCreateModal({
     const endMin = endM % 60;
     return `${String(endH).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
   }, [startTime, effectiveDuration]);
+
+  // 스튜디오 시간 중복 판별 함수 (분 단위 환산 비교)
+  const timeToMinutes = (timeStr) => {
+    if (!timeStr) return 0;
+    const [h, m] = String(timeStr).slice(0, 5).split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+
+  const isTimeOverlapping = (startA, endA, startB, endB) => {
+    const sA = timeToMinutes(startA);
+    const eA = timeToMinutes(endA);
+    const sB = timeToMinutes(startB);
+    const eB = timeToMinutes(endB);
+    return Math.max(sA, sB) < Math.min(eA, eB);
+  };
+
+  // 각 스튜디오별 현재 설정된 시간(startDate, startTime ~ endTime)에 충돌하는 기존 스케줄 목록
+  const studioConflicts = useMemo(() => {
+    const map = {};
+    const targetDate = startDate || dayjs().format('YYYY-MM-DD');
+
+    STUDIO_OPTIONS.forEach((st) => {
+      // PT/피트니스 등 중복 허용 공간은 시간 충돌을 제한하지 않음
+      if (st.allowOverlap) {
+        map[st.id] = [];
+        return;
+      }
+
+      const conflicts = (schedules || []).filter((s) => {
+        if (s.date && targetDate && s.date !== targetDate) return false;
+        const sStudio = s.studioId || (
+          s.title?.includes('필라테스') ? 'B' :
+          s.title?.includes('스피닝') ? 'C' :
+          (s.title?.includes('PT') || s.title?.includes('피트니스') || s.title?.includes('헬스') || s.capacity === 1) ? 'D' :
+          'A'
+        );
+        if (sStudio !== st.id) return false;
+        const sStart = s.startTime?.slice(0, 5);
+        const sEnd = s.endTime?.slice(0, 5);
+        return isTimeOverlapping(startTime, endTime, sStart, sEnd);
+      });
+      map[st.id] = conflicts;
+    });
+
+    return map;
+  }, [schedules, startDate, startTime, endTime]);
+
+  // 현재 선택된 스튜디오의 충돌 정보 (allowOverlap 공간인 경우 항상 null)
+  const currentStudioConflict = useMemo(() => {
+    const currentOpt = STUDIO_OPTIONS.find((s) => s.id === studioName);
+    if (currentOpt?.allowOverlap) return null;
+    const list = studioConflicts[studioName] || [];
+    return list.length > 0 ? list[0] : null;
+  }, [studioConflicts, studioName]);
 
   // 선택된 템플릿 데이터
   const selectedTemplate = useMemo(() => {
@@ -284,7 +286,14 @@ export function ClassCreateModal({
       if (tpl.instructorId) setInstructorId(String(tpl.instructorId));
       else if (tpl.instructor?.id) setInstructorId(String(tpl.instructor.id));
       else if (currentInstructor?.id) setInstructorId(String(currentInstructor.id));
-      if (tpl.studioId) setStudioName(tpl.studioId);
+      if (tpl.studioId) {
+        setStudioName(tpl.studioId);
+      } else {
+        if (tpl.name?.includes('스피닝') || tpl.category === '스피닝') setStudioName('C');
+        else if (tpl.name?.includes('필라테스') || tpl.category === '필라테스') setStudioName('B');
+        else if (tpl.name?.includes('PT') || tpl.category === 'PT' || isPriv) setStudioName('D');
+        else setStudioName('A');
+      }
       if (tpl.dayOfWeek) {
         const days = tpl.dayOfWeek.split(',').map((d) => d.trim()).filter(Boolean);
         if (days.length > 0) setSelectedDays(days);
@@ -301,6 +310,14 @@ export function ClassCreateModal({
     }
     if (activeTab === 'template' && !isInstructor && !selectedTemplateId) {
       message.warning('불러올 수업 템플릿을 선택해 주세요.');
+      return;
+    }
+
+    if (currentStudioConflict) {
+      const stName = STUDIO_OPTIONS.find((s) => s.id === studioName)?.name || '스튜디오';
+      message.error(
+        `선택한 [${stName}]는 해당 시간대(${startTime} ~ ${endTime})에 이미 다른 수업(${currentStudioConflict.title})이 등록되어 있어 사용할 수 없습니다. 다른 스튜디오를 선택하거나 시간을 변경해 주세요.`
+      );
       return;
     }
 
@@ -505,7 +522,14 @@ export function ClassCreateModal({
                   <label className="text-xs font-bold text-zinc-700 block mb-1">수업 분류</label>
                   <select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    onChange={(e) => {
+                      const newCat = e.target.value;
+                      setCategory(newCat);
+                      if (newCat === '스피닝') setStudioName('C');
+                      else if (newCat === '필라테스') setStudioName('B');
+                      else if (newCat === 'PT' || newCat === '크로스핏') setStudioName('D');
+                      else if (newCat === '요가') setStudioName('A');
+                    }}
                     disabled={isInstructor}
                     className="w-full text-xs bg-violet-50/40 border border-violet-200 rounded-xl p-2.5 outline-none focus:bg-white focus:border-violet-400 font-semibold text-zinc-800 disabled:bg-zinc-100 disabled:cursor-not-allowed"
                   >
@@ -525,6 +549,9 @@ export function ClassCreateModal({
                       onClick={() => {
                         setClassType('group');
                         setCapacity(10);
+                        if (category === '요가') setStudioName('A');
+                        else if (category === '필라테스') setStudioName('B');
+                        else if (category === '스피닝') setStudioName('C');
                       }}
                       className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all border-0 ${
                         classType === 'group'
@@ -541,6 +568,7 @@ export function ClassCreateModal({
                       onClick={() => {
                         setClassType('private');
                         setCapacity(1);
+                        setStudioName('D');
                       }}
                       className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all border-0 ${
                         classType === 'private'
@@ -672,16 +700,54 @@ export function ClassCreateModal({
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-zinc-700 block mb-1">스튜디오</label>
+                  <label className="text-xs font-bold text-zinc-700 block mb-1">스튜디오 / 공간</label>
                   <select
                     value={studioName}
                     onChange={(e) => setStudioName(e.target.value)}
-                    className="w-full text-xs bg-violet-50/40 border border-violet-200 rounded-xl p-2.5 outline-none font-semibold text-zinc-800"
+                    className={`w-full text-xs rounded-xl p-2.5 outline-none font-semibold transition-colors ${
+                      currentStudioConflict
+                        ? 'bg-rose-50/60 border border-rose-300 text-rose-900'
+                        : studioName === 'D'
+                        ? 'bg-emerald-50/40 border border-emerald-300 text-emerald-900'
+                        : 'bg-violet-50/40 border border-violet-200 text-zinc-800'
+                    }`}
                   >
-                    {STUDIO_OPTIONS.map((st) => (
-                      <option key={st.id} value={st.id}>{st.name}</option>
-                    ))}
+                    {STUDIO_OPTIONS.map((st) => {
+                      const conflictList = studioConflicts[st.id] || [];
+                      const isOccupied = !st.allowOverlap && conflictList.length > 0;
+                      const conflict = isOccupied ? conflictList[0] : null;
+                      return (
+                        <option key={st.id} value={st.id} disabled={isOccupied}>
+                          {st.name} {
+                            st.allowOverlap
+                              ? '✓ 상시 이용 가능 (공유 공간 / 중복 가능)'
+                              : isOccupied
+                              ? `🚫 [사용 중: ${conflict.title || '수업'} (${conflict.startTime?.slice(0, 5)}~${conflict.endTime?.slice(0, 5)})]`
+                              : '✓ 사용 가능 (단독 룸)'
+                          }
+                        </option>
+                      );
+                    })}
                   </select>
+                  {studioName === 'D' && (
+                    <p className="mt-1.5 text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                      <span>✓</span> 피트니스존은 센터 전 구역을 활용하는 공간으로, 시간 중복 제한 없이 여러 레슨을 동시 개설할 수 있습니다.
+                    </p>
+                  )}
+                  {currentStudioConflict && (
+                    <div className="mt-2 p-2.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2 text-rose-700 text-xs">
+                      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">선택한 단독 룸은 해당 시간에 이미 예약되어 있습니다.</p>
+                        <p className="text-[11px] text-rose-600 mt-0.5">
+                          기존 수업: <strong>{currentStudioConflict.title}</strong> ({currentStudioConflict.startTime?.slice(0, 5)} ~ {currentStudioConflict.endTime?.slice(0, 5)})
+                        </p>
+                        <p className="text-[11px] text-rose-500 mt-0.5">
+                          다른 룸 또는 피트니스존(공유 공간)을 선택하거나 수업 시간을 변경해 주세요.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -753,6 +819,7 @@ export function ClassCreateModal({
             type="submit"
             disabled={
               submitting ||
+              Boolean(currentStudioConflict) ||
               (isInstructor && (availableTemplates.length === 0 || !selectedTemplateId)) ||
               (activeTab === 'template' && !isInstructor && !selectedTemplateId)
             }

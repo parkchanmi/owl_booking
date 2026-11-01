@@ -46,7 +46,7 @@ export function ScheduleDetailDrawer({
   });
 
   const loadDetail = async ({ showSuccess = false } = {}) => {
-    if (!cls?.id || String(cls.id).startsWith('mock-')) return;
+    if (!cls?.id) return;
     setDetailLoading(true);
     try {
       const res = await axios.get(`/api/realprograms/${cls.id}/detail`);
@@ -122,11 +122,12 @@ export function ScheduleDetailDrawer({
   }, [scheduleDraft.instructorId, detailData?.instructorId, detailData?.instructorName, cls?.instructorId, cls?.instructorName, instructors]);
 
   const studioDisplayName = useMemo(() => {
-    if (!cls?.studioId) return '스튜디오 미지정';
-    if (cls.studioId === 'A') return 'Studio A';
-    if (cls.studioId === 'B') return 'Studio B';
-    return cls.studioId;
-  }, [cls?.studioId]);
+    if (cls?.studioId === 'A') return '스튜디오 A룸 (요가/GX)';
+    if (cls?.studioId === 'B') return '스튜디오 B룸 (기구 필라테스)';
+    if (cls?.studioId === 'C') return '스튜디오 C룸 (스피닝)';
+    if (cls?.studioId === 'D') return '피트니스존 (PT/자유운동)';
+    return cls?.studioName || cls?.studioId || '스튜디오 A룸';
+  }, [cls?.studioId, cls?.studioName]);
 
   // 검색어 필터링
   const filteredBooked = useMemo(() => {
@@ -166,7 +167,7 @@ export function ScheduleDetailDrawer({
   if (!open || !cls) return null;
 
   const saveScheduleInfo = async (instructorIdOverride) => {
-    if (!cls?.id || String(cls.id).startsWith('mock-')) return;
+    if (!cls?.id) return;
     const instructorId = instructorIdOverride ?? scheduleDraft.instructorId;
     setScheduleSaving(true);
     try {

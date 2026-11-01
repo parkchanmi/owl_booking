@@ -38,8 +38,10 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 const STUDIOS = [
   { id: 'all', name: '전체' },
-  { id: 'A', name: 'Studio A' },
-  { id: 'B', name: 'Studio B' },
+  { id: 'A', name: 'Studio A (요가/GX)', allowOverlap: false },
+  { id: 'B', name: 'Studio B (필라테스)', allowOverlap: false },
+  { id: 'C', name: 'Studio C (스피닝)', allowOverlap: false },
+  { id: 'D', name: '피트니스존 (PT/자유운동)', allowOverlap: true },
 ];
 
 const CLASS_TYPES = ['all', '요가', '필라테스', '스피닝', 'PT', '크로스핏'];
@@ -124,12 +126,20 @@ export const BookingSchedule = () => {
         else if (prog.name?.includes('PT') || prog.maxCapacity === 1) cat = 'PT';
         else if (prog.name?.includes('크로스핏')) cat = '크로스핏';
 
+        let studio = s.studioId;
+        if (!studio) {
+          if (prog.name?.includes('필라테스')) studio = 'B';
+          else if (prog.name?.includes('스피닝')) studio = 'C';
+          else if (prog.name?.includes('PT') || prog.name?.includes('피트니스') || prog.name?.includes('헬스') || prog.maxCapacity === 1) studio = 'D';
+          else studio = 'A';
+        }
+
         return {
           id: String(s.id),
           rawId: s.id,
           title: prog.name || '수업',
           type: cat,
-          studioId: s.studioId || 'A',
+          studioId: studio,
           instructorId: String(s.instructor?.id || prog.instructor?.id || ''),
           instructorName: s.instructor?.name || prog.instructor?.name || '-',
           date: dayjs(s.programDat).format('YYYY-MM-DD'),
@@ -143,95 +153,6 @@ export const BookingSchedule = () => {
           waitlist: Array.from({ length: s.waitlistCount || 0 }, (_, i) => ({ id: `wait-count-${s.id}-${i}` })),
         };
       });
-
-      // 만약 백엔드 스케줄이 비어있다면 가이드용 기본 데이터 세팅
-      if (mappedSchedules.length === 0) {
-        const todayStr = dayjs().format('YYYY-MM-DD');
-        mappedSchedules.push(
-          {
-            id: 'mock-1',
-            title: '오전 비까 요가',
-            type: '요가',
-            studioId: 'A',
-            instructorId: instructorList[0]?.id ? String(instructorList[0].id) : '1',
-            instructorName: instructorList[0]?.name || '김유라',
-            date: todayStr,
-            startTime: '07:00',
-            endTime: '08:00',
-            capacity: 10,
-            bookingCount: 8,
-            waitlistCount: 2,
-            booked: Array.from({ length: 8 }, (_, i) => ({
-              id: `mb-1-${i}`,
-              name: `회원 ${i + 1}`,
-              phone: `010-1234-${1000 + i}`,
-              ticketStatus: '요가 10회권',
-              ticketRemaining: 8,
-              ticketTotal: 10,
-              bookedAt: '10.02 09:30',
-            })),
-            waitlist: [
-              {
-                id: 'mw-1-1',
-                name: '이수민',
-                phone: '010-8888-1111',
-                ticketStatus: '요가 10회권',
-                ticketRemaining: 10,
-                ticketTotal: 10,
-                bookedAt: '10.03 14:20',
-              },
-            ],
-          },
-          {
-            id: 'mock-2',
-            title: '리포머 필라테스',
-            type: '필라테스',
-            studioId: 'B',
-            instructorId: instructorList[1]?.id ? String(instructorList[1].id) : '2',
-            instructorName: instructorList[1]?.name || '박민준',
-            date: todayStr,
-            startTime: '09:00',
-            endTime: '10:00',
-            capacity: 8,
-            bookingCount: 8,
-            waitlistCount: 1,
-            booked: Array.from({ length: 8 }, (_, i) => ({
-              id: `mb-2-${i}`,
-              name: `회원 ${i + 1}`,
-              phone: `010-5555-${1000 + i}`,
-              ticketStatus: '필라테스 20회권',
-              ticketRemaining: 15,
-              ticketTotal: 20,
-              bookedAt: '10.01 11:00',
-            })),
-            waitlist: [],
-          },
-          {
-            id: 'mock-3',
-            title: '스피닝 인터벌',
-            type: '스피닝',
-            studioId: 'A',
-            instructorId: instructorList[2]?.id ? String(instructorList[2].id) : '3',
-            instructorName: instructorList[2]?.name || '이서연',
-            date: todayStr,
-            startTime: '10:30',
-            endTime: '11:20',
-            capacity: 12,
-            bookingCount: 7,
-            waitlistCount: 0,
-            booked: Array.from({ length: 7 }, (_, i) => ({
-              id: `mb-3-${i}`,
-              name: `회원 ${i + 1}`,
-              phone: `010-7777-${1000 + i}`,
-              ticketStatus: '스피닝 자유이용권',
-              ticketRemaining: 25,
-              ticketTotal: 30,
-              bookedAt: '10.03 18:00',
-            })),
-            waitlist: [],
-          }
-        );
-      }
 
       setSchedules(mappedSchedules);
 
@@ -317,7 +238,12 @@ export const BookingSchedule = () => {
   };
 
   const instructorName = (id) => instructors.find((i) => String(i.id) === String(id))?.name || '-';
-  const studioName = (id) => (id === 'B' ? '스튜디오 B룸' : '스튜디오 A룸');
+  const studioName = (id) => {
+    if (id === 'B') return '스튜디오 B룸 (기구 필라테스)';
+    if (id === 'C') return '스튜디오 C룸 (스피닝)';
+    if (id === 'D') return '피트니스존 (PT/자유운동)';
+    return '스튜디오 A룸 (요가/GX)';
+  };
 
   const listSchedules = useMemo(() => {
     return [...filteredSchedules].sort((a, b) => {
@@ -691,6 +617,7 @@ export const BookingSchedule = () => {
           isAdmin={isAdmin}
           isInstructor={isInstructor}
           instructors={instructors}
+          schedules={schedules}
           onInstructorChange={(newInstructorId) => {
             loadData();
           }}
@@ -719,6 +646,7 @@ export const BookingSchedule = () => {
           centers={centers}
           instructors={instructors}
           programs={programs}
+          schedules={schedules}
           selectedCenterId={selectedCenterId}
           userRole={userRole}
           currentInstructorId={currentInstructorId}

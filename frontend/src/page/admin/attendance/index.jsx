@@ -29,121 +29,6 @@ dayjs.locale('ko');
 
 const TODAY = dayjs().format('YYYY-MM-DD');
 
-// 원본 시안 기준 샘플 데이터 생성기 (백엔드 스케줄이 비어있을 때 즉시 체험 가능)
-const generateMockClasses = (dateStr) => {
-  return [
-    {
-      id: `mock-${dateStr}-1`,
-      rawId: 101,
-      title: '오전 비까 요가',
-      type: '요가',
-      studioId: 'A',
-      studioName: 'Studio A',
-      instructorId: '1',
-      instructorName: '김유라',
-      date: dateStr,
-      startTime: '07:00',
-      endTime: '08:00',
-      capacity: 10,
-      booked: [
-        { memberId: 'm-1', memberName: '윤서아', memberPhone: '010-1234-5678', ticketStatus: '10회 수강권', ticketRemaining: 6, ticketTotal: 10, status: 'present', checkInTime: '09:5:00', memo: '' },
-        { memberId: 'm-2', memberName: '강도윤', memberPhone: '010-2345-6789', ticketStatus: '30회 수강권', ticketRemaining: 18, ticketTotal: 30, status: 'present', checkInTime: '09:6:07', memo: '' },
-        { memberId: 'm-3', memberName: '임지호', memberPhone: '010-3456-7890', ticketStatus: '정기 이용권', ticketRemaining: 0, ticketTotal: 0, status: 'present', checkInTime: '09:7:14', memo: '' },
-        { memberId: 'm-4', memberName: '조하늘', memberPhone: '010-4567-8901', ticketStatus: '10회 수강권', ticketRemaining: 3, ticketTotal: 10, status: 'absent', checkInTime: null, memo: '사전 연락으로 결석 확인' },
-        { memberId: 'm-5', memberName: '배수진', memberPhone: '010-5678-9012', ticketStatus: '20회 수강권', ticketRemaining: 12, ticketTotal: 20, status: 'present', checkInTime: '09:8:22', memo: '' },
-        { memberId: 'm-6', memberName: '권민재', memberPhone: '010-6789-0123', ticketStatus: '10회 수강권', ticketRemaining: 8, ticketTotal: 10, status: 'present', checkInTime: '09:9:01', memo: '' },
-        { memberId: 'm-7', memberName: '서예은', memberPhone: '010-7890-1234', ticketStatus: '10회 수강권', ticketRemaining: 4, ticketTotal: 10, status: 'present', checkInTime: '09:9:45', memo: '' },
-        { memberId: 'm-8', memberName: '신태양', memberPhone: '010-8901-2345', ticketStatus: '10회 수강권', ticketRemaining: 7, ticketTotal: 10, status: 'hold', checkInTime: null, memo: '' },
-      ],
-    },
-    {
-      id: `mock-${dateStr}-2`,
-      rawId: 102,
-      title: '리포머 필라테스',
-      type: '필라테스',
-      studioId: 'B',
-      studioName: 'Studio B',
-      instructorId: '2',
-      instructorName: '박민준',
-      date: dateStr,
-      startTime: '09:00',
-      endTime: '10:00',
-      capacity: 8,
-      booked: [
-        { memberId: 'm-21', memberName: '최유진', memberPhone: '010-3321-4455', ticketStatus: '10회권', ticketRemaining: 5, ticketTotal: 10, status: 'present', checkInTime: '08:52:10', memo: '' },
-        { memberId: 'm-22', memberName: '이도현', memberPhone: '010-5544-6677', ticketStatus: '20회권', ticketRemaining: 15, ticketTotal: 20, status: 'present', checkInTime: '08:55:30', memo: '' },
-        { memberId: 'm-23', memberName: '정하늘', memberPhone: '010-7766-8899', ticketStatus: '10회권', ticketRemaining: 2, ticketTotal: 10, status: 'present', checkInTime: '08:58:00', memo: '' },
-        { memberId: 'm-24', memberName: '한소희', memberPhone: '010-9988-1122', ticketStatus: '10회권', ticketRemaining: 7, ticketTotal: 10, status: 'present', checkInTime: '08:59:15', memo: '' },
-        { memberId: 'm-25', memberName: '송강', memberPhone: '010-2211-3344', ticketStatus: '10회권', ticketRemaining: 8, ticketTotal: 10, status: 'present', checkInTime: '09:00:02', memo: '' },
-        { memberId: 'm-26', memberName: '박은빈', memberPhone: '010-4433-5566', ticketStatus: '10회권', ticketRemaining: 4, ticketTotal: 10, status: 'present', checkInTime: '09:01:20', memo: '' },
-        { memberId: 'm-27', memberName: '남주혁', memberPhone: '010-6655-7788', ticketStatus: '10회권', ticketRemaining: 1, ticketTotal: 10, status: 'absent', checkInTime: null, memo: '당일 불참' },
-        { memberId: 'm-28', memberName: '김태리', memberPhone: '010-8877-9900', ticketStatus: '10회권', ticketRemaining: 9, ticketTotal: 10, status: 'hold', checkInTime: null, memo: '' },
-      ],
-    },
-    {
-      id: `mock-${dateStr}-3`,
-      rawId: 103,
-      title: '스피닝 인터벌',
-      type: '스피닝',
-      studioId: 'A',
-      studioName: 'Studio A',
-      instructorId: '3',
-      instructorName: '이서연',
-      date: dateStr,
-      startTime: '10:30',
-      endTime: '11:30',
-      capacity: 12,
-      booked: [
-        { memberId: 'm-31', memberName: '김민수', memberPhone: '010-1111-2222', ticketStatus: '스피닝 30회', ticketRemaining: 20, ticketTotal: 30, status: 'present', checkInTime: '10:20:10', memo: '' },
-        { memberId: 'm-32', memberName: '이영희', memberPhone: '010-2222-3333', ticketStatus: '스피닝 30회', ticketRemaining: 12, ticketTotal: 30, status: 'present', checkInTime: '10:22:15', memo: '' },
-        { memberId: 'm-33', memberName: '박철수', memberPhone: '010-3333-4444', ticketStatus: '스피닝 30회', ticketRemaining: 25, ticketTotal: 30, status: 'present', checkInTime: '10:25:00', memo: '' },
-        { memberId: 'm-34', memberName: '최진우', memberPhone: '010-4444-5555', ticketStatus: '스피닝 30회', ticketRemaining: 5, ticketTotal: 30, status: 'present', checkInTime: '10:28:30', memo: '' },
-        { memberId: 'm-35', memberName: '정다은', memberPhone: '010-5555-6666', ticketStatus: '스피닝 30회', ticketRemaining: 18, ticketTotal: 30, status: 'present', checkInTime: '10:29:45', memo: '' },
-        { memberId: 'm-36', memberName: '강태풍', memberPhone: '010-6666-7777', ticketStatus: '스피닝 30회', ticketRemaining: 11, ticketTotal: 30, status: 'absent', checkInTime: null, memo: '무단 불참' },
-        { memberId: 'm-37', memberName: '윤가을', memberPhone: '010-7777-8888', ticketStatus: '스피닝 30회', ticketRemaining: 7, ticketTotal: 30, status: 'hold', checkInTime: null, memo: '' },
-      ],
-    },
-    {
-      id: `mock-${dateStr}-4`,
-      rawId: 104,
-      title: '프리베이트 PT',
-      type: 'PT',
-      studioId: 'B',
-      studioName: 'Studio B',
-      instructorId: '4',
-      instructorName: '정태호',
-      date: dateStr,
-      startTime: '12:00',
-      endTime: '13:00',
-      capacity: 1,
-      booked: [
-        { memberId: 'm-41', memberName: '황시목', memberPhone: '010-9999-0000', ticketStatus: '1:1 PT 20회', ticketRemaining: 14, ticketTotal: 20, status: 'present', checkInTime: '11:58:30', memo: '골반 교정 집중' },
-      ],
-    },
-    {
-      id: `mock-${dateStr}-5`,
-      rawId: 105,
-      title: '오후 릴랙스 요가',
-      type: '요가',
-      studioId: 'A',
-      studioName: 'Studio A',
-      instructorId: '1',
-      instructorName: '김유라',
-      date: dateStr,
-      startTime: '14:00',
-      endTime: '15:00',
-      capacity: 10,
-      booked: [
-        { memberId: 'm-51', memberName: '한지민', memberPhone: '010-1357-2468', ticketStatus: '10회 수강권', ticketRemaining: 6, ticketTotal: 10, status: 'present', checkInTime: '13:50:11', memo: '' },
-        { memberId: 'm-52', memberName: '고아라', memberPhone: '010-2468-1357', ticketStatus: '10회 수강권', ticketRemaining: 4, ticketTotal: 10, status: 'present', checkInTime: '13:55:00', memo: '' },
-        { memberId: 'm-53', memberName: '유아인', memberPhone: '010-3579-2468', ticketStatus: '20회 수강권', ticketRemaining: 12, ticketTotal: 20, status: 'present', checkInTime: '13:58:12', memo: '' },
-        { memberId: 'm-54', memberName: '차은우', memberPhone: '010-4680-1357', ticketStatus: '10회 수강권', ticketRemaining: 9, ticketTotal: 10, status: 'absent', checkInTime: null, memo: '촬영 일정 불참' },
-        { memberId: 'm-55', memberName: '문채원', memberPhone: '010-5791-2468', ticketStatus: '10회 수강권', ticketRemaining: 2, ticketTotal: 10, status: 'hold', checkInTime: null, memo: '' },
-      ],
-    },
-  ];
-};
-
 export const AttendancePage = () => {
   const [searchParams] = useSearchParams();
 
@@ -201,13 +86,26 @@ export const AttendancePage = () => {
           else if (prog.name?.includes('PT') || prog.maxCapacity === 1) cat = 'PT';
           else if (prog.name?.includes('크로스핏')) cat = '크로스핏';
 
+          let studioId = 'A';
+          let studioName = 'Studio A (요가/GX)';
+          if (prog.name?.includes('필라테스')) {
+            studioId = 'B';
+            studioName = 'Studio B (필라테스)';
+          } else if (prog.name?.includes('스피닝')) {
+            studioId = 'C';
+            studioName = 'Studio C (스피닝)';
+          } else if (prog.name?.includes('PT') || prog.name?.includes('피트니스') || prog.name?.includes('헬스') || prog.maxCapacity === 1) {
+            studioId = 'D';
+            studioName = '피트니스존 (PT/자유운동)';
+          }
+
           return {
             id: String(s.id),
             rawId: s.id,
             title: prog.name || s.programName || '수업',
             type: cat,
-            studioId: s.id % 2 === 0 ? 'B' : 'A',
-            studioName: s.id % 2 === 0 ? 'Studio B' : 'Studio A',
+            studioId,
+            studioName,
             instructorId: String(s.instructor?.id || prog.instructor?.id || ''),
             instructorName: s.instructor?.name || prog.instructor?.name || '-',
             date: dayjs(s.programDat).format('YYYY-MM-DD'),
@@ -219,10 +117,10 @@ export const AttendancePage = () => {
         });
         setAllSchedules(mapped);
       } else {
-        setAllSchedules(generateMockClasses(selectedDate));
+        setAllSchedules([]);
       }
     } catch {
-      setAllSchedules(generateMockClasses(selectedDate));
+      setAllSchedules([]);
     } finally {
       setLoading(false);
     }
@@ -235,9 +133,6 @@ export const AttendancePage = () => {
   // ── 5. 날짜별 수업 필터링 ──
   const daySchedules = useMemo(() => {
     let list = allSchedules.filter((s) => s.date === selectedDate);
-    if (list.length === 0) {
-      list = generateMockClasses(selectedDate);
-    }
 
     if (selectedCenterId && selectedCenterId !== 'all') {
       list = list.filter((s) => String(s.centerId) === String(selectedCenterId));
@@ -268,10 +163,10 @@ export const AttendancePage = () => {
     async (cls) => {
       if (!cls || classAttendanceMap[cls.id]) return;
 
-      if (cls.rawId && typeof cls.rawId === 'number') {
+      if (cls.rawId && !String(cls.rawId).startsWith('mock-')) {
         try {
           const attData = await fetchAttendance(cls.rawId).catch(() => null);
-          if (Array.isArray(attData) && attData.length > 0) {
+          if (Array.isArray(attData)) {
             const mappedRows = attData.map((a, idx) => ({
               memberId: a.memberId || `m-${idx}`,
               memberName: a.memberName || `회원 ${idx + 1}`,
@@ -292,18 +187,7 @@ export const AttendancePage = () => {
       if (cls.booked && cls.booked.length > 0) {
         setClassAttendanceMap((prev) => ({ ...prev, [cls.id]: cls.booked }));
       } else {
-        const mockRows = Array.from({ length: 4 }, (_, i) => ({
-          memberId: `m-${cls.id}-${i}`,
-          memberName: ['김은지', '이지훈', '박서윤', '정도현'][i] || `회원 ${i + 1}`,
-          memberPhone: `010-${2000 + i}-${3000 + i}`,
-          ticketStatus: '회원권 예약',
-          ticketRemaining: 6 + i,
-          ticketTotal: 10,
-          status: i === 0 ? 'present' : i === 1 ? 'absent' : 'hold',
-          checkInTime: i === 0 ? '08:55:12' : null,
-          memo: i === 1 ? '당일 취소 연락' : '',
-        }));
-        setClassAttendanceMap((prev) => ({ ...prev, [cls.id]: mockRows }));
+        setClassAttendanceMap((prev) => ({ ...prev, [cls.id]: [] }));
       }
     },
     [classAttendanceMap]
@@ -436,7 +320,7 @@ export const AttendancePage = () => {
     const rows = classAttendanceMap[classId] || [];
     setSavingClassId(classId);
     try {
-      if (cls.rawId && typeof cls.rawId === 'number') {
+      if (cls.rawId && !String(cls.rawId).startsWith('mock-')) {
         const records = rows
           .filter((r) => r.status === 'present' || r.status === 'absent')
           .map((r) => ({
@@ -447,7 +331,7 @@ export const AttendancePage = () => {
       }
       message.success('출결 저장이 성공적으로 완료되었습니다.');
     } catch {
-      message.success('출결 데이터가 저장되었습니다.');
+      message.error('출결 저장 중 오류가 발생했습니다.');
     } finally {
       setSavingClassId(null);
     }
