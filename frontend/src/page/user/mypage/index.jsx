@@ -14,6 +14,8 @@ import {
     Input,
     Form,
     Checkbox,
+    Alert,
+    Empty,
 } from 'antd';
 import {
     CalendarOutlined,
@@ -44,83 +46,14 @@ import {
 } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
-import Header, { INITIAL_NOTIFICATIONS } from '../../../components/common/Header';
+import Header from '../../../components/common/Header';
+import useMyPageData from './useMyPageData';
+import MemberSettings from '../../../components/mypage/MemberSettings';
+import PassDetailsModal from '../../../components/mypage/PassDetailsModal';
+import ReservationHistory from '../../../components/mypage/ReservationHistory';
+import { memberRequest } from '../../../api/myPageApi';
+import { calendarDots, classStart, memberMetrics, membershipCard } from '../../../utils/myPageData';
 import '../userMypage.css';
-
-// 센터 목록
-const CENTERS = [
-    { id: 1, name: '강남 시그니처점', addr: '서울 강남구 테헤란로 123', phone: '02-1234-5678', hours: '평일 06:00 - 23:00 / 주말 09:00 - 18:00', facility: '샤워실 완비 · 무료 주차 2시간 · 개별 락커' },
-    { id: 2, name: '서초역점', addr: '서울 서초구 서초대로 250', phone: '02-581-2244', hours: '평일 06:00 - 23:00 / 주말 09:00 - 18:00', facility: '샤워실 완비 · 무료 주차 1시간 30분 · 기구 필라테스 특화' },
-    { id: 3, name: '역삼 테헤란점', addr: '서울 강남구 테헤란로 208', phone: '02-555-8890', hours: '평일 06:30 - 22:30 / 주말 10:00 - 18:00', facility: '샤워실 완비 · 발렛 주차 지원 · 1:1 PT 전용 프라이빗 룸' },
-];
-
-// 다가오는 일정 캐러셀 데이터
-const UPCOMING_CLASSES = [
-    {
-        id: 'up-1',
-        title: '고강도 서킷 트레이닝',
-        badge: '오늘',
-        dateStr: '26.9.11 (금)',
-        timeStr: '19:30 - 20:20',
-        centerName: '강남 시그니처점',
-        instructor: '강민호 트레이너',
-        studio: 'Studio A',
-    },
-    {
-        id: 'up-2',
-        title: '하타 딥 스트레칭',
-        badge: 'D-2',
-        dateStr: '26.9.13 (일)',
-        timeStr: '10:00 - 11:00',
-        centerName: '강남 시그니처점',
-        instructor: '이지은 강사',
-        studio: 'Studio C',
-    },
-    {
-        id: 'up-3',
-        title: '코어 리포머 필라테스',
-        badge: 'D-5',
-        dateStr: '26.9.16 (수)',
-        timeStr: '11:00 - 12:00',
-        centerName: '강남 시그니처점',
-        instructor: '박소연 강사',
-        studio: 'Studio B',
-    },
-];
-
-// 보유 이용권 데이터
-const ACTIVE_PASSES = [
-    {
-        id: 'pass-1',
-        category: 'PT 회원권',
-        branch: '강남 시그니처점',
-        title: '1:1 개인 PT 30회권',
-        remainingCount: 12,
-        totalCount: 30,
-        rate: 40,
-        startDate: '2026.07.01',
-        endDate: '2026.12.31',
-        dDay: 'D-111',
-        paymentDate: '2026.06.25 14:22',
-        paymentMethod: '신한카드 (일시불)',
-        paymentAmount: '1,980,000원',
-    },
-    {
-        id: 'pass-2',
-        category: '필라테스 회원권',
-        branch: '강남 시그니처점',
-        title: '필라테스 & 리포머 20회권',
-        remainingCount: 8,
-        totalCount: 20,
-        rate: 40,
-        startDate: '2026.05.01',
-        endDate: '2026.11.30',
-        dDay: 'D-80',
-        paymentDate: '2026.04.28 11:15',
-        paymentMethod: '국민카드 (일시불)',
-        paymentAmount: '1,450,000원',
-    },
-];
 
 // 공지 및 이벤트 데이터
 const NOTICES_AND_EVENTS = [
@@ -232,6 +165,9 @@ const NOTICES_AND_EVENTS = [
 
 const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
     const navigate = useNavigate();
+    const { centers, reservations, waitlists, memberships, attendance, holds, loading: dataLoading, errors, reload } = useMyPageData();
+    const [passDialog, setPassDialog] = useState(null);
+    const [actionBusy, setActionBusy] = useState(false);
 
     const [searchParams] = useSearchParams();
     const tabParam = searchParams.get('tab');
@@ -255,22 +191,30 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
             .catch((err) => console.error('회원 정보 조회 실패:', err));
     }, []);
 
-    // 지점 선택 상태
-    const [selectedCenterId, setSelectedCenterId] = useState(1);
-    const selectedCenter = useMemo(
-        () => CENTERS.find((c) => c.id === selectedCenterId) ?? CENTERS[0],
-        [selectedCenterId]
-    );
+    // 서버에서 조회한 센터를 모든 위젯의 공통 필터로 사용한다.
+    const [selectedCenterId, setSelectedCenterId] = useState(null);
+    const selectedCenter = centers.find((center) => center.id === selectedCenterId) ?? centers[0] ?? null;
+    const centerId = selectedCenter?.id;
+    const centerReservations = useMemo(() => [...reservations, ...waitlists].filter((row) => row.centerId === centerId), [reservations, waitlists, centerId]);
+    const centerAttendance = useMemo(() => attendance.filter((row) => row.centerId === centerId), [attendance, centerId]);
+    const passCards = memberships.filter((row) => row.center?.id === centerId).map((row) => membershipCard(row));
+    const ACTIVE_PASSES = passCards.filter((pass) => !pass.expired);
+    const expiredPasses = passCards.filter((pass) => pass.expired);
+    const metrics = memberMetrics(centerReservations, centerAttendance);
+    const UPCOMING_CLASSES = centerReservations.filter((row) => !row.waitlist && classStart(row).isAfter(dayjs())).sort((a,b) => classStart(a).valueOf()-classStart(b).valueOf()).map((row) => ({
+        ...row, title: row.programName, badge: dayjs(row.programDat).isSame(dayjs(),'day') ? '오늘' : 'D-' + dayjs(row.programDat).startOf('day').diff(dayjs().startOf('day'),'day'),
+        dateStr: dayjs(row.programDat).format('YY.MM.DD'), timeStr: row.startTime + ' - ' + row.endTime, instructor: row.instructorName || '강사 미배정',
+    }));
 
     // 알림 목록 상태
-    const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+    const [notifications, setNotifications] = useState([]);
 
     // 캐러셀 인덱스 상태
     const [carouselIdx, setCarouselIdx] = useState(0);
 
     // 출석 미니 캘린더 날짜 상태
-    const [calendarMonth, setCalendarMonth] = useState(dayjs('2026-09-01'));
-    const [selectedCalDay, setSelectedCalDay] = useState(11); // 오늘 11일
+    const [calendarMonth, setCalendarMonth] = useState(dayjs().startOf('month'));
+    const [selectedCalDay, setSelectedCalDay] = useState(null);
 
     // 미니 캘린더 날짜 그리드 동적 계산 (월요일 시작)
     const miniCalendarGrid = useMemo(() => {
@@ -297,20 +241,9 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
 
         // 2. 현재 달 일자
         for (let d = 1; d <= daysInCurrentMonth; d++) {
-            const monthKey = calendarMonth.format('YYYY-MM');
-            let dots = [];
-            if (monthKey === '2026-09') {
-                if (d === 4 || d === 11 || d === 16) dots.push('#6D28D9');
-                if (d === 5 || d === 13) dots.push('#EA580C');
-                if (d === 28) dots.push('#D4D4D8');
-            } else {
-                // 다른 월도 상태 도트가 동적으로 제공되도록 현실적인 패턴 부여 (예약/출석, 대기, 취소)
-                if ([2, 9, 16, 23].includes(d)) dots.push('#6D28D9');
-                else if ([6, 20].includes(d)) dots.push('#EA580C');
-                else if (d === 27) dots.push('#D4D4D8');
-            }
-
-            const isToday = calendarMonth.isSame(dayjs('2026-09-01'), 'month') && d === 11;
+            const date = calendarMonth.date(d);
+            const dots = calendarDots(date, centerReservations, centerAttendance);
+            const isToday = date.isSame(dayjs(), 'day');
             const isSelected = selectedCalDay === d;
 
             cells.push({
@@ -338,7 +271,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
         }
 
         return cells;
-    }, [calendarMonth, selectedCalDay]);
+    }, [calendarMonth, selectedCalDay, centerReservations, centerAttendance]);
 
     // 공지 및 이벤트 필터 및 아코디언 상태
     const [noticeFilter, setNoticeFilter] = useState('all'); // 'all' | 'notice' | 'event'
@@ -373,48 +306,12 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
         }
     };
 
-    // 설정 알림 토글 상태
-    const [settingNotifications, setSettingNotifications] = useState({
-        remind: false,
-        waitlist: true,
-        expire: true,
-        marketing: false,
-    });
-
     // 모달 제어 상태
     const [actionModal, setActionModal] = useState({
         open: false,
         type: 'confirm', // 'confirm' | 'cancel'
         item: null,
     });
-
-    const [refundModalOpen, setRefundModalOpen] = useState(false);
-    const [refundAgreed, setRefundAgreed] = useState(false);
-    const [metricModalOpen, setMetricModalOpen] = useState(false);
-    const [pauseModalOpen, setPauseModalOpen] = useState(false);
-
-    // 내 예약 내역 (실제 백엔드 조회)
-    const [myBookings, setMyBookings] = useState([]);
-    const [bookingsLoading, setBookingsLoading] = useState(true);
-
-    const fetchMyBookings = async () => {
-        setBookingsLoading(true);
-        try {
-            const response = await fetch('/api/bookings/mine', { credentials: 'include' });
-            if (response.ok) {
-                const data = await response.json();
-                setMyBookings(data);
-            }
-        } catch (e) {
-            console.error('예약 내역 조회 실패:', e);
-        } finally {
-            setBookingsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchMyBookings();
-    }, []);
 
     // 로그아웃 핸들러 (기존 세션 해제 보존)
     const handleLogout = async () => {
@@ -440,69 +337,18 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
         });
     };
 
-    // 액션 확인 실행 (백엔드 예약 확정 / 취소 API 호출)
+    // 서버가 성공을 응답했을 때만 완료를 안내하고 모든 위젯을 갱신한다.
     const handleExecuteAction = async () => {
-        const { type, item } = actionModal;
+        if (actionBusy || !actionModal.item) return;
+        setActionBusy(true);
+        const item = actionModal.item;
         try {
-            if (type === 'confirm') {
-                // 대기 승격 확정 API 호출
-                await fetch('/api/bookings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        bookingId: item?.id,
-                        realProgramId: item?.programId,
-                        centerId: selectedCenter.id,
-                        action: 'CONFIRM_PROMOTED',
-                    }),
-                    credentials: 'include',
-                });
-                message.success(`${item?.title || '수업'} 예약이 정상적으로 확정되었습니다!`);
-            } else {
-                // 예약 취소 / 대기 취소 API 호출
-                const endpoint = item?.isWaitlist ? `/api/waitlists/${item?.id}` : `/api/bookings/${item?.id}`;
-                const response = await fetch(endpoint, {
-                    method: 'DELETE',
-                    credentials: 'include',
-                });
-                if (response.ok) {
-                    message.info(`${item?.title || '수업'} 신청이 안전하게 취소되었습니다.`);
-                    fetchMyBookings();
-                } else {
-                    message.error('취소 처리 중 오류가 발생했습니다.');
-                }
-            }
-        } catch (err) {
-            console.error('예약 처리 실패:', err);
-            message.error('취소 처리 중 오류가 발생했습니다.');
-        } finally {
-            setActionModal({ open: false, type: 'confirm', item: null });
-        }
-    };
-
-    // 환불 신청 실행 (PRD REQ-06)
-    const handleExecuteRefund = async () => {
-        if (!refundAgreed) {
-            message.warning('환불 정책 확인 및 동의에 체크해주세요.');
-            return;
-        }
-        try {
-            await fetch('/api/member/refunds', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ticketId: 'ticket-gn-30',
-                    refundAmount: 522000,
-                    penaltyAmount: 198000,
-                    usedAmount: 1260000,
-                }),
-                credentials: 'include',
-            });
-        } catch {
-            // 통신 실패해도 사용자에게 접수 완료 안내
-        }
-        message.success('이용권 중도 해지 및 환불 신청이 완료되었습니다. 영업일 기준 2~3일 내 승인 취소됩니다.');
-        setRefundModalOpen(false);
+            await memberRequest(item.isWaitlist ? '/api/waitlists/' + item.id : '/api/bookings/' + item.id, { method: 'DELETE' });
+            message.success(item.isWaitlist ? '대기 신청을 취소했습니다.' : '예약을 취소했습니다.');
+            setActionModal({ open: false, type: 'cancel', item: null });
+            reload();
+        } catch (error) { message.error(error.message); }
+        finally { setActionBusy(false); }
     };
 
     return (
@@ -513,6 +359,10 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
 
             {/* Floating Pill-Style Header */}
             <Header
+                centers={centers}
+                userName={memberInfo?.name || '회원'}
+                userInitials={memberInfo?.name?.slice(0, 1) || ''}
+                userGrade={memberInfo?.hasAdminCenter ? '센터 관리자' : '일반 회원'}
                 selectedCenterId={selectedCenterId}
                 onSelectCenterId={(id) => setSelectedCenterId(id)}
                 notifications={notifications}
@@ -520,9 +370,6 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                 onDeleteNotification={(id) => setNotifications((prev) => prev.filter((n) => n.id !== id))}
                 onLogout={handleLogout}
                 onNavigateSettings={() => setActiveTab('settings')}
-                userName={memberInfo?.name}
-                userGrade={memberInfo?.hasAdminCenter ? '센터 관리자' : '일반 회원'}
-                userInitials={memberInfo?.name ? memberInfo.name.slice(0, 1) : undefined}
             />
 
             {/* Main Content Workspace (Matches reservation page container) */}
@@ -572,8 +419,8 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                             cursor: 'pointer',
                                         }}
                                         onClick={() => {
-                                            setCalendarMonth(dayjs('2026-09-01'));
-                                            setSelectedCalDay(11);
+                                            setCalendarMonth(dayjs().startOf('month'));
+                                            setSelectedCalDay(dayjs().date());
                                         }}
                                     >
                                         오늘
@@ -583,7 +430,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                     <button
                                         type="button"
                                         style={{ padding: 4, color: '#71717A', background: 'transparent', border: 'none', cursor: 'pointer' }}
-                                        onClick={() => setCalendarMonth(calendarMonth.subtract(1, 'month'))}
+                                        onClick={() => { setCalendarMonth(calendarMonth.subtract(1, 'month')); setSelectedCalDay(null); }}
                                         title="이전 달"
                                     >
                                         <LeftOutlined style={{ fontSize: 12 }} />
@@ -591,7 +438,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                     <button
                                         type="button"
                                         style={{ padding: 4, color: '#71717A', background: 'transparent', border: 'none', cursor: 'pointer' }}
-                                        onClick={() => setCalendarMonth(calendarMonth.add(1, 'month'))}
+                                        onClick={() => { setCalendarMonth(calendarMonth.add(1, 'month')); setSelectedCalDay(null); }}
                                         title="다음 달"
                                     >
                                         <RightOutlined style={{ fontSize: 12 }} />
@@ -678,7 +525,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                     <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#EA580C' }} /> 대기
                                 </span>
                                 <span style={{ fontSize: 11, color: '#71717A', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#D4D4D8' }} /> 취소/결석
+                                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#D4D4D8' }} /> 결석
                                 </span>
                             </div>
                         </div>
@@ -711,7 +558,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                     className="carousel-nav-btn"
                                     style={{ left: -10 }}
                                     title="이전"
-                                    onClick={() => setCarouselIdx((prev) => (prev === 0 ? UPCOMING_CLASSES.length - 1 : prev - 1))}
+                                    onClick={() => setCarouselIdx((prev) => (prev <= 0 ? Math.max(0, UPCOMING_CLASSES.length - 1) : prev - 1))}
                                 >
                                     <LeftOutlined style={{ fontSize: 12, color: '#6D28D9' }} />
                                 </button>
@@ -720,14 +567,15 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                     className="carousel-nav-btn"
                                     style={{ right: -10 }}
                                     title="다음"
-                                    onClick={() => setCarouselIdx((prev) => (prev === UPCOMING_CLASSES.length - 1 ? 0 : prev + 1))}
+                                    onClick={() => setCarouselIdx((prev) => (UPCOMING_CLASSES.length ? (prev + 1) % UPCOMING_CLASSES.length : 0))}
                                 >
                                     <RightOutlined style={{ fontSize: 12, color: '#6D28D9' }} />
                                 </button>
 
                                 {/* Active Upcoming Card */}
                                 {(() => {
-                                    const currentClass = UPCOMING_CLASSES[carouselIdx];
+                                    const currentClass = UPCOMING_CLASSES[carouselIdx % UPCOMING_CLASSES.length];
+                                    if (!currentClass) return <div style={{ padding: 24, borderRadius: 20, background: '#FFFFFF' }}>{dataLoading ? '일정을 불러오는 중입니다.' : errors.reservations ? '일정을 불러오지 못했습니다.' : '다가오는 예약이 없습니다.'}</div>;
                                     return (
                                         <div
                                             style={{
@@ -774,7 +622,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                 <span style={{ opacity: 0.4 }}>·</span>
                                                 <span>{currentClass.instructor}</span>
                                                 <span style={{ opacity: 0.4 }}>·</span>
-                                                <span>{currentClass.studio}</span>
+
                                             </div>
 
                                             {/* Paging Dots */}
@@ -867,6 +715,8 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
 
                     {/* Right Column (700px Workspace Content) */}
                     <section style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                        {Object.keys(errors).length > 0 && <Alert type="error" showIcon style={{ marginBottom: 16 }} title="일부 데이터를 불러오지 못했습니다." description={Object.keys(errors).map((key) => ({centers:'센터',reservations:'예약',waitlists:'대기',memberships:'이용권',attendance:'출석',holds:'일시정지'})[key]).join(', ') + ' · ' + Object.values(errors)[0]} action={<Button onClick={reload} loading={dataLoading}>다시 조회</Button>} />}
+
                         {/* Greeting & Top 3 Metrics Bar */}
                         <div
                             style={{
@@ -938,10 +788,10 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                         WELCOME :)
                                     </div>
                                     <h1 style={{ fontSize: 20, fontWeight: 700, color: '#18181B', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-                                        좋은 오후입니다, {memberInfo?.name || '회원'}님
+                                        안녕하세요, {memberInfo?.name || '회원'}님
                                     </h1>
                                     <p style={{ fontSize: 12, color: '#71717A', margin: '4px 0 0' }}>
-                                        이번 주 목표 달성까지 2개의 수업이 남았어요.
+                                        {selectedCenter?.name || '센터'}의 예약과 이용 내역을 확인해 보세요.
                                     </p>
                                 </div>
                             </div>
@@ -955,8 +805,8 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                         <span style={{ fontSize: 12, color: '#71717A', fontWeight: 500 }}>이번 달 예약 현황</span>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                                        <span style={{ fontSize: 22, fontWeight: 800, color: '#18181B', lineHeight: 1 }} className="font-num">18</span>
-                                        <span style={{ fontSize: 12, color: '#71717A', fontWeight: 500 }}>회 완료</span>
+                                        <span style={{ fontSize: 22, fontWeight: 800, color: '#18181B', lineHeight: 1 }} className="font-num">{dataLoading || errors.reservations ? '—' : metrics.monthlyBookings}</span>
+                                        <span style={{ fontSize: 12, color: '#71717A', fontWeight: 500 }}>회 예약</span>
                                     </div>
                                 </div>
 
@@ -967,7 +817,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                         <span style={{ fontSize: 12, color: '#71717A', fontWeight: 500 }}>전체 출석률</span>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                                        <span style={{ fontSize: 22, fontWeight: 800, color: '#18181B', lineHeight: 1 }} className="font-num">94%</span>
+                                        <span style={{ fontSize: 22, fontWeight: 800, color: '#18181B', lineHeight: 1 }} className="font-num">{dataLoading || errors.attendance || metrics.attendanceRate === null ? '—' : metrics.attendanceRate + '%'}</span>
                                         <span style={{ fontSize: 12, color: '#71717A', fontWeight: 500 }}>달성</span>
                                     </div>
                                 </div>
@@ -979,7 +829,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                         <span style={{ fontSize: 12, color: '#71717A', fontWeight: 500 }}>대기 접수 현황</span>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                                        <span style={{ fontSize: 22, fontWeight: 800, color: '#EA580C', lineHeight: 1 }} className="font-num">1건</span>
+                                        <span style={{ fontSize: 22, fontWeight: 800, color: '#EA580C', lineHeight: 1 }} className="font-num">{dataLoading || errors.waitlists ? '—' : metrics.waitlistCount + '건'}</span>
                                         <span style={{ fontSize: 12, color: '#71717A', fontWeight: 500 }}>대기중</span>
                                     </div>
                                 </div>
@@ -1004,7 +854,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                     className={`sub-tab-btn ${activeTab === 'reservations' ? 'active' : ''}`}
                                     onClick={() => setActiveTab('reservations')}
                                 >
-                                    예약 내역 ({myBookings.length})
+                                    예약 내역 ({centerReservations.length})
                                 </button>
                                 <button
                                     type="button"
@@ -1030,110 +880,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                             </div>
 
                             {/* TAB PANE 1: 예약 내역 (Reservations) */}
-                            {activeTab === 'reservations' && (
-                                <div>
-                                    {/* Section Header Row */}
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <h3 style={{ fontWeight: 700, fontSize: 18, color: '#18181B', margin: 0, letterSpacing: '-0.02em' }}>
-                                                전체 예약 내역
-                                            </h3>
-                                            <span style={{ fontSize: 12, fontWeight: 700, color: '#6D28D9', backgroundColor: '#F5F3FF', border: '1px solid #DDD6FE', padding: '2px 9px', borderRadius: 9999 }} className="font-num">
-                                                총 {myBookings.length}건
-                                            </span>
-                                        </div>
-                                        <span style={{ fontSize: 12, color: '#A1A1AA', fontWeight: 500 }}>최신 일정 순으로 정렬됨</span>
-                                    </div>
-
-                                    {/* Chronological Timeline Schedule List (실제 예약 데이터) */}
-                                    {bookingsLoading ? (
-                                        <div style={{ padding: '40px 0', textAlign: 'center', color: '#A1A1AA', fontSize: 13 }}>
-                                            예약 내역을 불러오는 중입니다...
-                                        </div>
-                                    ) : myBookings.length === 0 ? (
-                                        <div style={{ padding: '40px 0', textAlign: 'center', color: '#A1A1AA', fontSize: 13 }}>
-                                            예약된 수업이 없습니다.
-                                        </div>
-                                    ) : (
-                                        <div style={{ position: 'relative', paddingBottom: 8 }}>
-                                            {myBookings.map((booking, idx) => {
-                                                const programMoment = booking.programDat ? dayjs(booking.programDat) : null;
-                                                const dayName = programMoment ? ['일', '월', '화', '수', '목', '금', '토'][programMoment.day()] : '';
-                                                const diffDays = programMoment ? programMoment.startOf('day').diff(dayjs().startOf('day'), 'day') : null;
-                                                const isLast = idx === myBookings.length - 1;
-
-                                                let badge = null;
-                                                if (diffDays === 0) badge = { label: 'TODAY', bg: '#EDE9FE', color: '#6D28D9' };
-                                                else if (diffDays > 0) badge = { label: `D-${diffDays}`, bg: '#F4F4F5', color: '#71717A' };
-
-                                                return (
-                                                    <div key={booking.id} style={{ position: 'relative', paddingLeft: 36, marginBottom: isLast ? 0 : 40 }}>
-                                                        {!isLast && (
-                                                            <div style={{ position: 'absolute', left: 7.5, top: 19, bottom: -40, borderLeft: '1px solid #DDD6FE', pointerEvents: 'none' }} />
-                                                        )}
-                                                        <div style={{ position: 'absolute', left: 0, top: 3, width: 16, height: 16, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #6D28D9', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 10 }}>
-                                                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#6D28D9' }} />
-                                                        </div>
-
-                                                        <div
-                                                            className="timeline-item-content transition-transform duration-200 ease-out cursor-pointer hover:-translate-y-[2px]"
-                                                            style={{ background: 'transparent', border: 'none', padding: 0 }}
-                                                        >
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                                                {badge && (
-                                                                    <span style={{ background: badge.bg, color: badge.color, fontWeight: 700, fontSize: 11, padding: '2px 8px', borderRadius: 6 }} className="font-num">
-                                                                        {badge.label}
-                                                                    </span>
-                                                                )}
-                                                                <span style={{ fontWeight: 700, fontSize: 15, color: '#18181B' }} className="font-num">
-                                                                    {programMoment ? `${programMoment.format('YYYY.MM.DD')} (${dayName})` : '-'} &nbsp;{booking.startTime} — {booking.endTime}
-                                                                </span>
-                                                            </div>
-
-                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 4 }}>
-                                                                <h4 style={{ fontSize: 17, fontWeight: 700, color: '#18181B', margin: 0, letterSpacing: '-0.01em' }}>
-                                                                    {booking.programName}
-                                                                </h4>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                                                                    <button
-                                                                        type="button"
-                                                                        className="action-cancel-link"
-                                                                        style={{ fontSize: 12 }}
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleOpenActionModal('cancel', {
-                                                                                id: booking.id,
-                                                                                title: booking.programName,
-                                                                                dateStr: `${programMoment ? programMoment.format('YYYY.MM.DD') : ''} ${booking.startTime} — ${booking.endTime}`,
-                                                                                instructor: booking.instructorName,
-                                                                            });
-                                                                        }}
-                                                                    >
-                                                                        예약 취소
-                                                                    </button>
-                                                                    <span style={{ background: '#F5F3FF', color: '#6D28D9', fontWeight: 600, fontSize: 12, padding: '4px 12px', borderRadius: 9999 }}>
-                                                                        예약 완료
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-
-                                                            <div style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                                <span>{booking.centerName}</span>
-                                                                {booking.instructorName && (
-                                                                    <>
-                                                                        <span>·</span>
-                                                                        <span>{booking.instructorName}</span>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                            {activeTab === 'reservations' && <ReservationHistory reservations={centerReservations} attendance={centerAttendance} loading={dataLoading} selectedDate={selectedCalDay ? calendarMonth.date(selectedCalDay) : null} onResetDate={() => setSelectedCalDay(null)} onCancel={handleOpenActionModal} busy={actionBusy} />}
 
                             {/* TAB PANE 2: 이용권 관리 (Passes) */}
                             {activeTab === 'passes' && (
@@ -1159,7 +906,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                     alignItems: 'center',
                                                 }}
                                             >
-                                                2개
+                                                {ACTIVE_PASSES.length}개
                                             </span>
                                         </div>
                                         <button
@@ -1177,15 +924,17 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                 alignItems: 'center',
                                                 gap: 6,
                                             }}
-                                            onClick={() => message.info('새 이용권 구매 페이지로 이동합니다.')}
+                                            disabled title="센터에 이용권 등록을 문의해 주세요."
                                         >
                                             <span>+</span>
-                                            <span>새 이용권 구매</span>
+                                            <span>이용권 구매 준비 중</span>
                                         </button>
                                     </div>
 
                                     {/* Active Passes Accordion Cards */}
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                        {dataLoading && <p>이용권을 불러오는 중입니다.</p>}
+                                        {!dataLoading && !ACTIVE_PASSES.length && <Empty description={errors.memberships ? '이용권을 불러오지 못했습니다.' : '보유 이용권이 없습니다.'} />}
                                         {ACTIVE_PASSES.map((pass) => {
                                             const isExpanded = !!expandedPassIds[pass.id];
 
@@ -1259,7 +1008,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                                 style={{ fontSize: 12, color: '#71717A', display: 'flex', alignItems: 'center', gap: 8 }}
                                                             >
                                                                 <span>
-                                                                    잔여 횟수: <strong className="font-bold text-[#7C3AED] font-num" style={{ color: '#7C3AED', fontWeight: 800 }}>{pass.remainingCount}회</strong> / {pass.totalCount}회 ({pass.rate}%)
+                                                                    잔여 횟수: <strong className="font-bold text-[#7C3AED] font-num" style={{ color: '#7C3AED', fontWeight: 800 }}>{pass.remainingCount == null ? '횟수 제한 없음' : pass.remainingCount + '회'}</strong>{pass.totalCount == null ? '' : ' / ' + pass.totalCount + '회 (' + Math.round(pass.rate) + '%)'}
                                                                 </span>
                                                                 <span style={{ color: '#D4D4D8' }}>·</span>
                                                                 <span className="font-num">유효기간: {pass.startDate} ~ {pass.endDate}</span>
@@ -1318,7 +1067,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                                                                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 36 }}>
                                                                     <div>
-                                                                        <span style={{ fontSize: 11, color: '#A1A1AA', display: 'block', marginBottom: 2 }}>결제 일시</span>
+                                                                        <span style={{ fontSize: 11, color: '#A1A1AA', display: 'block', marginBottom: 2 }}>등록 결제일</span>
                                                                         <div style={{ fontSize: 12, fontWeight: 600, color: '#18181B' }} className="font-num">{pass.paymentDate}</div>
                                                                     </div>
                                                                     <div>
@@ -1326,7 +1075,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                                         <div style={{ fontSize: 12, fontWeight: 600, color: '#18181B' }}>{pass.paymentMethod}</div>
                                                                     </div>
                                                                     <div>
-                                                                        <span style={{ fontSize: 11, color: '#A1A1AA', display: 'block', marginBottom: 2 }}>승인 금액</span>
+                                                                        <span style={{ fontSize: 11, color: '#A1A1AA', display: 'block', marginBottom: 2 }}>등록 금액</span>
                                                                         <div style={{ fontSize: 14, fontWeight: 800, color: '#18181B' }} className="font-num">{pass.paymentAmount}</div>
                                                                     </div>
                                                                 </div>
@@ -1346,7 +1095,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                                         alignItems: 'center',
                                                                         gap: 6,
                                                                     }}
-                                                                    onClick={() => message.success('영수증 PDF가 다운로드되었습니다.')}
+                                                                    disabled title="결제 승인·영수증 정보가 등록되지 않았습니다."
                                                                 >
                                                                     <FilePdfOutlined />
                                                                     <span>영수증 발급 (PDF)</span>
@@ -1370,7 +1119,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                                         border: 'none',
                                                                         cursor: 'pointer',
                                                                     }}
-                                                                    onClick={() => message.info(`${pass.title}에 대한 차감 이력을 조회합니다.`)}
+                                                                    onClick={() => setPassDialog({ mode: 'usage', pass })}
                                                                 >
                                                                     <ClockCircleOutlined />
                                                                     <span>차감 이력 조회</span>
@@ -1389,7 +1138,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                                             borderRadius: 10,
                                                                             cursor: 'pointer',
                                                                         }}
-                                                                        onClick={() => setPauseModalOpen(true)}
+                                                                        onClick={() => setPassDialog({ mode: 'hold', pass })}
                                                                     >
                                                                         일시정지 신청
                                                                     </button>
@@ -1405,12 +1154,9 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                                                             borderRadius: 10,
                                                                             cursor: 'pointer',
                                                                         }}
-                                                                        onClick={() => {
-                                                                            setRefundAgreed(false);
-                                                                            setRefundModalOpen(true);
-                                                                        }}
+                                                                        onClick={() => setPassDialog({ mode: 'refund', pass })}
                                                                     >
-                                                                        중도 해지 / 환불 신청
+                                                                        예상 환불액 확인
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -1421,76 +1167,12 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                         })}
                                     </div>
 
-                                    {/* Dedicated Section: 만료된 이용권 */}
                                     <div style={{ marginTop: 36 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                                                <h3 className="text-lg font-bold text-[#18181B] tracking-tight" style={{ fontWeight: 700, fontSize: 18, color: '#18181B', margin: 0, letterSpacing: '-0.02em' }}>
-                                                    만료된 이용권
-                                                </h3>
-                                                <span
-                                                    className="bg-[#F5F3FF] text-[#7C3AED] px-2.5 py-0.5 rounded-full text-xs font-semibold ml-2 inline-flex items-center font-num"
-                                                    style={{
-                                                        fontSize: 12,
-                                                        fontWeight: 600,
-                                                        color: '#7C3AED',
-                                                        backgroundColor: '#F5F3FF',
-                                                        border: '1px solid #DDD6FE',
-                                                        padding: '2px 10px',
-                                                        borderRadius: 9999,
-                                                        marginLeft: 8,
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                    }}
-                                                >
-                                                    전체 3건
-                                                </span>
-                                            </div>
-                                            <span style={{ fontSize: 12, color: '#A1A1AA', fontWeight: 500 }}>
-                                                최근 1년 이내 만료 기준
-                                            </span>
-                                        </div>
-
-                                        <div
-                                            style={{
-                                                background: '#FAFAFC',
-                                                border: '1px solid #F1F0F7',
-                                                borderRadius: 18,
-                                                padding: '16px 20px',
-                                                marginBottom: 12,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                opacity: 0.85,
-                                            }}
-                                        >
-                                            <div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                    <span style={{ background: '#E4E4E7', color: '#71717A', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6 }}>
-                                                        전 지점 공용
-                                                    </span>
-                                                    <span style={{ fontWeight: 700, fontSize: 15, color: '#71717A' }}>전지점 VIP 프리패스</span>
-                                                </div>
-                                                <div style={{ fontSize: 12, color: '#A1A1AA', marginTop: 4 }}>
-                                                    무제한 시설 이용권 · 유효기간: 2025.01.01 ~ 2025.12.31
-                                                </div>
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <span style={{ background: '#E4E4E7', color: '#71717A', fontWeight: 700, fontSize: 12, padding: '3px 10px', borderRadius: 9999 }}>
-                                                    기간 만료
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 14 }}>
-                                            <button
-                                                type="button"
-                                                className="load-more-text-btn"
-                                                onClick={() => message.info('지난 이용권 2건을 추가로 불러왔습니다.')}
-                                            >
-                                                + 지난 이용권 2건 더보기
-                                            </button>
-                                        </div>
+                                        <h3>만료·소진된 이용권 <Tag>{expiredPasses.length}건</Tag></h3>
+                                        {expiredPasses.length ? expiredPasses.map((pass) => <div key={pass.id} style={{ padding: 20, background: '#FAFAFC', borderRadius: 16, marginBottom: 12 }}>
+                                            <strong>{pass.title}</strong><p>{pass.branch} · {pass.startDate} ~ {pass.endDate}</p>
+                                            <Button size="small" onClick={() => setPassDialog({ mode: 'usage', pass })}>차감 이력 조회</Button>
+                                        </div>) : <Empty description={errors.memberships ? '이용권을 불러오지 못했습니다.' : '만료·소진된 이용권이 없습니다.'} image={Empty.PRESENTED_IMAGE_SIMPLE} />}
                                     </div>
                                 </div>
                             )}
@@ -2018,212 +1700,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                                 </div>
                             )}
 
-                            {/* TAB PANE 4: 설정 (Settings) */}
-                            {activeTab === 'settings' && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                                    {/* Card 1: 대시보드 요약 지표 설정 */}
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: '16px 20px',
-                                            border: '1px solid #F1F0F7',
-                                            borderRadius: 16,
-                                            background: '#FFFFFF',
-                                        }}
-                                    >
-                                        <div>
-                                            <span style={{ fontWeight: 700, fontSize: 14, color: '#18181B' }}>대시보드 요약 지표</span>
-                                            <span style={{ fontSize: 12, color: '#71717A', marginLeft: 12 }}>
-                                                상단 배너에 고정할 핵심 운동 지표를 설정합니다.
-                                            </span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            style={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: 6,
-                                                padding: '0 16px',
-                                                height: 34,
-                                                borderRadius: 9999,
-                                                background: '#F5F3FF',
-                                                border: 'none',
-                                                fontSize: 12,
-                                                fontWeight: 600,
-                                                color: '#6D28D9',
-                                                cursor: 'pointer',
-                                            }}
-                                            onClick={() => setMetricModalOpen(true)}
-                                        >
-                                            <span>지표 편집</span>
-                                            <SettingOutlined />
-                                        </button>
-                                    </div>
-
-                                    {/* Card 2: 알림 수신 설정 */}
-                                    <div
-                                        style={{
-                                            background: '#FFFFFF',
-                                            border: '1px solid #F1F0F7',
-                                            borderRadius: 18,
-                                            padding: '22px 26px',
-                                        }}
-                                    >
-                                        <h3 style={{ fontWeight: 700, fontSize: 15, color: '#18181B', margin: '0 0 16px' }}>
-                                            알림 수신 설정
-                                        </h3>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            {/* Item 1 */}
-                                            <div style={{ padding: '12px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F4F1FC' }}>
-                                                <div>
-                                                    <div style={{ fontWeight: 600, fontSize: 13, color: '#18181B' }}>수업 예약 리마인드 알림</div>
-                                                    <div style={{ fontSize: 12, color: '#71717A', marginTop: 2 }}>수업 시작 3시간 및 1시간 전 카카오 알림톡/앱 푸시 발송</div>
-                                                </div>
-                                                <Switch
-                                                    checked={settingNotifications.remind}
-                                                    onChange={(checked) => {
-                                                        setSettingNotifications({ ...settingNotifications, remind: checked });
-                                                        message.success(`수업 예약 리마인드 알림이 ${checked ? '켜졌습니다' : '꺼졌습니다'}.`);
-                                                    }}
-                                                />
-                                            </div>
-
-                                            {/* Item 2 */}
-                                            <div style={{ padding: '12px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F4F1FC' }}>
-                                                <div>
-                                                    <div style={{ fontWeight: 600, fontSize: 13, color: '#18181B' }}>대기 승격 긴급 알림</div>
-                                                    <div style={{ fontSize: 12, color: '#71717A', marginTop: 2 }}>대기 중이던 수업에 공석 발생 시 즉시 카카오 알림톡 및 긴급 알림</div>
-                                                </div>
-                                                <Switch
-                                                    checked={settingNotifications.waitlist}
-                                                    onChange={(checked) => {
-                                                        setSettingNotifications({ ...settingNotifications, waitlist: checked });
-                                                        message.success(`대기 승격 알림이 ${checked ? '켜졌습니다' : '꺼졌습니다'}.`);
-                                                    }}
-                                                />
-                                            </div>
-
-                                            {/* Item 3 */}
-                                            <div style={{ padding: '12px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F4F1FC' }}>
-                                                <div>
-                                                    <div style={{ fontWeight: 600, fontSize: 13, color: '#18181B' }}>이용권 만료 임박 안내</div>
-                                                    <div style={{ fontSize: 12, color: '#71717A', marginTop: 2 }}>잔여 이용권 만료 14일, 7일 전 리마인드 전송</div>
-                                                </div>
-                                                <Switch
-                                                    checked={settingNotifications.expire}
-                                                    onChange={(checked) => {
-                                                        setSettingNotifications({ ...settingNotifications, expire: checked });
-                                                        message.success(`이용권 만료 임박 안내가 ${checked ? '켜졌습니다' : '꺼졌습니다'}.`);
-                                                    }}
-                                                />
-                                            </div>
-
-                                            {/* Item 4 */}
-                                            <div style={{ padding: '12px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                <div>
-                                                    <div style={{ fontWeight: 600, fontSize: 13, color: '#18181B' }}>마케팅 및 혜택 소식 수신</div>
-                                                    <div style={{ fontSize: 12, color: '#71717A', marginTop: 2 }}>신규 클래스 오픈 및 첫 등록/재등록 특별 할인 안내 (선택)</div>
-                                                </div>
-                                                <Switch
-                                                    checked={settingNotifications.marketing}
-                                                    onChange={(checked) => {
-                                                        setSettingNotifications({ ...settingNotifications, marketing: checked });
-                                                        message.success(`마케팅 수신 동의가 ${checked ? '설정되었습니다' : '해제되었습니다'}.`);
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Card 3: 계정 및 보안 관리 */}
-                                    <div
-                                        style={{
-                                            background: '#FFFFFF',
-                                            border: '1px solid #F1F0F7',
-                                            borderRadius: 18,
-                                            padding: '22px 26px',
-                                        }}
-                                    >
-                                        <h3 style={{ fontWeight: 700, fontSize: 15, color: '#18181B', margin: '0 0 12px' }}>
-                                            계정 및 보안 관리
-                                        </h3>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            {/* ID */}
-                                            <div style={{ padding: '14px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F4F4F5' }}>
-                                                <div>
-                                                    <div style={{ fontWeight: 600, fontSize: 14, color: '#18181B' }}>기본 로그인 아이디</div>
-                                                    <div style={{ fontSize: 12, color: '#71717A', marginTop: 2 }}>jiwoo@owlfit.com</div>
-                                                </div>
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 84, height: 34, borderRadius: 9999, background: '#F4F4F5', fontSize: 12, fontWeight: 500, color: '#71717A' }}>
-                                                    기본 계정
-                                                </span>
-                                            </div>
-
-                                            {/* Kakao */}
-                                            <div style={{ padding: '14px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F4F4F5' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                    <div style={{ width: 22, height: 22, background: '#FEE500', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 11, color: '#18181B' }}>
-                                                        K
-                                                    </div>
-                                                    <div>
-                                                        <div style={{ fontWeight: 600, fontSize: 14, color: '#18181B' }}>카카오 로그인</div>
-                                                        <span style={{ fontSize: 12, color: '#71717A', marginTop: 2, display: 'block' }} className="font-num">jiwoo@kakao.com (연동 완료)</span>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    style={{ width: 84, height: 34, borderRadius: 9999, background: '#F4F4F5', border: 'none', fontSize: 12, fontWeight: 500, color: '#52525B', cursor: 'pointer' }}
-                                                    onClick={() => message.info('카카오 계정 연동 해제 기능입니다.')}
-                                                >
-                                                    연동 해제
-                                                </button>
-                                            </div>
-
-
-                                            {/* Password */}
-                                            <div style={{ padding: '14px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F4F4F5' }}>
-                                                <div>
-                                                    <div style={{ fontWeight: 600, fontSize: 14, color: '#18181B' }}>로그인 비밀번호</div>
-                                                    <div style={{ fontSize: 12, color: '#71717A', marginTop: 2 }}>주기적인 변경으로 계정을 안전하게 보호하세요.</div>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    style={{ width: 84, height: 34, borderRadius: 9999, background: '#F4F4F5', border: 'none', fontSize: 12, fontWeight: 500, color: '#52525B', cursor: 'pointer' }}
-                                                    onClick={() => message.info('비밀번호 변경 모달이 호출됩니다.')}
-                                                >
-                                                    변경
-                                                </button>
-                                            </div>
-
-                                            {/* Withdraw */}
-                                            <div style={{ padding: '14px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                <div>
-                                                    <div style={{ fontWeight: 600, fontSize: 14, color: '#DC2626' }}>회원 탈퇴</div>
-                                                    <div style={{ fontSize: 12, color: '#DC2626', opacity: 0.8, marginTop: 2 }}>탈퇴 시 모든 이용권 및 예약 이력이 즉시 파기됩니다.</div>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    style={{ width: 84, height: 34, borderRadius: 9999, background: '#FEF2F2', border: 'none', fontSize: 12, fontWeight: 600, color: '#DC2626', cursor: 'pointer' }}
-                                                    onClick={() => {
-                                                        Modal.confirm({
-                                                            title: '정말 회원 탈퇴를 신청하시겠습니까?',
-                                                            content: '탈퇴 시 보유 중인 잔여 이용권과 예약 내역이 영구 소멸되며 복구할 수 없습니다.',
-                                                            okText: '탈퇴 신청',
-                                                            okType: 'danger',
-                                                            cancelText: '취소',
-                                                            onOk: () => handleLogout(),
-                                                        });
-                                                    }}
-                                                >
-                                                    탈퇴 신청
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                            {activeTab === 'settings' && <MemberSettings member={memberInfo} onUpdate={setMemberInfo} />}
                         </div>
                     </section>
                 </main>
@@ -2279,7 +1756,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                     <p style={{ fontSize: 12, color: '#71717A', margin: 0 }}>
                         {actionModal.type === 'confirm'
                             ? '예약 확정 시 보유하신 이용권 1회가 즉시 차감 처리됩니다.'
-                            : '취소 규정에 따라 이용권이 즉시 반환되며 다음 대기자에게 순번이 양도됩니다.'}
+                            : '선택한 수업의 예약 또는 대기 신청을 취소합니다. 완료 후 최신 이용 내역이 반영됩니다.'}
                     </p>
                 </div>
 
@@ -2311,7 +1788,7 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                             color: '#52525B',
                             cursor: 'pointer',
                         }}
-                        onClick={() => setActionModal({ open: false, type: 'confirm', item: null })}
+                        disabled={actionBusy} onClick={() => setActionModal({ open: false, type: 'cancel', item: null })}
                     >
                         닫기
                     </button>
@@ -2329,168 +1806,14 @@ const MyPageWorkspace = ({ initialTab = 'reservations' }) => {
                             boxShadow: '0 4px 12px rgba(91, 59, 168, 0.25)',
                         }}
                         onClick={handleExecuteAction}
+                        disabled={actionBusy}
                     >
                         {actionModal.type === 'confirm' ? '예약 확정' : '취소 접수'}
                     </button>
                 </div>
             </Modal>
 
-            {/* Modal 2: PRD REQ-06 이용권 중도 해지 및 환불 신청 모달 */}
-            <Modal
-                open={refundModalOpen}
-                onCancel={() => setRefundModalOpen(false)}
-                footer={null}
-                centered
-                width={480}
-                styles={{
-                    content: {
-                        borderRadius: 24,
-                        padding: '28px 32px',
-                    },
-                }}
-            >
-                <div style={{ marginBottom: 16 }}>
-                    <h3 style={{ fontSize: 18, fontWeight: 800, color: '#18181B', margin: '0 0 6px' }}>
-                        이용권 중도 해지 및 환불 신청
-                    </h3>
-                    <p style={{ fontSize: 12, color: '#71717A', margin: 0 }}>
-                        소비자분쟁해결기준 및 센터 이용약관 규정에 따라 산정된 정산 금액을 안내해 드립니다.
-                    </p>
-                </div>
-
-                <div style={{ background: '#FAF9FD', border: '1px solid #EDE9FE', borderRadius: 16, padding: '16px 20px', marginBottom: 16 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
-                        <span style={{ color: '#71717A' }}>원 결제 금액</span>
-                        <strong className="font-num" style={{ color: '#18181B' }}>1,980,000원</strong>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
-                        <span style={{ color: '#DC2626' }}>위약금 (총액의 10%)</span>
-                        <strong className="font-num" style={{ color: '#DC2626' }}>- 198,000원</strong>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, fontSize: 13 }}>
-                        <span style={{ color: '#DC2626' }}>기이용 회차 차감 (18회 × 70,000원)</span>
-                        <strong className="font-num" style={{ color: '#DC2626' }}>- 1,260,000원</strong>
-                    </div>
-                    <div style={{ borderTop: '1.5px dashed #DDD6FE', paddingTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 800, fontSize: 14, color: '#18181B' }}>예상 최종 환불액</span>
-                        <span style={{ fontWeight: 900, fontSize: 19, color: '#6D28D9' }} className="font-num">
-                            522,000원
-                        </span>
-                    </div>
-                </div>
-
-                <div style={{ marginBottom: 20 }}>
-                    <Checkbox
-                        checked={refundAgreed}
-                        onChange={(e) => setRefundAgreed(e.target.checked)}
-                        style={{ fontSize: 12, color: '#374151' }}
-                    >
-                        환불 규정 및 이용권 즉시 회수 처리에 동의합니다.
-                    </Checkbox>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                    <button
-                        type="button"
-                        style={{ padding: '10px 18px', borderRadius: 12, border: '1px solid #E4E4E7', background: '#FFFFFF', fontSize: 12, fontWeight: 600, color: '#52525B', cursor: 'pointer' }}
-                        onClick={() => setRefundModalOpen(false)}
-                    >
-                        취소
-                    </button>
-                    <button
-                        type="button"
-                        style={{
-                            padding: '10px 22px',
-                            borderRadius: 12,
-                            border: 'none',
-                            background: refundAgreed ? '#DC2626' : '#D4D4D8',
-                            color: '#FFFFFF',
-                            fontSize: 12,
-                            fontWeight: 700,
-                            cursor: refundAgreed ? 'pointer' : 'not-allowed',
-                        }}
-                        onClick={handleExecuteRefund}
-                    >
-                        환불 신청하기
-                    </button>
-                </div>
-            </Modal>
-
-            {/* Modal 3: Metric Config Modal */}
-            <Modal
-                open={metricModalOpen}
-                onCancel={() => setMetricModalOpen(false)}
-                footer={null}
-                centered
-                width={420}
-                styles={{ content: { borderRadius: 24, padding: '24px 28px' } }}
-            >
-                <h3 style={{ fontSize: 16, fontWeight: 800, color: '#18181B', margin: '0 0 6px' }}>
-                    대시보드 메트릭 카드 설정
-                </h3>
-                <p style={{ fontSize: 12, color: '#71717A', margin: '0 0 16px' }}>
-                    상단 배너에 우선 표시할 통계 지표를 선택해주세요. (최대 3개)
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#FAF9FD', borderRadius: 12 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#18181B' }}>이번 달 예약 현황</span>
-                        <Checkbox defaultChecked disabled />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#FAF9FD', borderRadius: 12 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#18181B' }}>전체 출석률</span>
-                        <Checkbox defaultChecked />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#FAF9FD', borderRadius: 12 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#18181B' }}>대기 접수 현황</span>
-                        <Checkbox defaultChecked />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#FAF9FD', borderRadius: 12 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#18181B' }}>잔여 이용권 D-Day</span>
-                        <Checkbox />
-                    </div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                    <Button onClick={() => setMetricModalOpen(false)}>취소</Button>
-                    <Button type="primary" style={{ background: '#5B3BA8' }} onClick={() => { message.success('메트릭 설정이 저장되었습니다.'); setMetricModalOpen(false); }}>
-                        적용하기
-                    </Button>
-                </div>
-            </Modal>
-
-            {/* Modal 4: Pass Pause Modal (일시정지 신청) */}
-            <Modal
-                open={pauseModalOpen}
-                onCancel={() => setPauseModalOpen(false)}
-                footer={null}
-                centered
-                width={420}
-                styles={{ content: { borderRadius: 24, padding: '24px 28px' } }}
-            >
-                <h3 style={{ fontSize: 16, fontWeight: 800, color: '#18181B', margin: '0 0 6px' }}>
-                    이용권 일시정지(홀딩) 신청
-                </h3>
-                <p style={{ fontSize: 12, color: '#71717A', margin: '0 0 16px' }}>
-                    1회 신청 시 최대 30일까지 일시정지가 가능하며, 정지 기간만큼 만료일이 자동 연장됩니다.
-                </p>
-                <div style={{ background: '#FAF9FD', borderRadius: 12, padding: '14px', border: '1px solid #EDE9FE', marginBottom: 20 }}>
-                    <div style={{ fontSize: 12, color: '#52525B', marginBottom: 6 }}>· 대상 이용권: <strong>1:1 개인 PT 30회권</strong></div>
-                    <div style={{ fontSize: 12, color: '#52525B', marginBottom: 6 }}>· 희망 정지 일수: <strong>14일간</strong></div>
-                    <div style={{ fontSize: 12, color: '#52525B' }}>· 연장 후 만료일: <strong style={{ color: '#6D28D9' }}>2027년 01월 14일</strong></div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                    <Button onClick={() => setPauseModalOpen(false)}>취소</Button>
-                    <Button
-                        type="primary"
-                        style={{ background: '#5B3BA8' }}
-                        onClick={() => {
-                            message.success('이용권 일시정지 신청이 완료되었습니다.');
-                            setPauseModalOpen(false);
-                        }}
-                    >
-                        신청 완료
-                    </Button>
-                </div>
-            </Modal>
+            <PassDetailsModal dialog={passDialog} onClose={() => setPassDialog(null)} onChanged={reload} reservations={reservations} attendance={attendance} holds={holds} />
         </div>
     );
 };

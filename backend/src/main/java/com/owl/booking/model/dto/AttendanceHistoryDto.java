@@ -12,6 +12,7 @@ public class AttendanceHistoryDto {
     private String bookingId;
     private String realProgramId;
     private String centerName;
+    private String centerId;
     private String programName;
     private LocalDateTime programDat;
     private String startTime;

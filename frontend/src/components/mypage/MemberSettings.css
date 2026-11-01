@@ -1,0 +1,143 @@
+.member-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: 100%;
+}
+
+.member-settings-card {
+    padding: 22px 26px;
+    background: #FFFFFF;
+    border: 1px solid #F1F0F7;
+    border-radius: 18px;
+}
+
+.member-settings-card h3 {
+    margin: 0 0 12px;
+    color: #18181B;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.member-settings-account {
+    margin: 0;
+}
+
+.member-settings-account > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    min-height: 54px;
+    padding: 12px 0;
+    border-bottom: 1px solid #F4F4F5;
+}
+
+.member-settings-account > div:last-child {
+    padding-bottom: 4px;
+    border-bottom: 0;
+}
+
+.member-settings-account dt {
+    flex-shrink: 0;
+    color: #71717A;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.member-settings-account dd {
+    margin: 0;
+    color: #18181B;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.member-settings-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    background: #F5F3FF;
+    color: #6D28D9;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.member-settings-description {
+    margin: -6px 0 20px;
+    color: #71717A;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.member-settings-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.member-settings-contact .ant-form-item {
+    margin-bottom: 20px;
+}
+
+.member-settings-contact .ant-form-item-label > label {
+    color: #52525B;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.member-settings-contact .ant-input {
+    min-height: 42px;
+    padding: 10px 14px;
+    border-color: #E4E4E7;
+    border-radius: 12px;
+    font-size: 13px;
+}
+
+.member-settings-contact .ant-input:hover {
+    border-color: #DDD6FE;
+}
+
+.member-settings-contact .ant-input:focus {
+    border-color: #7C3AED;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.08);
+}
+
+.member-settings-save-row {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 16px;
+    border-top: 1px solid #F4F1FC;
+}
+
+.member-settings-contact .member-settings-save {
+    height: 34px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 9999px;
+    background: #F5F3FF;
+    color: #6D28D9;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: none;
+}
+
+.member-settings-contact .member-settings-save:not(:disabled):hover {
+    background: #EDE9FE;
+    color: #6D28D9;
+}
+
+@media (max-width: 640px) {
+    .member-settings-card {
+        padding: 20px;
+    }
+
+    .member-settings-fields {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+}

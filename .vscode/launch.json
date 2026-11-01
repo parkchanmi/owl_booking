@@ -4,17 +4,9 @@
             "type": "java",
             "name": "BackendApplication",
             "request": "launch",
-            "mainClass": "com.owl.booking.BackendApplication",
-            "projectName": "backend"
-        },
-        {
-            "type": "java",
-            "name": "Spring Boot-BookingApplication<backend>",
-            "request": "launch",
             "cwd": "${workspaceFolder}",
-            "mainClass": "com.owl.booking.BookingApplication",
+            "mainClass": "com.owl.booking.BackendApplication",
             "projectName": "backend",
-            "args": "",
             "envFile": "${workspaceFolder}/.env"
         }
     ]

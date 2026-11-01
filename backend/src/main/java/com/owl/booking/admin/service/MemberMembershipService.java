@@ -167,7 +167,9 @@ public class MemberMembershipService {
         dto.setUCnt(mm.getUCnt());
         dto.setHDay(mm.getHDay());
         dto.setActualUsedCount(calculateUsedCount(mm));
+        dto.setRemainingCount(mm.getUCnt() == null ? null : Math.max(0L, mm.getUCnt() - dto.getActualUsedCount()));
         dto.setActualHoldDays(holdHistoryRepository.sumHDayByMmId(mm.getId()));
+        dto.setRemainingHoldDays(Math.max(0L, (mm.getHDay() == null ? 0L : mm.getHDay()) - dto.getActualHoldDays()));
         dto.setCenter(toCenterDto(mm.getCenter()));
         dto.setMember(toMemberDto(mm.getMember()));
         dto.setMembership(toMembershipDto(mm.getMembership()));

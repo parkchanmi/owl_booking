@@ -1,6 +1,7 @@
 package com.owl.booking.admin.service;
 
 import com.owl.booking.common.service.MailService;
+import com.owl.booking.common.BookingTimePolicy;
 import com.owl.booking.model.dto.CenterConfigDto;
 import com.owl.booking.model.dto.MyBookingDto;
 import com.owl.booking.model.dto.WaitlistReservationDto;
@@ -213,6 +214,7 @@ public class WaitlistReservationService {
     public MyBookingDto reserve(String token, String waitlistId) {
         Waitlist waitlist = findByTokenOrId(token, waitlistId);
         RealProgram program = requireProgram(waitlist);
+        BookingTimePolicy.requireOpen(program);
         Member member = waitlist.getMember();
         if (member == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "대기 회원 정보를 찾을 수 없습니다.");

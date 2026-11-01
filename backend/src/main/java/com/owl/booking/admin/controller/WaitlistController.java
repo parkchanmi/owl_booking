@@ -1,7 +1,9 @@
 package com.owl.booking.admin.controller;
 
 import com.owl.booking.admin.service.WaitlistReservationService;
+import com.owl.booking.common.BookingTimePolicy;
 import com.owl.booking.model.dto.BookingCreateRequestDto;
+import com.owl.booking.model.dto.MyBookingDto;
 import com.owl.booking.model.entity.Booking;
 import com.owl.booking.model.entity.CenterConfig;
 import com.owl.booking.model.entity.Member;
@@ -19,8 +21,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -45,11 +49,43 @@ public class WaitlistController {
     @Autowired
     private WaitlistReservationService waitlistReservationService;
 
+    @GetMapping("/mine")
+    public List<MyBookingDto> getMyWaitlists() {
+        return waitlistRepository.findByMember_Id(currentMember().getId()).stream().map(waitlist -> {
+            RealProgram program = waitlist.getProgram();
+            return MyBookingDto.builder().id(waitlist.getId()).waitlist(true)
+                    .realProgramId(program.getId())
+                    .centerId(program.getCenter() != null ? program.getCenter().getId() : null)
+                    .centerName(program.getCenter() != null ? program.getCenter().getName() : null)
+                    .programName(program.getProgramName()).instructorName(program.getInstructorName())
+                    .programDat(program.getProgramDat()).startTime(program.getStartTime()).endTime(program.getEndTime())
+                    .build();
+        }).toList();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> cancelMyWaitlist(@PathVariable String id) {
+        Member member = currentMember();
+        Waitlist waitlist = waitlistRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "대기 신청을 찾을 수 없습니다."));
+        if (waitlist.getMember() == null || !member.getId().equals(waitlist.getMember().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인의 대기 신청만 취소할 수 있습니다.");
+        }
+        waitlistRepository.delete(waitlist);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping
+    @Transactional
     public ResponseEntity<?> createWaitlist(@RequestBody BookingCreateRequestDto request) {
         Member member = currentMember();
-        RealProgram program = realProgramRepository.findById(request.getRealProgramId())
+        RealProgram program = realProgramRepository.findByIdForUpdate(request.getRealProgramId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "수업을 찾을 수 없습니다."));
+        BookingTimePolicy.requireOpen(program);
+
+        if (bookingRepository.existsByProgramAndMember_Id(program, member.getId())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "이미 예약한 수업입니다."));
+        }
 
         if (waitlistRepository.existsByProgramAndMember_Id(program, member.getId())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "이미 대기 신청한 수업입니다."));
@@ -87,6 +123,7 @@ public class WaitlistController {
         if (waitlist == null) {
             return ResponseEntity.notFound().build();
         }
+        BookingTimePolicy.requireOpen(waitlist.getProgram());
 
         Booking booking = Booking.builder()
                 .center(waitlist.getProgram() != null ? waitlist.getProgram().getCenter() : null)
