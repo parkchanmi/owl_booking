@@ -103,3 +103,37 @@ aside button:active {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(124, 58, 237, 0.3);
 }
+
+/* Hide scrollbar for Collapsed Sidebar */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Ant Design Tooltip Custom Overlay for Sidebar (하얀 배경 + 보라색 글씨 말풍선) */
+.sidebar-tooltip-overlay.ant-tooltip {
+  --antd-arrow-background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.sidebar-tooltip-overlay .ant-tooltip-inner {
+  background: rgba(255, 255, 255, 0.95) !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 8px 24px -4px rgba(124, 58, 237, 0.18), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+  border-radius: 12px !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #2D175E !important;
+  white-space: nowrap !important;
+}
+
+.sidebar-tooltip-overlay .ant-tooltip-arrow::before {
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+

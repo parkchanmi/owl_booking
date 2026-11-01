@@ -3,6 +3,7 @@ import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import axios from 'axios';
 import { message } from 'antd';
 import { fetchCenters } from '../api/centerApi';
+import Sidebar from './Sidebar';
 import '../page/admin/index.css';
 
 const DashboardLayoutContext = createContext(null);
@@ -23,7 +24,6 @@ const DashboardLayoutFrame = ({ title, userLabel = '-', children }) => {
     });
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
-    const [isBranchMenuOpen, setIsBranchMenuOpen] = useState(false);
     const [layoutTitle, setLayoutTitle] = useState(title ?? 'Dashboard');
 
     // 사이드바 접힘 상태 동기화
@@ -61,44 +61,12 @@ const DashboardLayoutFrame = ({ title, userLabel = '-', children }) => {
     const [loginUser, setLoginUser] = useState(null);
 
     const profileRef = useRef(null);
-    const branchRef = useRef(null);
-
-    // 활성 메뉴 감지
-    const isDashboardActive = currentPath === '/admin';
-    const isCenterActive = currentPath.startsWith('/admin/center');
-    const isMemberActive = currentPath.startsWith('/admin/member');
-    const isInstructorActive = currentPath === '/admin/instructor/list' || (currentPath.startsWith('/admin/instructor') && !currentPath.includes('/attendance'));
-    const isBookingActive = currentPath === '/admin/booking' || currentPath.startsWith('/admin/class');
-    const isAttendanceActive = currentPath === '/admin/attendance' || currentPath.startsWith('/admin/attendance') || currentPath.startsWith('/admin/instructor/attendance');
-    const isTicketActive = currentPath.startsWith('/admin/ticket');
-    const isSalesActive = currentPath.startsWith('/admin/sales');
-    const isPermissionActive = currentPath.startsWith('/admin/permission');
-    const isSettingActive = currentPath.startsWith('/admin/setting');
-
-    // 사이드바 버튼 클래스 (접힘 상태 중앙 고정 규격 적용)
-    const getNavItemClass = (isActive) => {
-        if (isCollapsed) {
-            return `w-10 h-10 mx-auto flex items-center justify-center rounded-2xl transition-all duration-200 border-0 outline-none cursor-pointer ${
-                isActive
-                    ? 'bg-[#EDE9FE] text-[#7C3AED] font-bold shadow-sm'
-                    : 'text-slate-500 hover:bg-white/60 hover:text-[#7C3AED] bg-transparent'
-            }`;
-        }
-        return `w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 border-0 outline-none cursor-pointer ${
-            isActive
-                ? 'bg-[#EDE9FE] text-[#7C3AED] shadow-sm'
-                : 'text-slate-600 hover:bg-white/40 hover:text-[#7C3AED] bg-transparent'
-        }`;
-    };
 
     // 외부 클릭 감지
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (profileRef.current && !profileRef.current.contains(e.target)) {
                 setIsProfileOpen(false);
-            }
-            if (branchRef.current && !branchRef.current.contains(e.target)) {
-                setIsBranchMenuOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -322,330 +290,15 @@ const DashboardLayoutFrame = ({ title, userLabel = '-', children }) => {
                 {/* 2. Main Outer Container: 사이드바 + 메인 본문 독립 스크롤 */}
                 {/* ==================================================== */}
                 <div className="flex-1 flex w-full overflow-hidden">
-                    {/* ── Sidebar ── */}
-                    <aside
-                        className={`relative m-4 rounded-2xl border-0 flex flex-col shrink-0 h-[calc(100vh-6rem)] z-40 transition-all duration-300 ${
-                            isCollapsed ? 'w-[76px] py-4 px-2 items-center overflow-visible' : 'w-[240px] p-4 overflow-hidden'
-                        }`}
-                        style={{
-                            background: 'rgba(255, 255, 255, 0.75)',
-                            backdropFilter: 'blur(24px) saturate(160%)',
-                            WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-                            boxShadow: '0 10px 30px -10px rgba(124, 58, 237, 0.07)',
-                        }}
-                    >
-                        {/* 1. Header (고정): 지점 셀렉터 */}
-                        <div className="relative flex-shrink-0 w-full mb-3 px-0" ref={branchRef}>
-                            {isCollapsed ? (
-                                <div className="group relative flex justify-center items-center w-full px-0">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsBranchMenuOpen(!isBranchMenuOpen)}
-                                        className="w-10 h-10 mx-auto bg-transparent border-0 flex items-center justify-center p-0 cursor-pointer transition outline-none"
-                                    >
-                                        <span className="w-9 h-9 rounded-full bg-[#EDE9FE] text-[#7C3AED] font-bold text-xs flex items-center justify-center shadow-sm">
-                                            {branchInitial}
-                                        </span>
-                                    </button>
-                                    <div className="sidebar-tooltip">{branchFullName}</div>
-                                </div>
-                            ) : (
-                                <button
-                                    type="button"
-                                    onClick={() => setIsBranchMenuOpen(!isBranchMenuOpen)}
-                                    className="w-full bg-transparent border-0 px-2 py-1.5 flex items-center justify-between text-left transition group cursor-pointer outline-none"
-                                >
-                                    <div className="flex items-center gap-2.5 truncate">
-                                        <span className="w-7 h-7 rounded-full bg-[#EDE9FE] text-[#7C3AED] font-bold text-xs flex items-center justify-center shrink-0">
-                                            {branchInitial}
-                                        </span>
-                                        <span className="text-xs font-bold text-slate-900 group-hover:text-[#7C3AED] transition-colors truncate">
-                                            {branchFullName}
-                                        </span>
-                                    </div>
-                                    <svg
-                                        className={`w-3.5 h-3.5 text-slate-400 group-hover:text-[#7C3AED] transition-transform duration-200 shrink-0 ${
-                                            isBranchMenuOpen ? 'rotate-180 text-[#7C3AED]' : ''
-                                        }`}
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </button>
-                            )}
-
-                            {/* 지점 선택 팝오버 드롭다운 */}
-                            {isBranchMenuOpen && (
-                                <div
-                                    className={`absolute z-50 rounded-2xl bg-white/95 backdrop-blur-xl border border-white/80 shadow-[0_12px_36px_rgba(124,58,237,0.18)] p-2 min-w-[200px] space-y-1 ${
-                                        isCollapsed ? 'left-[calc(100%+14px)] top-0' : 'left-0 top-[calc(100%+6px)]'
-                                    }`}
-                                >
-                                    <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 tracking-wider">
-                                        센터 선택
-                                    </div>
-                                    {centers.map((c) => {
-                                        const isSelected = c.id === selectedCenterId;
-                                        return (
-                                            <button
-                                                key={`branch-opt-${c.id}`}
-                                                type="button"
-                                                onClick={() => {
-                                                    setSelectedCenterId(c.id);
-                                                    setIsBranchMenuOpen(false);
-                                                    message.success(`[${c.name}] 센터가 선택되었습니다.`);
-                                                }}
-                                                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-left border-0 ${
-                                                    isSelected
-                                                        ? 'bg-[#EDE9FE] text-[#7C3AED]'
-                                                        : 'text-slate-700 hover:bg-[#F5F3FF] hover:text-[#7C3AED]'
-                                                }`}
-                                            >
-                                                <span>{c.name}</span>
-                                                {isSelected && (
-                                                    <svg className="w-3.5 h-3.5 text-[#7C3AED] stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <polyline points="20 6 9 17 4 12" />
-                                                    </svg>
-                                                )}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* 2. Middle (독립 스크롤): Workspace Navigation */}
-                        <nav
-                            className={`w-full ${
-                                isCollapsed
-                                    ? 'flex-1 min-h-0 flex flex-col items-center space-y-1.5 overflow-visible px-0'
-                                    : 'flex-1 min-h-0 overflow-y-auto overflow-x-hidden sidebar-scroll space-y-1 pr-1'
-                            }`}
-                        >
-                            {!isCollapsed && (
-                                <div className="text-[11px] font-bold text-slate-400 tracking-wider mb-2 px-3">
-                                    WORKSPACE
-                                </div>
-                            )}
-
-                            {/* 1. 대시보드 */}
-                            <div className="group relative flex justify-center items-center w-full px-0">
-                                <button
-                                    type="button"
-                                    aria-label="대시보드"
-                                    onClick={() => navigate('/admin')}
-                                    className={getNavItemClass(isDashboardActive)}
-                                >
-                                    <svg className={`w-4 h-4 stroke-[1.8] shrink-0 ${isDashboardActive ? 'text-[#7C3AED]' : 'text-slate-400 group-hover:text-[#7C3AED]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <rect height="7" rx="2" width="7" x="3" y="3" />
-                                        <rect height="7" rx="2" width="7" x="14" y="3" />
-                                        <rect height="7" rx="2" width="7" x="14" y="14" />
-                                        <rect height="7" rx="2" width="7" x="3" y="14" />
-                                    </svg>
-                                    {!isCollapsed && <span>대시보드</span>}
-                                </button>
-                                {isCollapsed && <div className="sidebar-tooltip">대시보드</div>}
-                            </div>
-
-                            {/* 2. 센터 관리 */}
-                            <div className="group relative flex justify-center items-center w-full px-0">
-                                <button
-                                    type="button"
-                                    aria-label="센터 관리"
-                                    onClick={() => navigate('/admin/center/list')}
-                                    className={getNavItemClass(isCenterActive)}
-                                >
-                                    <svg className={`w-4 h-4 stroke-[1.8] shrink-0 ${isCenterActive ? 'text-[#7C3AED]' : 'text-slate-400 group-hover:text-[#7C3AED]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M3 21h18M3 7v14M21 7v14M6 21V10a2 2 0 012-2h8a2 2 0 012 2v11M9 11h2m-2 4h2m4-4h2m-2 4h2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {!isCollapsed && <span>센터 관리</span>}
-                                </button>
-                                {isCollapsed && <div className="sidebar-tooltip">센터 관리</div>}
-                            </div>
-
-                            {/* 3. 회원 관리 */}
-                            <div className="group relative flex justify-center items-center w-full px-0">
-                                <button
-                                    type="button"
-                                    aria-label="회원 관리"
-                                    onClick={() => navigate('/admin/member/list')}
-                                    className={getNavItemClass(isMemberActive)}
-                                >
-                                    <svg className={`w-4 h-4 stroke-[1.8] shrink-0 ${isMemberActive ? 'text-[#7C3AED]' : 'text-slate-400 group-hover:text-[#7C3AED]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {!isCollapsed && <span>회원 관리</span>}
-                                </button>
-                                {isCollapsed && <div className="sidebar-tooltip">회원 관리</div>}
-                            </div>
-
-                            {/* 4. 강사 관리 */}
-                            <div className="group relative flex justify-center items-center w-full px-0">
-                                <button
-                                    type="button"
-                                    aria-label="강사 관리"
-                                    onClick={() => navigate('/admin/instructor/list')}
-                                    className={getNavItemClass(isInstructorActive)}
-                                >
-                                    <svg className={`w-4 h-4 stroke-[1.8] shrink-0 ${isInstructorActive ? 'text-[#7C3AED]' : 'text-slate-400 group-hover:text-[#7C3AED]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {!isCollapsed && <span>강사 관리</span>}
-                                </button>
-                                {isCollapsed && <div className="sidebar-tooltip">강사 관리</div>}
-                            </div>
-
-                            {/* 5. 수업 스케줄 (1depth 독립 메뉴) */}
-                            <div className="group relative flex justify-center items-center w-full px-0">
-                                <button
-                                    type="button"
-                                    aria-label="수업 스케줄"
-                                    onClick={() => navigate('/admin/booking')}
-                                    className={getNavItemClass(isBookingActive)}
-                                >
-                                    <svg className={`w-4 h-4 stroke-[1.8] shrink-0 ${isBookingActive ? 'text-[#7C3AED]' : 'text-slate-400 group-hover:text-[#7C3AED]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <rect height="18" rx="2" width="18" x="3" y="4" strokeLinecap="round" strokeLinejoin="round" />
-                                        <line x1="16" x2="16" y1="2" y2="6" strokeLinecap="round" strokeLinejoin="round" />
-                                        <line x1="8" x2="8" y1="2" y2="6" strokeLinecap="round" strokeLinejoin="round" />
-                                        <line x1="3" x2="21" y1="10" y2="10" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {!isCollapsed && <span>수업 스케줄</span>}
-                                </button>
-                                {isCollapsed && <div className="sidebar-tooltip">수업 스케줄</div>}
-                            </div>
-
-                            {/* 6. 출결 관리 (1depth 독립 메뉴) */}
-                            <div className="group relative flex justify-center items-center w-full px-0">
-                                <button
-                                    type="button"
-                                    aria-label="출결 관리"
-                                    onClick={() => navigate('/admin/attendance')}
-                                    className={getNavItemClass(isAttendanceActive)}
-                                >
-                                    <svg className={`w-4 h-4 stroke-[1.8] shrink-0 ${isAttendanceActive ? 'text-[#7C3AED]' : 'text-slate-400 group-hover:text-[#7C3AED]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <circle cx="9" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round" />
-                                        <polyline points="16 11 18 13 22 9" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {!isCollapsed && <span>출결 관리</span>}
-                                </button>
-                                {isCollapsed && <div className="sidebar-tooltip">출결 관리</div>}
-                            </div>
-
-                            {/* 7. 이용권 관리 */}
-                            <div className="group relative flex justify-center items-center w-full px-0">
-                                <button
-                                    type="button"
-                                    aria-label="이용권 관리"
-                                    onClick={() => navigate('/admin/ticket/list')}
-                                    className={getNavItemClass(isTicketActive)}
-                                >
-                                    <svg className={`w-4 h-4 stroke-[1.8] shrink-0 ${isTicketActive ? 'text-[#7C3AED]' : 'text-slate-400 group-hover:text-[#7C3AED]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {!isCollapsed && <span>이용권 관리</span>}
-                                </button>
-                                {isCollapsed && <div className="sidebar-tooltip">이용권 관리</div>}
-                            </div>
-
-                            {/* 8. 매출 관리 */}
-                            <div className="group relative flex justify-center items-center w-full px-0">
-                                <button
-                                    type="button"
-                                    aria-label="매출 관리"
-                                    onClick={() => navigate('/admin/sales')}
-                                    className={getNavItemClass(isSalesActive)}
-                                >
-                                    <svg className={`w-4 h-4 stroke-[1.8] shrink-0 ${isSalesActive ? 'text-[#7C3AED]' : 'text-slate-400 group-hover:text-[#7C3AED]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {!isCollapsed && <span>매출 관리</span>}
-                                </button>
-                                {isCollapsed && <div className="sidebar-tooltip">매출 관리</div>}
-                            </div>
-
-                            {/* 9. 권한 설정 */}
-                            <div className="group relative flex justify-center items-center w-full px-0">
-                                <button
-                                    type="button"
-                                    aria-label="권한 설정"
-                                    onClick={() => navigate('/admin/permission')}
-                                    className={getNavItemClass(isPermissionActive)}
-                                >
-                                    <svg className={`w-4 h-4 stroke-[1.8] shrink-0 ${isPermissionActive ? 'text-[#7C3AED]' : 'text-slate-400 group-hover:text-[#7C3AED]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {!isCollapsed && <span>권한 설정</span>}
-                                </button>
-                                {isCollapsed && <div className="sidebar-tooltip">권한 설정</div>}
-                            </div>
-
-                            {/* 10. 환경 설정 */}
-                            <div className="group relative flex justify-center items-center w-full px-0">
-                                <button
-                                    type="button"
-                                    aria-label="환경 설정"
-                                    onClick={() => navigate('/admin/setting')}
-                                    className={getNavItemClass(isSettingActive)}
-                                >
-                                    <svg className={`w-4 h-4 stroke-[1.8] shrink-0 ${isSettingActive ? 'text-[#7C3AED]' : 'text-slate-400 group-hover:text-[#7C3AED]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" strokeLinecap="round" strokeLinejoin="round" />
-                                        <circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {!isCollapsed && <span>환경 설정</span>}
-                                </button>
-                                {isCollapsed && <div className="sidebar-tooltip">환경 설정</div>}
-                            </div>
-                        </nav>
-
-                        {/* 3. Footer (고정): 사이드바 접기/펼치기 토글 & 로그아웃 */}
-                        <div className="flex-shrink-0 mt-auto pt-3 border-t border-slate-100/80 space-y-1 w-full flex flex-col items-center px-0">
-                            <div className="group relative flex justify-center items-center w-full px-0">
-                                <button
-                                    type="button"
-                                    aria-label={isCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
-                                    onClick={toggleSidebar}
-                                    className={`text-slate-500 hover:text-slate-800 transition cursor-pointer border-0 bg-transparent flex items-center outline-none ${
-                                        isCollapsed
-                                            ? 'w-10 h-10 mx-auto rounded-2xl hover:bg-white/60 justify-center'
-                                            : 'w-full text-xs font-semibold py-2 px-3 rounded-full hover:bg-white/40 gap-2.5'
-                                    }`}
-                                >
-                                    <svg className="w-4 h-4 stroke-[1.8] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        {isCollapsed ? (
-                                            <path d="M13 5l7 7-7 7M5 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-                                        ) : (
-                                            <path d="M11 19l-7-7 7-7m8 14l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-                                        )}
-                                    </svg>
-                                    {!isCollapsed && <span>사이드바 접기</span>}
-                                </button>
-                                {isCollapsed && <div className="sidebar-tooltip">사이드바 펼치기</div>}
-                            </div>
-
-                            <div className="group relative flex justify-center items-center w-full px-0">
-                                <button
-                                    type="button"
-                                    aria-label="로그아웃"
-                                    onClick={handleLogout}
-                                    className={`text-slate-500 hover:text-rose-600 transition cursor-pointer border-0 bg-transparent flex items-center outline-none ${
-                                        isCollapsed
-                                            ? 'w-10 h-10 mx-auto rounded-2xl hover:bg-rose-50 justify-center'
-                                            : 'w-full text-xs font-semibold py-2 px-3 rounded-full hover:bg-rose-50 gap-2.5'
-                                    }`}
-                                >
-                                    <svg className="w-4 h-4 stroke-[1.8] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {!isCollapsed && <span>로그아웃</span>}
-                                </button>
-                                {isCollapsed && <div className="sidebar-tooltip">로그아웃</div>}
-                            </div>
-                        </div>
-                    </aside>
+                    {/* ── Sidebar (공통 사이드바 컴포넌트) ── */}
+                    <Sidebar
+                        centers={centers}
+                        selectedCenterId={selectedCenterId}
+                        setSelectedCenterId={setSelectedCenterId}
+                        isCollapsed={isCollapsed}
+                        toggleSidebar={toggleSidebar}
+                        handleLogout={handleLogout}
+                    />
 
                     {/* ── Main Content Area (독립 스크롤) ── */}
                     <main

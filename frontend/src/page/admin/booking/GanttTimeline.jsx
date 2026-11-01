@@ -25,12 +25,44 @@ function durationPercent(start, end) {
   return Math.max(5, timeToPercent(end) - timeToPercent(start));
 }
 
+// 동일 리소스(강사/스튜디오) 내 시간대 중복 발생 시 다단(Multi-lane) 배치 계산
+function computeScheduleLanes(scheds = []) {
+  const sorted = [...scheds].sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+  const laneEndTimes = [];
+  const scheduleLanes = new Map();
+
+  sorted.forEach((item) => {
+    const [sh = 0, sm = 0] = (item.startTime || '00:00').split(':').map(Number);
+    const [eh = 0, em = 0] = (item.endTime || '00:00').split(':').map(Number);
+    const startMin = sh * 60 + sm;
+    const endMin = eh * 60 + em;
+
+    let targetLane = -1;
+    for (let i = 0; i < laneEndTimes.length; i++) {
+      if (laneEndTimes[i] <= startMin) {
+        targetLane = i;
+        laneEndTimes[i] = endMin;
+        break;
+      }
+    }
+    if (targetLane === -1) {
+      targetLane = laneEndTimes.length;
+      laneEndTimes.push(endMin);
+    }
+    scheduleLanes.set(item.id, targetLane);
+  });
+
+  return { scheduleLanes, totalLanes: Math.max(1, laneEndTimes.length) };
+}
+
 export function GanttTimeline({
   schedules = [],
   instructors = [],
   studios = [
-    { id: 'A', name: '스튜디오 A룸', capacity: 10 },
-    { id: 'B', name: '스튜디오 B룸', capacity: 8 },
+    { id: 'A', name: '스튜디오 A룸 (요가/GX)', capacity: 10, allowOverlap: false },
+    { id: 'B', name: '스튜디오 B룸 (필라테스)', capacity: 8, allowOverlap: false },
+    { id: 'C', name: '스튜디오 C룸 (스피닝)', capacity: 15, allowOverlap: false },
+    { id: 'D', name: '피트니스존 (PT/자유운동)', capacity: 20, allowOverlap: true },
   ],
   timelineDate,
   onTimelineDateChange,
@@ -68,10 +100,18 @@ export function GanttTimeline({
     return studios.map((std) => ({
       id: std.id,
       label: std.name,
-      sublabel: `정원 ${std.capacity}명`,
+      sublabel: std.allowOverlap ? '공유 공간 (중복 허용)' : `정원 ${std.capacity}명`,
       schedules: daySchedules.filter((s) => s.studioId === std.id),
     }));
   }, [groupById, instructors, studios, daySchedules, isInstructor, currentInstructorId]);
+
+  const resourceLanes = useMemo(() => {
+    const map = new Map();
+    resources.forEach((res) => {
+      map.set(res.id, computeScheduleLanes(res.schedules));
+    });
+    return map;
+  }, [resources]);
 
   const hours = useMemo(() => {
     const arr = [];
@@ -181,31 +221,41 @@ export function GanttTimeline({
           <div className="h-10 flex items-center px-4 text-xs font-bold text-violet-500 border-b border-violet-100/80 bg-violet-50/30">
             {groupById === 'instructor' ? '강사' : '스튜디오 룸'}
           </div>
-          {resources.map((res) => (
-            <div key={res.id} className="h-20 flex items-center gap-2.5 px-3 border-b border-violet-50/60 last:border-b-0">
-              {groupById === 'instructor' ? (
-                <>
-                  <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0 text-violet-700 shadow-2xs font-bold text-xs">
-                    {res.label.slice(0, 1)}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-zinc-900 truncate">{res.label}</p>
-                    <p className="text-[10px] text-zinc-400 font-medium">{res.schedules.length}개 수업</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="w-8 h-8 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0 text-violet-700 shadow-2xs">
-                    <MapPin className="w-4 h-4 text-violet-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-zinc-900 truncate">{res.label}</p>
-                    <p className="text-[10px] text-zinc-400 font-medium">{res.sublabel}</p>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
+          {resources.map((res) => {
+            const laneInfo = resourceLanes.get(res.id) || { totalLanes: 1 };
+            const isMultiLane = laneInfo.totalLanes > 1;
+            const rowHeightPx = isMultiLane ? laneInfo.totalLanes * 46 + 18 : 80;
+
+            return (
+              <div
+                key={res.id}
+                style={{ height: `${rowHeightPx}px` }}
+                className="flex items-center gap-2.5 px-3 border-b border-violet-50/60 last:border-b-0 transition-all"
+              >
+                {groupById === 'instructor' ? (
+                  <>
+                    <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0 text-violet-700 shadow-2xs font-bold text-xs">
+                      {res.label.slice(0, 1)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-zinc-900 truncate">{res.label}</p>
+                      <p className="text-[10px] text-zinc-400 font-medium">{res.schedules.length}개 수업</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-8 h-8 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0 text-violet-700 shadow-2xs">
+                      <MapPin className="w-4 h-4 text-violet-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-zinc-900 truncate">{res.label}</p>
+                      <p className="text-[10px] text-zinc-400 font-medium">{res.sublabel}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* 우측 수평 시간축 스크롤 컨테이너 */}
@@ -227,49 +277,74 @@ export function GanttTimeline({
           </div>
 
           {/* 리소스별 행 */}
-          {resources.map((res, rowIdx) => (
-            <div
-              key={res.id}
-              className="h-20 relative border-b border-violet-50/60 last:border-b-0 hover:z-30 transition-colors"
-              style={{ width: `${totalTimelineWidth}px`, minWidth: `${totalTimelineWidth}px` }}
-            >
-              {/* 세로 시간 눈금선 (배경 격자) */}
-              {hours.slice(0, -1).map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute top-0 bottom-0 border-r border-violet-100/40 pointer-events-none"
-                  style={{ left: `${i * HOUR_CELL_WIDTH}px`, width: `${HOUR_CELL_WIDTH}px` }}
-                />
-              ))}
+          {resources.map((res, rowIdx) => {
+            const { scheduleLanes, totalLanes } = resourceLanes.get(res.id) || { scheduleLanes: new Map(), totalLanes: 1 };
+            const isMultiLane = totalLanes > 1;
+            const rowHeightPx = isMultiLane ? totalLanes * 46 + 18 : 80;
 
-              {/* 배치된 수업 블록들 */}
-              {res.schedules.map((cls) => {
-                const leftPct = timeToPercent(cls.startTime);
-                const widthPct = Math.max(durationPercent(cls.startTime, cls.endTime), 5);
-                const bookedCount = Array.isArray(cls.booked) ? cls.booked.length : (cls.bookingCount || 0);
-                const capacity = cls.capacity || 10;
-                const isFull = bookedCount >= capacity;
-
-                const compactLabel =
-                  groupById === 'instructor'
-                    ? `${cls.title} · ${cls.studioId === 'B' ? 'Studio B' : 'Studio A'}`
-                    : `${cls.title} · ${cls.instructorName || '강사'}`;
-
-                const isTooltipLeft = hoveredPlacement?.id === cls.id && hoveredPlacement.isLeft;
-                const isFirstRow = rowIdx === 0;
-                const isLastRow = rowIdx === resources.length - 1;
-                const verticalPositionClass = isLastRow
-                  ? 'bottom-0'
-                  : isFirstRow
-                  ? 'top-0'
-                  : 'top-1/2 -translate-y-1/2';
-
-                return (
+            return (
+              <div
+                key={res.id}
+                className="relative border-b border-violet-50/60 last:border-b-0 hover:z-30 transition-all"
+                style={{
+                  width: `${totalTimelineWidth}px`,
+                  minWidth: `${totalTimelineWidth}px`,
+                  height: `${rowHeightPx}px`,
+                }}
+              >
+                {/* 세로 시간 눈금선 (배경 격자) */}
+                {hours.slice(0, -1).map((_, i) => (
                   <div
-                    key={cls.id}
-                    className="group absolute h-11 top-1/2 -translate-y-1/2"
-                    style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-                  >
+                    key={i}
+                    className="absolute top-0 bottom-0 border-r border-violet-100/40 pointer-events-none"
+                    style={{ left: `${i * HOUR_CELL_WIDTH}px`, width: `${HOUR_CELL_WIDTH}px` }}
+                  />
+                ))}
+
+                {/* 배치된 수업 블록들 */}
+                {res.schedules.map((cls) => {
+                  const leftPct = timeToPercent(cls.startTime);
+                  const widthPct = Math.max(durationPercent(cls.startTime, cls.endTime), 5);
+                  const bookedCount = Array.isArray(cls.booked) ? cls.booked.length : (cls.bookingCount || 0);
+                  const capacity = cls.capacity || 10;
+                  const isFull = bookedCount >= capacity;
+
+                  const studioShort =
+                    cls.studioId === 'B' ? 'Studio B' :
+                    cls.studioId === 'C' ? 'Studio C (스피닝)' :
+                    cls.studioId === 'D' ? '피트니스(PT)' :
+                    'Studio A';
+
+                  const compactLabel =
+                    groupById === 'instructor'
+                      ? `${cls.title} · ${studioShort}`
+                      : `${cls.title} · ${cls.instructorName || '강사'}`;
+
+                  const isTooltipLeft = hoveredPlacement?.id === cls.id && hoveredPlacement.isLeft;
+                  const isFirstRow = rowIdx === 0;
+                  const isLastRow = rowIdx === resources.length - 1;
+                  const verticalPositionClass = isLastRow
+                    ? 'bottom-0'
+                    : isFirstRow
+                    ? 'top-0'
+                    : 'top-1/2 -translate-y-1/2';
+
+                  const lane = scheduleLanes.get(cls.id) || 0;
+                  const topPos = isMultiLane ? `${lane * 46 + 9}px` : '50%';
+                  const transform = isMultiLane ? 'none' : 'translateY(-50%)';
+                  const blockHeightClass = isMultiLane ? 'h-9.5' : 'h-11';
+
+                  return (
+                    <div
+                      key={cls.id}
+                      className={`group absolute ${blockHeightClass}`}
+                      style={{
+                        left: `${leftPct}%`,
+                        width: `${widthPct}%`,
+                        top: topPos,
+                        transform: transform,
+                      }}
+                    >
                     <button
                       type="button"
                       onClick={() => openDrawer && openDrawer(cls)}
@@ -315,7 +390,7 @@ export function GanttTimeline({
                       </div>
                       <div className="text-[11px] text-zinc-600 flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-violet-500 shrink-0" />
-                        <span>{cls.studioId === 'B' ? 'Studio B' : 'Studio A'}</span>
+                        <span>{studioShort}</span>
                       </div>
                       <div className="text-[11px] text-zinc-600 flex items-center gap-1.5">
                         <User className="w-3.5 h-3.5 text-violet-500 shrink-0" />
@@ -330,7 +405,8 @@ export function GanttTimeline({
                 );
               })}
             </div>
-          ))}
+          );
+        })}
         </div>
       </div>
     </div>

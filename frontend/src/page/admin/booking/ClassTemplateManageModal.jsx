@@ -24,61 +24,6 @@ import {
 } from '../../../api/programApi';
 import { message } from 'antd';
 
-const FALLBACK_TEMPLATES = [
-  {
-    id: 'tpl-1',
-    title: '요가 기초',
-    category: '요가',
-    type: 'group',
-    status: '활성',
-    defaultDuration: 60,
-    timeRange: '09:00 - 10:00',
-    capacity: 15,
-    repeatSchedule: '매주 월·수·금',
-    defaultStudio: '스튜디오 A룸',
-    instructorName: '홍길동',
-  },
-  {
-    id: 'tpl-2',
-    title: '리포머 필라테스',
-    category: '필라테스',
-    type: 'group',
-    status: '활성',
-    defaultDuration: 50,
-    timeRange: '09:00 - 09:50',
-    capacity: 8,
-    repeatSchedule: '매주 금',
-    defaultStudio: '스튜디오 B룸',
-    instructorName: '김서연',
-  },
-  {
-    id: 'tpl-3',
-    title: '1:1 퍼스널 트레이닝 (PT)',
-    category: 'PT',
-    type: 'private',
-    status: '활성',
-    defaultDuration: 50,
-    timeRange: '상시 조율',
-    capacity: 1,
-    repeatSchedule: '반복 없음 (개인)',
-    defaultStudio: '피트니스존 (헬스장)',
-    instructorName: '김유라',
-  },
-  {
-    id: 'tpl-4',
-    title: '릴리즈 요가',
-    category: '요가',
-    type: 'group',
-    status: '중지',
-    defaultDuration: 60,
-    timeRange: '14:00 - 15:00',
-    capacity: 10,
-    repeatSchedule: '매주 목',
-    defaultStudio: '스튜디오 B룸',
-    instructorName: '박수민',
-  },
-];
-
 export function ClassTemplateManageModal({
   open,
   onClose,
@@ -147,10 +92,10 @@ export function ClassTemplateManageModal({
           }))
         );
       } else {
-        setTemplates(FALLBACK_TEMPLATES);
+        setTemplates([]);
       }
     } catch {
-      setTemplates(FALLBACK_TEMPLATES);
+      setTemplates([]);
     } finally {
       setLoading(false);
     }
@@ -510,9 +455,10 @@ export function ClassTemplateManageModal({
                       onChange={(e) => setFormStudio(e.target.value)}
                       className="w-full text-xs bg-white border border-violet-200 rounded-xl p-2.5 outline-none font-semibold"
                     >
-                      <option value="스튜디오 A룸">스튜디오 A룸 (GX/요가)</option>
+                      <option value="스튜디오 A룸">스튜디오 A룸 (요가/GX)</option>
                       <option value="스튜디오 B룸">스튜디오 B룸 (기구 필라테스)</option>
-                      <option value="피트니스존">피트니스존 (헬스장)</option>
+                      <option value="스튜디오 C룸">스튜디오 C룸 (스피닝)</option>
+                      <option value="피트니스존">피트니스존 (PT/자유운동)</option>
                     </select>
                   </div>
                 </div>
